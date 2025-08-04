@@ -12,7 +12,7 @@ class DumpDownloader():
         self.number_of_files = number_of_files
     
     def get_dump_links(self):
-        #  Get list of .bz2 files from the wikidata dump service
+        #  Get list of .bz2 files from the wikidata dump service (Scrapper)
         response = requests.get(self.base_url)
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -50,7 +50,10 @@ class DumpDownloader():
 
         # Download the files in parallel
         with ThreadPoolExecutor(max_workers=4) as executor:
-            executor.map(self.download_file, self.bz2_links[:self.number_of_files])
+            if self.number_of_files is None: # Flag to download only a number of files
+                executor.map(self.download_file, self.bz2_links)
+            else:
+                executor.map(self.download_file, self.bz2_links[:self.number_of_files])
        
 
     
