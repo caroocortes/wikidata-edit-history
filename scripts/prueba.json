@@ -1,0 +1,3857 @@
+[
+  {
+    "entity_id": "Q15",
+    "rev_id": "16",
+    "timestamp": "2012-10-29T17:03:21Z",
+    "user": "Denny",
+    "comment": "Created page with \"A continent\"",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "A continent"
+        }
+      },
+      "claims": []
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "20",
+    "timestamp": "2012-10-29T17:10:49Z",
+    "user": "Denny",
+    "comment": "/* wbsetlabel-set:1|de */ Afrika",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "A continent"
+        }
+      },
+      "claims": []
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "9144982",
+    "timestamp": "2013-03-03T23:33:06Z",
+    "user": "Jon Harald Søby",
+    "comment": "/* wbsetlabel-set:1|fit */ Aafriikka",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P107": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P107",
+              "hash": "74e8ddb93752ea5cfcc2928d338f7421619300c0",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 618123,
+                  "id": "Q618123"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$553AD786-BC4F-4F78-BE1A-C957368F1FA4",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "9215180",
+    "timestamp": "2013-03-04T03:16:12Z",
+    "user": "Clarice Reis",
+    "comment": "/* wbeditentity-update */ [[MediaWiki_talk:Gadget-labelLister.js|labelLister]] [pt-br] description (continente)",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P107": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P107",
+              "hash": "74e8ddb93752ea5cfcc2928d338f7421619300c0",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 618123,
+                  "id": "Q618123"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$553AD786-BC4F-4F78-BE1A-C957368F1FA4",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "31126123",
+    "timestamp": "2013-04-25T21:51:41Z",
+    "user": "Wizardist",
+    "comment": "/* wbsetlabel-set:1|be-tarask */ Афрыка",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P107": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P107",
+              "hash": "74e8ddb93752ea5cfcc2928d338f7421619300c0",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 618123,
+                  "id": "Q618123"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$553AD786-BC4F-4F78-BE1A-C957368F1FA4",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "54240147",
+    "timestamp": "2013-07-04T20:46:39Z",
+    "user": "Hobofan",
+    "comment": "/* wbsetclaim-create:1||1 */ [[Property:P47]]: [[Q46]]",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P107": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P107",
+              "hash": "74e8ddb93752ea5cfcc2928d338f7421619300c0",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 618123,
+                  "id": "Q618123"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$553AD786-BC4F-4F78-BE1A-C957368F1FA4",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "64013750",
+    "timestamp": "2013-08-04T19:13:17Z",
+    "user": "Addbot",
+    "comment": "/* wbcreateclaim-create:1| */ [[Property:P625]]",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P107": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P107",
+              "hash": "74e8ddb93752ea5cfcc2928d338f7421619300c0",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 618123,
+                  "id": "Q618123"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$553AD786-BC4F-4F78-BE1A-C957368F1FA4",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "65614694",
+    "timestamp": "2013-08-14T16:42:29Z",
+    "user": "Kompakt",
+    "comment": "/* wbsetdescription-set:1|de */ Kontinent",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P107": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P107",
+              "hash": "74e8ddb93752ea5cfcc2928d338f7421619300c0",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 618123,
+                  "id": "Q618123"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$553AD786-BC4F-4F78-BE1A-C957368F1FA4",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "66319339",
+    "timestamp": "2013-08-20T12:32:10Z",
+    "user": "Anonymous",
+    "comment": "/* wbremoveclaims-remove:1||1 */ [[Property:P107]]: [[Q618123]]",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "66322509",
+    "timestamp": "2013-08-20T13:27:18Z",
+    "user": "Anonymous",
+    "comment": "Undid revision 66319339 by [[Special:Contributions/20.132.68.148|20.132.68.148]] ([[User talk:20.132.68.148|talk]])",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P107": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P107",
+              "hash": "74e8ddb93752ea5cfcc2928d338f7421619300c0",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 618123,
+                  "id": "Q618123"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$553AD786-BC4F-4F78-BE1A-C957368F1FA4",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "70979673",
+    "timestamp": "2013-09-17T15:35:34Z",
+    "user": "BotMultichill",
+    "comment": "/* wbcreateclaim-create:1| */[[Property:P910]]: [[Q5460710]]",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P107": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P107",
+              "hash": "74e8ddb93752ea5cfcc2928d338f7421619300c0",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 618123,
+                  "id": "Q618123"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$553AD786-BC4F-4F78-BE1A-C957368F1FA4",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P910": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P910",
+              "hash": "ed8026fc02a69df8b41f3c185dcb3f45f2785554",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5460710,
+                  "id": "Q5460710"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$96A2A45A-C2B0-4291-A4AE-D6EB97954C90",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "76198549",
+    "timestamp": "2013-10-10T05:29:57Z",
+    "user": "CalakBot",
+    "comment": "/* wbeditentity-update:0| */Bot: Update of labels.",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P910": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P910",
+              "hash": "ed8026fc02a69df8b41f3c185dcb3f45f2785554",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5460710,
+                  "id": "Q5460710"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$96A2A45A-C2B0-4291-A4AE-D6EB97954C90",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "83508382",
+    "timestamp": "2013-11-03T17:08:08Z",
+    "user": "KLBot2",
+    "comment": "/* wbcreateclaim-create:1| */[[Property:P998]]: Regional/Africa/",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P910": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P910",
+              "hash": "ed8026fc02a69df8b41f3c185dcb3f45f2785554",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5460710,
+                  "id": "Q5460710"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$96A2A45A-C2B0-4291-A4AE-D6EB97954C90",
+            "rank": "normal"
+          }
+        ],
+        "P948": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P948",
+              "hash": "374175b17f4dbbab4d92ba1430a96ebcdce6f231",
+              "datavalue": {
+                "value": "Kenya Central banner.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$C7613A0A-26BB-4C20-9C98-20BCD8B13E47",
+            "rank": "normal"
+          }
+        ],
+        "P349": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P349",
+              "hash": "0d9ac83c7446f3cd39c8bc53b1103bc4cd35d6c6",
+              "datavalue": {
+                "value": "00560082",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$BB341468-DC35-4F9C-A76A-44B166108BE9",
+            "rank": "normal"
+          }
+        ],
+        "P214": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P214",
+              "hash": "52b488a9aff0f9cf3df8ee38e4176e2dcaeee03a",
+              "datavalue": {
+                "value": "258169097",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$63174D44-2344-4CF5-A4E8-433FA07BBC51",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "a51d6594fee36c7452eaed2db35a4833613a7078",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "74f998bedaf1a0efbee6fec668f089c6922eaa0d",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 54919,
+                          "id": "Q54919"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P998": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P998",
+              "hash": "fb50cacea33ae42728b28fd41f36b7d27433658a",
+              "datavalue": {
+                "value": "Regional/Africa/",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$171B9FB9-975A-4A2A-BFC6-34782FAC4118",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "85668057",
+    "timestamp": "2013-11-11T21:53:13Z",
+    "user": "JAnDbot",
+    "comment": "/* wbcreateclaim-create:1| */[[Property:P935]]: Africa",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P910": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P910",
+              "hash": "ed8026fc02a69df8b41f3c185dcb3f45f2785554",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5460710,
+                  "id": "Q5460710"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$96A2A45A-C2B0-4291-A4AE-D6EB97954C90",
+            "rank": "normal"
+          }
+        ],
+        "P948": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P948",
+              "hash": "374175b17f4dbbab4d92ba1430a96ebcdce6f231",
+              "datavalue": {
+                "value": "Kenya Central banner.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$C7613A0A-26BB-4C20-9C98-20BCD8B13E47",
+            "rank": "normal"
+          }
+        ],
+        "P349": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P349",
+              "hash": "0d9ac83c7446f3cd39c8bc53b1103bc4cd35d6c6",
+              "datavalue": {
+                "value": "00560082",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$BB341468-DC35-4F9C-A76A-44B166108BE9",
+            "rank": "normal"
+          }
+        ],
+        "P214": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P214",
+              "hash": "52b488a9aff0f9cf3df8ee38e4176e2dcaeee03a",
+              "datavalue": {
+                "value": "258169097",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$63174D44-2344-4CF5-A4E8-433FA07BBC51",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "a51d6594fee36c7452eaed2db35a4833613a7078",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "74f998bedaf1a0efbee6fec668f089c6922eaa0d",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 54919,
+                          "id": "Q54919"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P998": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P998",
+              "hash": "fb50cacea33ae42728b28fd41f36b7d27433658a",
+              "datavalue": {
+                "value": "Regional/Africa/",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$171B9FB9-975A-4A2A-BFC6-34782FAC4118",
+            "rank": "normal"
+          }
+        ],
+        "P935": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P935",
+              "hash": "849b05ca3df2d8d07f5493ba20541c8450e1afce",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$28FA0A6A-6EB5-4C85-9BBA-E0190582D4FE",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "85668078",
+    "timestamp": "2013-11-11T21:53:17Z",
+    "user": "JAnDbot",
+    "comment": "/* wbsetreference-add:2| */[[Property:P935]]: Africa",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P910": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P910",
+              "hash": "ed8026fc02a69df8b41f3c185dcb3f45f2785554",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5460710,
+                  "id": "Q5460710"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$96A2A45A-C2B0-4291-A4AE-D6EB97954C90",
+            "rank": "normal"
+          }
+        ],
+        "P948": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P948",
+              "hash": "374175b17f4dbbab4d92ba1430a96ebcdce6f231",
+              "datavalue": {
+                "value": "Kenya Central banner.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$C7613A0A-26BB-4C20-9C98-20BCD8B13E47",
+            "rank": "normal"
+          }
+        ],
+        "P349": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P349",
+              "hash": "0d9ac83c7446f3cd39c8bc53b1103bc4cd35d6c6",
+              "datavalue": {
+                "value": "00560082",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$BB341468-DC35-4F9C-A76A-44B166108BE9",
+            "rank": "normal"
+          }
+        ],
+        "P214": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P214",
+              "hash": "52b488a9aff0f9cf3df8ee38e4176e2dcaeee03a",
+              "datavalue": {
+                "value": "258169097",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$63174D44-2344-4CF5-A4E8-433FA07BBC51",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "a51d6594fee36c7452eaed2db35a4833613a7078",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "74f998bedaf1a0efbee6fec668f089c6922eaa0d",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 54919,
+                          "id": "Q54919"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P998": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P998",
+              "hash": "fb50cacea33ae42728b28fd41f36b7d27433658a",
+              "datavalue": {
+                "value": "Regional/Africa/",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$171B9FB9-975A-4A2A-BFC6-34782FAC4118",
+            "rank": "normal"
+          }
+        ],
+        "P935": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P935",
+              "hash": "849b05ca3df2d8d07f5493ba20541c8450e1afce",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$28FA0A6A-6EB5-4C85-9BBA-E0190582D4FE",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "2f183743080f8e1970847d13a04fde9a796f1476",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "7b1122b316cc6a66acb7adea711ed193a140a0f2",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 191168,
+                          "id": "Q191168"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "128407944",
+    "timestamp": "2014-05-12T03:34:24Z",
+    "user": "לערי ריינהארט",
+    "comment": "/* wbsetclaim-create:2||1 */ [[Property:P1245]]: 71",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P1245": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P1245",
+              "hash": "8686b3a15aecb375dc0725cbd708d4c644e4419d",
+              "datavalue": {
+                "value": "71",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$2858e77f-47f8-d8c5-3fc5-759d73c5773d",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P1245",
+              "hash": "8686b3a15aecb375dc0725cbd708d4c644e4419d",
+              "datavalue": {
+                "value": "71",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$31478160-4b31-0d0f-4da0-cd44b868f0a3",
+            "rank": "normal"
+          }
+        ],
+        "P1151": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P1151",
+              "hash": "ca5588d03cad2bc92d3ff4bc7ef682bb8cdbbbea",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 7486129,
+                  "id": "Q7486129"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$7870cf68-453d-0052-5a4f-bc41dc75227a",
+            "rank": "normal"
+          }
+        ],
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P910": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P910",
+              "hash": "ed8026fc02a69df8b41f3c185dcb3f45f2785554",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5460710,
+                  "id": "Q5460710"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$96A2A45A-C2B0-4291-A4AE-D6EB97954C90",
+            "rank": "normal"
+          }
+        ],
+        "P948": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P948",
+              "hash": "374175b17f4dbbab4d92ba1430a96ebcdce6f231",
+              "datavalue": {
+                "value": "Kenya Central banner.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$C7613A0A-26BB-4C20-9C98-20BCD8B13E47",
+            "rank": "normal"
+          }
+        ],
+        "P349": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P349",
+              "hash": "0d9ac83c7446f3cd39c8bc53b1103bc4cd35d6c6",
+              "datavalue": {
+                "value": "00560082",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$BB341468-DC35-4F9C-A76A-44B166108BE9",
+            "rank": "normal"
+          }
+        ],
+        "P214": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P214",
+              "hash": "52b488a9aff0f9cf3df8ee38e4176e2dcaeee03a",
+              "datavalue": {
+                "value": "258169097",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$63174D44-2344-4CF5-A4E8-433FA07BBC51",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "a51d6594fee36c7452eaed2db35a4833613a7078",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "74f998bedaf1a0efbee6fec668f089c6922eaa0d",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 54919,
+                          "id": "Q54919"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P998": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P998",
+              "hash": "fb50cacea33ae42728b28fd41f36b7d27433658a",
+              "datavalue": {
+                "value": "Regional/Africa/",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$171B9FB9-975A-4A2A-BFC6-34782FAC4118",
+            "rank": "normal"
+          }
+        ],
+        "P935": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P935",
+              "hash": "29242cfcc65171c5933333a09e2414542f305f61",
+              "datavalue": {
+                "value": "Africa - Afrique - أفريقيا",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$28FA0A6A-6EB5-4C85-9BBA-E0190582D4FE",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "2f183743080f8e1970847d13a04fde9a796f1476",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "7b1122b316cc6a66acb7adea711ed193a140a0f2",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 191168,
+                          "id": "Q191168"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P646": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P646",
+              "hash": "1f84e00b6d4a638f6cdbb555699430685efbfa1b",
+              "datavalue": {
+                "value": "/m/0dg3n1",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$947D0328-A860-4456-9017-18568DA9B48C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "af38848ab5d9d9325cffd93a5ec656cc6ca889ed",
+                "snaks": {
+                  "P248": [
+                    {
+                      "snaktype": "value",
+                      "property": "P248",
+                      "hash": "62e345446a0c505d83139055fc6affea7d82887b",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 15241312,
+                          "id": "Q15241312"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ],
+                  "P577": [
+                    {
+                      "snaktype": "value",
+                      "property": "P577",
+                      "hash": "326dbe1cf6754fbdae762db3874856de204141f4",
+                      "datavalue": {
+                        "value": {
+                          "time": "+2013-10-28T00:00:00Z",
+                          "timezone": 0,
+                          "before": 0,
+                          "after": 0,
+                          "precision": 11,
+                          "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                        },
+                        "type": "time"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P248",
+                  "P577"
+                ]
+              }
+            ]
+          }
+        ],
+        "P227": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P227",
+              "hash": "0a7f44d0901f2f62ec048011b59f2868055a5db0",
+              "datavalue": {
+                "value": "4000695-5",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$8CA395AC-2F46-448B-A76F-4F54E4D9342E",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "entity_id": "Q15",
+    "rev_id": "128408144",
+    "timestamp": "2014-05-12T03:35:05Z",
+    "user": "לערי ריינהארט",
+    "comment": "/* wbsetclaim-create:2||1 */ [[Property:P1036]]: 2--6",
+    "json": {
+      "type": "item",
+      "id": "Q15",
+      "labels": {
+        "en": {
+          "language": "en",
+          "value": "Africa"
+        }
+      },
+      "descriptions": {
+        "en": {
+          "language": "en",
+          "value": "continent"
+        }
+      },
+      "claims": {
+        "P1245": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P1245",
+              "hash": "8686b3a15aecb375dc0725cbd708d4c644e4419d",
+              "datavalue": {
+                "value": "71",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$2858e77f-47f8-d8c5-3fc5-759d73c5773d",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P1245",
+              "hash": "8686b3a15aecb375dc0725cbd708d4c644e4419d",
+              "datavalue": {
+                "value": "71",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$31478160-4b31-0d0f-4da0-cd44b868f0a3",
+            "rank": "normal"
+          }
+        ],
+        "P1151": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P1151",
+              "hash": "ca5588d03cad2bc92d3ff4bc7ef682bb8cdbbbea",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 7486129,
+                  "id": "Q7486129"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$7870cf68-453d-0052-5a4f-bc41dc75227a",
+            "rank": "normal"
+          }
+        ],
+        "P31": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P31",
+              "hash": "fb7c74db4f5ee524306c0ae727838b368a5bd6f7",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5107,
+                  "id": "Q5107"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$D583DF01-F7D8-4010-9EDA-C5BBE6C5A594",
+            "rank": "normal"
+          }
+        ],
+        "P361": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P361",
+              "hash": "dbc2f5d1bd25f41fba3e7a2bf8b68ebb98c9cdda",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 2,
+                  "id": "Q2"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$60f93cc4-4a85-f1a0-3584-d6043bd41b80",
+            "rank": "normal"
+          }
+        ],
+        "P47": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "c3418bca9836321efc559a1b9bb8a0a5e8d86f69",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 48,
+                  "id": "Q48"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$2457B21F-EF0B-48FF-843E-77645887E6C5",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P47",
+              "hash": "6648a2ee14d7ef0e54f3597336df49d0729aecaa",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 46,
+                  "id": "Q46"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "q15$dc19045e-49dc-396d-2f77-c5bb3ff5d736",
+            "rank": "normal"
+          }
+        ],
+        "P373": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P373",
+              "hash": "b619f11d7fa46cf041f6fb022a6159f341cb1072",
+              "datavalue": {
+                "value": "Africa",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$E9B52923-02DA-4613-9043-B14AF8FBABEA",
+            "rank": "normal"
+          }
+        ],
+        "P18": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P18",
+              "hash": "24fc9737d99fbd100ede00b76fea43ffe1707c3c",
+              "datavalue": {
+                "value": "Africa satellite orthographic.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$9FDD99A4-487C-41D9-8FD7-A0A4FD1E4A75",
+            "rank": "normal"
+          }
+        ],
+        "P242": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "cb531f1a41677bbc0da2b5dee0e02f218db097d1",
+              "datavalue": {
+                "value": "Africa ethnic groups 1996.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$CC452BD9-08D8-482B-8FCE-AE8F0C5F293D",
+            "rank": "normal"
+          },
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P242",
+              "hash": "d84cd8ee411ec2c4c6f4a477e6071ffe9eef653b",
+              "datavalue": {
+                "value": "Afriko-meza.png",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "q15$BF765B27-3656-48DB-A47F-15EF8E358E96",
+            "rank": "normal"
+          }
+        ],
+        "P625": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P625",
+              "hash": "9b1f801531fa969ce2500689a5635d9025ad63b2",
+              "datavalue": {
+                "value": {
+                  "latitude": 7.1880555555556,
+                  "longitude": 21.093611111111,
+                  "altitude": null,
+                  "precision": 0.00027777777777778,
+                  "globe": "http://www.wikidata.org/entity/Q2"
+                },
+                "type": "globecoordinate"
+              }
+            },
+            "type": "statement",
+            "id": "q15$1EE103EB-7FF7-41BB-AC7E-634DC94F058C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P910": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P910",
+              "hash": "ed8026fc02a69df8b41f3c185dcb3f45f2785554",
+              "datavalue": {
+                "value": {
+                  "entity-type": "item",
+                  "numeric-id": 5460710,
+                  "id": "Q5460710"
+                },
+                "type": "wikibase-entityid"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$96A2A45A-C2B0-4291-A4AE-D6EB97954C90",
+            "rank": "normal"
+          }
+        ],
+        "P948": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P948",
+              "hash": "374175b17f4dbbab4d92ba1430a96ebcdce6f231",
+              "datavalue": {
+                "value": "Kenya Central banner.jpg",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$C7613A0A-26BB-4C20-9C98-20BCD8B13E47",
+            "rank": "normal"
+          }
+        ],
+        "P349": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P349",
+              "hash": "0d9ac83c7446f3cd39c8bc53b1103bc4cd35d6c6",
+              "datavalue": {
+                "value": "00560082",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$BB341468-DC35-4F9C-A76A-44B166108BE9",
+            "rank": "normal"
+          }
+        ],
+        "P214": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P214",
+              "hash": "52b488a9aff0f9cf3df8ee38e4176e2dcaeee03a",
+              "datavalue": {
+                "value": "258169097",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$63174D44-2344-4CF5-A4E8-433FA07BBC51",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "a51d6594fee36c7452eaed2db35a4833613a7078",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "74f998bedaf1a0efbee6fec668f089c6922eaa0d",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 54919,
+                          "id": "Q54919"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P998": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P998",
+              "hash": "fb50cacea33ae42728b28fd41f36b7d27433658a",
+              "datavalue": {
+                "value": "Regional/Africa/",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$171B9FB9-975A-4A2A-BFC6-34782FAC4118",
+            "rank": "normal"
+          }
+        ],
+        "P935": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P935",
+              "hash": "29242cfcc65171c5933333a09e2414542f305f61",
+              "datavalue": {
+                "value": "Africa - Afrique - أفريقيا",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$28FA0A6A-6EB5-4C85-9BBA-E0190582D4FE",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "2f183743080f8e1970847d13a04fde9a796f1476",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "7b1122b316cc6a66acb7adea711ed193a140a0f2",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 191168,
+                          "id": "Q191168"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P646": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P646",
+              "hash": "1f84e00b6d4a638f6cdbb555699430685efbfa1b",
+              "datavalue": {
+                "value": "/m/0dg3n1",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$947D0328-A860-4456-9017-18568DA9B48C",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "af38848ab5d9d9325cffd93a5ec656cc6ca889ed",
+                "snaks": {
+                  "P248": [
+                    {
+                      "snaktype": "value",
+                      "property": "P248",
+                      "hash": "62e345446a0c505d83139055fc6affea7d82887b",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 15241312,
+                          "id": "Q15241312"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ],
+                  "P577": [
+                    {
+                      "snaktype": "value",
+                      "property": "P577",
+                      "hash": "326dbe1cf6754fbdae762db3874856de204141f4",
+                      "datavalue": {
+                        "value": {
+                          "time": "+2013-10-28T00:00:00Z",
+                          "timezone": 0,
+                          "before": 0,
+                          "after": 0,
+                          "precision": 11,
+                          "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                        },
+                        "type": "time"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P248",
+                  "P577"
+                ]
+              }
+            ]
+          }
+        ],
+        "P227": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P227",
+              "hash": "0a7f44d0901f2f62ec048011b59f2868055a5db0",
+              "datavalue": {
+                "value": "4000695-5",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$8CA395AC-2F46-448B-A76F-4F54E4D9342E",
+            "rank": "normal",
+            "references": [
+              {
+                "hash": "004ec6fbee857649acdbdbad4f97b2c8571df97b",
+                "snaks": {
+                  "P143": [
+                    {
+                      "snaktype": "value",
+                      "property": "P143",
+                      "hash": "ed26fcd5570c4e73da1b33301244ec0494789f52",
+                      "datavalue": {
+                        "value": {
+                          "entity-type": "item",
+                          "numeric-id": 48183,
+                          "id": "Q48183"
+                        },
+                        "type": "wikibase-entityid"
+                      }
+                    }
+                  ]
+                },
+                "snaks-order": [
+                  "P143"
+                ]
+              }
+            ]
+          }
+        ],
+        "P1036": [
+          {
+            "mainsnak": {
+              "snaktype": "value",
+              "property": "P1036",
+              "hash": "e08836c6a72192ff5122cd50c185025b43df4d64",
+              "datavalue": {
+                "value": "2--6",
+                "type": "string"
+              }
+            },
+            "type": "statement",
+            "id": "Q15$a057f02b-4b35-dd18-78cb-f6795503292e",
+            "rank": "normal"
+          }
+        ]
+      }
+    }
+  }
+]
