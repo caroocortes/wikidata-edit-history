@@ -37,10 +37,18 @@ class DumpDownloader():
         print(f"Downloading: {filename}")
         with requests.get(url, stream=True) as r:
             r.raise_for_status()
+
+            size_bytes = int(r.headers.get('Content-Length', 0))
+            size_mb = size_bytes / (1024 * 1024)
+
             with open(path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
         print(f"Finished: {filename}")
+
+        log_path = os.path.join(self.download_dir, "download_log.txt")
+        with open(log_path, "a") as log_file:
+            log_file.write(f"{filename}\t{size_mb:.2f} MB\n")
     
     def download_dumps(self):
         # Create download directory if it doesn't exist
