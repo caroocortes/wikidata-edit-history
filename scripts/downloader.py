@@ -57,7 +57,7 @@ class DumpDownloader():
         self.bz2_links = self.get_dump_links()
 
         # Download the files in parallel
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        with ThreadPoolExecutor(max_workers=10) as executor:
             if self.number_of_files is None: # Flag to download only a number of files
                 executor.map(self.download_file, self.bz2_links)
             else:
