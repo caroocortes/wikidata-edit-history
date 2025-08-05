@@ -3,6 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
+from scripts.parser import DumpParser
+import time
 
 class DumpDownloader():
 
@@ -34,7 +36,9 @@ class DumpDownloader():
         if os.path.exists(path):
             print(f"Already downloaded: {filename}")
             return
+        
         print(f"Downloading: {filename}")
+        download_start = time.time()
         with requests.get(url, stream=True) as r:
             r.raise_for_status()
 
@@ -44,11 +48,37 @@ class DumpDownloader():
             with open(path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
-        print(f"Finished: {filename}")
+        download_end = time.time()
+        download_time = download_end - download_start
+        print(f"Downloaded {filename} ({size_mb:.2f} MB) in {download_time:.2f} seconds.")
 
-        log_path = os.path.join(self.download_dir, "download_log.txt")
-        with open(log_path, "a") as log_file:
-            log_file.write(f"{filename}\t{size_mb:.2f} MB\n")
+        # Process the downloaded file
+        print(f"Processing: {filename}")
+        start_process = time.time()
+        dump_parser = DumpParser()
+        entities, changes_saved, revision_avg = dump_parser.parse_pages_in_dump(path)
+        end_process = time.time()
+        process_time = end_process - start_process
+        print(f"Processed {filename} in {end_process - start_process:.2f} seconds.")
+        
+        # Remove the downloaded file 
+        if os.path.exists(path):
+            os.remove(path)
+        else:
+            print("File does not exist, nothing to remove.")
+
+        log_file =  "download_log.txt"
+        if size_mb > 0:
+            with open(log_file, "a") as log:
+                log.write(
+                    f"{filename} size: {size_mb:.2f} MB\t"
+                    f"Entities: {len(entities)}\t"
+                    f"Avg. number of revisions: {revision_avg:.2f}\t"
+                    f"Number of changes saved: {changes_saved}\t"
+                    f"Entities: {','.join(entities)}\t"
+                    f"Processing time: {process_time:.2f}s\t"
+                    f"Download time: {download_time:.2f}s\n"
+                )
     
     def download_dumps(self):
         # Create download directory if it doesn't exist
