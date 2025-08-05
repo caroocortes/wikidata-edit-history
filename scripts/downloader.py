@@ -56,7 +56,7 @@ class DumpDownloader():
         print(f"Processing: {filename}")
         start_process = time.time()
         dump_parser = DumpParser()
-        entities, changes_saved, revision_avg = dump_parser.parse_pages_in_dump(path)
+        entities, changes_saved, revision_avg = dump_parser.parse_pages_in_xml(path)
         end_process = time.time()
         process_time = end_process - start_process
         print(f"Processed {filename} in {end_process - start_process:.2f} seconds.")

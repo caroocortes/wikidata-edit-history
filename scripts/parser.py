@@ -5,8 +5,8 @@ import os
 import bz2
 from concurrent.futures import ProcessPoolExecutor
 import shutil
-
-from const import CREATE_ENTITY, UPDATE_PROPERTY_VALUE
+import xml.etree.ElementTree as ET
+from const import CREATE_ENTITY, UPDATE_PROPERTY_VALUE, DELETE_ENTITY, CREATE_PROPERTY, DELETE_PROPERTY, CREATE_PROPERTY_VALUE, DELETE_PROPERTY_VALUE
 
 class DumpParser():
 
@@ -22,24 +22,52 @@ class DumpParser():
             return stmt["mainsnak"].get(property_, None)
         except (KeyError, TypeError):
             return None
-
-    def parse_revision(self, entity_id, current_revision, previous_revision, revision_meta):
+        
+    def changes_deleted_created_entity(self, previous_revision, revision_meta, change_type):
         changes = []
+        claims = previous_revision.get('claims')
+        labels = previous_revision.get('labels', {}).get('en', {}).get('value')
+        descriptions = previous_revision.get('descriptions', {}).get('en', {}).get('value')
 
-        if not previous_revision:
-            # Entity was created again or for the first time
-            for property_id, property_stmts in current_revision['claims'].items():
+        # Determine old/new values based on change type
+        if change_type == CREATE_ENTITY:
+            get_old_new = lambda v: (None, v)
+        elif change_type == DELETE_ENTITY:
+            get_old_new = lambda v: (v, None)
+
+        # Process claims
+        if isinstance(claims, dict):
+            for property_id, property_stmts in claims.items():
                 for stmt in property_stmts:
-                    changes.append( {
+                    old_value, new_value = get_old_new(stmt)
+                    changes.append({
                         **revision_meta,
-                        "entity_id": entity_id,
                         "property_id": property_id,
-                        "old_value": None,  
-                        "new_value": stmt,
-                        "change_type": CREATE_ENTITY
+                        "old_value": old_value,
+                        "new_value": new_value,
+                        "change_type": change_type
                     })
 
+        # Process labels and descriptions (non-claim properties)
+        for pid, val in [('label', labels), ('description', descriptions)]:
+            old_value, new_value = get_old_new(val)
+            changes.append({
+                **revision_meta,
+                "property_id": pid,
+                "old_value": old_value,
+                "new_value": new_value,
+                "change_type": change_type
+            })
+        return changes
+
+    def get_changes_from_revisions(self, entity_id, current_revision, previous_revision, revision_meta):
+        
+        if not previous_revision:
+            # Entity was created again or for the first time
+            return self.changes_deleted_created_entity(previous_revision, revision_meta, CREATE_ENTITY)
+
         else:
+            changes = []
 
             # --- Label change ---
             prev_label = None
@@ -54,7 +82,7 @@ class DumpParser():
                     "property_id": "label",
                     "old_value": prev_label,
                     "new_value": curr_label,
-                    "change_type": "CREATE_PROPERTY" if not prev_label else "UPDATE_PROPERTY"
+                    "change_type": CREATE_PROPERTY if not prev_label else UPDATE_PROPERTY_VALUE
                 })
 
             # --- Description change ---
@@ -70,7 +98,7 @@ class DumpParser():
                     "property_id": "description",
                     "old_value": prev_desc,
                     "new_value": curr_desc,
-                    "change_type": "CREATE_PROPERTY" if not prev_desc else "UPDATE_PROPERTY"
+                    "change_type": CREATE_PROPERTY if not prev_desc else UPDATE_PROPERTY_VALUE
                 })
 
             # --- Statements (P-IDs) ---
@@ -90,14 +118,14 @@ class DumpParser():
                     curr_statements = curr_claims.get(new_pid, [])
                     for s in curr_statements:
                         new_value = s.get('mainsnak', {}).get('datavalue')
-                        print(f'New statements found: p_id: {new_pid}, value: {new_value}')
+                        # New property : p_id: {new_pid}, value: {new_value}'
                         changes.append({
                             **revision_meta,
                             "entity_id": entity_id,
                             "property_id": new_pid,
                             "old_value": None,
                             "new_value": new_value,
-                            "change_type": "CREATE_PROPERTY"
+                            "change_type": CREATE_PROPERTY
                         })
 
             # --- Deleted statements in current revision ---
@@ -108,14 +136,14 @@ class DumpParser():
                     prev_statements = prev_claims.get(removed_pid, [])
                     for s in prev_statements:
                         old_value = s.get('mainsnak', {}).get('datavalue')
-                        print(f'Statement removed: p_id: {removed_pid}, value: {old_value}')
+                        # Property removed: p_id: {removed_pid}, value: {old_value}'
                         changes.append({
                             **revision_meta,
                             "entity_id": entity_id,
                             "property_id": removed_pid,
                             "old_value": old_value,
                             "new_value": None,
-                            "change_type": "DELETE_PROPERTY"
+                            "change_type": DELETE_PROPERTY
                         })
 
             # --- Check updates of statements between revisions ---
@@ -140,45 +168,42 @@ class DumpParser():
                     old_value = self.get_property_mainsnak(prev_stmt, 'datavalue')
 
                     if prev_stmt and curr_stmt is None:
-                        # deleted
-                        print(f'Statement removed for existing property: p_id: {pid}, value: {old_value}')
+                        # 'Statement removed for existing property: p_id: {pid}, value: {old_value}'
                         changes.append({
                             **revision_meta,
                             "entity_id": entity_id,
                             "property_id": pid,
                             "old_value": old_value,
                             "new_value": None,
-                            "change_type": "DELETE_PROPERTY_VALUE" 
+                            "change_type": DELETE_PROPERTY_VALUE
                         })
 
                     elif curr_stmt and prev_stmt is None:
-                        # new
-                        print(f'New Statement for existing property: p_id: {pid}, value: {new_value}')
+                        # New value for existing property: p_id: {pid}, value: {new_value}'
                         changes.append({
                             **revision_meta,
                             "entity_id": entity_id,
                             "property_id": pid,
                             "old_value": None,
                             "new_value": new_value,
-                            "change_type": "CREATE_PROPERTY_VALUE" 
+                            "change_type": CREATE_PROPERTY_VALUE
                         })
 
                     prev_hash = self.get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
                     curr_hash = self.get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
 
                     if prev_hash and curr_hash and new_value and old_value and prev_hash != curr_hash:
-                        # Statement was updated in current revision
-                        print(f'Statement updated: p_id: {pid}, old value: {old_value}, new value: {new_value}')
+                        # Statement updated: p_id: {pid}, old value: {old_value}, new value: {new_value}'
                         changes.append({
                             **revision_meta,
                             "entity_id": entity_id,
                             "property_id": pid,
                             "old_value": old_value,
                             "new_value": new_value,
-                            "change_type": "UPDATE_PROPERTY_VALUE"
+                            "change_type": UPDATE_PROPERTY_VALUE
                         })
 
-        return changes
+            return changes
 
     """ Auxiliary function to extract full snapshot from revision - can be removed later """
     def get_snapshot_from_dump(self, file):
@@ -250,10 +275,10 @@ class DumpParser():
                         for rev in page_revisions:
                             f_out.write(json.dumps(rev, ensure_ascii=False) + '\n')
 
-    def extract_changes_from_page(self, page_data):
+    def process_revisions(self, page_data):
 
         """"
-            Extract changes from an entity's revisions.
+            Process entity's revisions.
             
             Args: tuple of (page title, page)
             Returns: list of changes and number of revisions
@@ -269,56 +294,57 @@ class DumpParser():
         if entity_id.startswith("Q"): # Only process entities pages
             
             # Iterate through each revision in the page
-            for revision in page:
+            for rev in page.findall('revision'):
+
                 try:
                     # --- Revision metadata ---
                     revision_meta = {
-                        "revision_id": revision.id,
-                        "timestamp": str(revision.timestamp),
-                        "user_id": revision.user.id if revision.user else None,
-                        "comment": revision.comment
+                        "revision_id": rev.findtext('id'),
+                        "timestamp": rev.findtext('timestamp'),
+                        "user_id": rev.findtext('id') or '',
+                        'user_name': rev.findtext('username') or '',
+                        "comment": rev.findtext('comment'),
+                        "entity_id": entity_id,
                     }
 
-                    if not revision.text: # No JSON data in revision
-                        if not previous_revision:
-                            continue
-                        for property_id, property_stmts in previous_revision['claims'].items():
-                            for stmt in property_stmts:
-                                total_changes.append( {
-                                    ** revision_meta,
-                                    "entity_id": entity_id,
-                                    "property_id": property_id,
-                                    "old_value": stmt,  
-                                    "new_value": None,
-                                    "change_type": "DELETE_ENTITY"
-                                })
+                    revision_text = rev.findtext('text') or ''
 
+                    if not revision_text: # No JSON data in current revision
+                        if not previous_revision:
+                            # Previous revision is None -> iterate until we find a revision with JSON data
+                            continue
+                        
+                        # If previous revision exists, we assume the entity was deleted in this revision
+                        total_changes.extend(self.changes_deleted_entity(previous_revision, revision_meta, DELETE_ENTITY))
                         current_revision = None
+                        print(f'Revision text doesnt exist -> Entity {entity_id} was deleted in revision: {revision_meta["revision_id"]}')
 
                     else:
 
-                        json_text = html.unescape(revision.text)
-                        current_revision = json.loads(json_text)
+                        if revision_text.strip():
+                            json_text = html.unescape(revision_text)
+                            try:
+                                current_revision = json.loads(json_text)
+                            except json.JSONDecodeError as e:
+                                print(f'Error decoding JSON in revision {revision_meta["revision_id"]} for entity {entity_id}: {e}. Revision skipped.')
+                                continue
+                        else:
+                            current_revision = None
 
-                        # Entity was removed in this revision
-                        if previous_revision and (not current_revision or current_revision.keys() == 0 or len(current_revision) == 0):
-                            for property_id, property_stmts in previous_revision['claims'].items():
-                                for stmt in property_stmts:
-                                    total_changes.append( {
-                                        **revision_meta,
-                                        "entity_id": entity_id,
-                                        "property_id": property_id,
-                                        "old_value": stmt,  
-                                        "new_value": None,
-                                        "change_type": "DELETE_ENTITY"
-                                    })
-                            
+                        # Revision text exists but is empty -> entity was deleted in this revision
+                        if previous_revision and not current_revision:
+                            print(f'Revision text exists but is empty -> Entity {entity_id} was deleted in revision: {revision_meta["revision_id"]}')
+                            total_changes.extend(self.changes_deleted_entity(previous_revision, revision_meta, DELETE_ENTITY))
                             current_revision = None # to be consistent with the other case (revision.text == None)
-
-                        total_changes.extend(self.parse_revision(entity_id, 
-                                                                 current_revision, 
-                                                                 previous_revision, 
-                                                                 revision_meta))
+                        else:
+                            total_changes.extend(
+                                self.get_changes_from_revisions(
+                                    entity_id, 
+                                    current_revision, 
+                                    previous_revision, 
+                                    revision_meta
+                                )
+                            )
 
                     number_revisions += 1
                     previous_revision = current_revision
@@ -332,7 +358,7 @@ class DumpParser():
 
         return total_changes, number_revisions
     
-    def parse_pages_in_dump(self, file):
+    def parse_pages_in_xml(self, file):
         """
             Parse a bz2 dump file and extract changes between revisions.
             Stores the changes in a JSONL file (bz2) and entities in a JSON file.
@@ -349,32 +375,85 @@ class DumpParser():
         filename = os.path.basename(file)
         base = filename.replace(".xml", "").replace(".bz2", "")
         jsonl_output = f"{revision_dir}/{base}_changes.jsonl" 
-        entities_output = f"{base}_entities.json"
 
         total_num_revisions = 0
         changes_saved = 0
 
         with bz2.open(file, mode="rt", encoding="utf-8", errors="ignore") as f:
-            dump = mwxml.Dump.from_file(f)
 
-            page_data = ((page.title, list(page)) for page in dump)
-            
-            with open(jsonl_output, 'a', encoding='utf-8') as f_out:
-                # Extract changes from each page in parallel
-                with ProcessPoolExecutor(max_workers=4) as executor:
-                    for changes, number_revisions in executor.map(self.extract_changes_from_page, page_data):
+            context = ET.iterparse(file, events=('end',))
+            # Iterate over pages in the XML file
+            for event, elem in context:
+                if elem.tag == 'page':
+                    page_title = elem.find('title').text
+                    with open(jsonl_output, 'a', encoding='utf-8') as f_out:
+                        
+                        changes, number_revisions = self.process_revisions((page_title, elem))
                         total_num_revisions += number_revisions
                         # Save each change as a line to JSONL file
                         for change in changes:
                             changes_saved += 1
                             f_out.write(json.dumps(change) + '\n')
 
-            bz2_output = jsonl_output + '.bz2'
-
         # Compress the JSONL file
+        bz2_output = jsonl_output + '.bz2'
         with open(jsonl_output, 'rb') as f_in, bz2.open(bz2_output, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
         
+        # Remove the original JSONL file
         os.remove(jsonl_output)
 
         return self.entities, changes_saved, (total_num_revisions / len(self.entities)) if self.entities else 0
+
+
+    # VERSION WITH mwxml
+    # def parse_pages_in_dump(self, file):
+    #     """
+    #         Parse a bz2 dump file and extract changes between revisions.
+    #         Stores the changes in a JSONL file (bz2) and entities in a JSON file.
+            
+    #         Args: bz2 file path
+    #         Returns: (number of entities, average number of revisions)
+    #     """
+
+    #     parent_dir = os.path.dirname(file)
+    #     revision_dir = os.path.join(parent_dir, "revisions")
+    #     os.makedirs(revision_dir, exist_ok=True)
+
+    #     # Use name of bz2 file as base name
+    #     filename = os.path.basename(file)
+    #     base = filename.replace(".xml", "").replace(".bz2", "")
+    #     jsonl_output = f"{revision_dir}/{base}_changes.jsonl" 
+    #     entities_output = f"{base}_entities.json"
+
+    #     total_num_revisions = 0
+    #     changes_saved = 0
+
+    #     with bz2.open(file, mode="rt", encoding="utf-8", errors="ignore") as f:
+    #         dump = mwxml.Dump.from_file(f)
+    #         # context = ET.iterparse(file, events=('end',))
+    #         # for event, elem in context:
+    #         #     if elem.tag == 'page':
+    #         #         yield elem
+
+    #         page_data = ((page.title, list(page)) for page in dump)
+            
+    #         with open(jsonl_output, 'a', encoding='utf-8') as f_out:
+    #             # Extract changes from each page in parallel
+    #             with ProcessPoolExecutor(max_workers=4) as executor:
+    #                 for changes, number_revisions in executor.map(self.extract_changes_from_page, page_data):
+    #                     total_num_revisions += number_revisions
+    #                     # Save each change as a line to JSONL file
+    #                     for change in changes:
+    #                         changes_saved += 1
+    #                         f_out.write(json.dumps(change) + '\n')
+
+    #         bz2_output = jsonl_output + '.bz2'
+
+    #     # Compress the JSONL file
+    #     with open(jsonl_output, 'rb') as f_in, bz2.open(bz2_output, 'wb') as f_out:
+    #         shutil.copyfileobj(f_in, f_out)
+        
+    #     os.remove(jsonl_output)
+
+    #     return self.entities, changes_saved, (total_num_revisions / len(self.entities)) if self.entities else 0
