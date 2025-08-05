@@ -553,12 +553,6 @@ class DumpParser():
             total_num_revisions = 0
             changes_saved = 0
 
-            times = {
-                'open_file': 0,
-                'iter_parse': 0,
-                'process_page': 0,
-            }
-
             start = time.time()
             with bz2.open(file, mode="rb") as f:
                 print('Time to open file: ', time.time() - start)
@@ -573,7 +567,7 @@ class DumpParser():
                     if elem.tag == f'{NS}page': 
                         page_title = elem.find(f'{NS}title')
   
-                        if page_title is not None and page_title.text.startswith("Q"):
+                        if page_title is not None and page_title.text.startswith("Q32"):
                             page_title = page_title.text
                             print('Processing page:', page_title)
 
