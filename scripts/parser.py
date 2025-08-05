@@ -9,6 +9,7 @@ import time
 from lxml import etree
 import xml.etree.ElementTree as ET
 from const import CREATE_ENTITY, UPDATE_PROPERTY_VALUE, DELETE_ENTITY, CREATE_PROPERTY, DELETE_PROPERTY, CREATE_PROPERTY_VALUE, DELETE_PROPERTY_VALUE, NS
+import traceback
 
 class DumpParser():
 
@@ -61,6 +62,7 @@ class DumpParser():
                 "new_value": new_value,
                 "change_type": change_type
             })
+        
         return changes
 
     def get_changes_from_revisions(self, entity_id, current_revision, previous_revision, revision_meta):
@@ -271,7 +273,7 @@ class DumpParser():
 
                         except Exception as e:
                             print(f'Error parsing revision: {e}')
-                            raise
+                            raise e
 
                     entity_id = page.title if page.title is not None else current_revision.get('id')           
                     jsonl_output = f"{snapshot_dir}/{entity_id}_snapshot.jsonl" 
@@ -279,101 +281,6 @@ class DumpParser():
                         for rev in page_revisions:
                             f_out.write(json.dumps(rev, ensure_ascii=False) + '\n')
 
-    def process_revisions_etree(self, page_data):
-        """"
-            Process entity's revisions.
-            
-            Args: tuple of (page title, page)
-            Returns: list of changes and number of revisions
-        """
-        page_title, page = page_data
-        entity_id = page_title
-
-        previous_revision = None
-        number_revisions = 0
-        total_changes = []
-
-        # Iterate through each revision in the page
-        start = time.time()
-        for rev in page.findall(f'{NS}revision'):
-            
-            try:
-                # --- Revision metadata ---
-                revision_meta = {
-                    "revision_id": rev.findtext(f'{NS}id'),
-                    "timestamp": rev.findtext(f'{NS}timestamp'),
-                    "user_id": rev.findtext(f'{NS}contributor/id') or '',
-                    'user_name': rev.findtext(f'{NS}contributor/username') or '',
-                    "comment": rev.findtext(f'{NS}comment'),
-                    "entity_id": entity_id,
-                }
-
-                revision_text = rev.findtext(f'{NS}text') or ''
-
-                if not revision_text: # No JSON data in current revision
-                    if not previous_revision:
-                        # Previous revision is None -> iterate until we find a revision with JSON data
-                        continue
-                    
-                    # If previous revision exists, we assume the entity was deleted in this revision
-                    total_changes.extend(self.changes_deleted_created_entity(previous_revision, revision_meta, DELETE_ENTITY))
-                    current_revision = None
-                    print(f'Revision text doesnt exist -> Entity {entity_id} was deleted in revision: {revision_meta["revision_id"]}')
-
-                else:
-
-                    if revision_text.strip():
-                        json_text = html.unescape(revision_text)
-                        try:
-                            current_revision = json.loads(json_text)
-                            print(f"DEBUG previous_revision type: {type(current_revision)}, value: {previous_revision}")
-                        except json.JSONDecodeError as e:
-                            print(f'Error decoding JSON in revision {revision_meta["revision_id"]} for entity {entity_id}: {e}. Revision skipped.')
-                            raise
-
-                    else:
-                        current_revision = None
-
-                    # Revision text exists but is empty -> entity was deleted in this revision
-                    if previous_revision and not current_revision:
-                        print(f'Revision text exists but is empty -> Entity {entity_id} was deleted in revision: {revision_meta["revision_id"]}')
-                        total_changes.extend(self.changes_deleted_created_entity(previous_revision, revision_meta, DELETE_ENTITY))
-                        current_revision = None # to be consistent with the other case (revision.text == None)
-                    else:
-                        total_changes.extend(
-                            self.get_changes_from_revisions(
-                                entity_id, 
-                                current_revision, 
-                                previous_revision, 
-                                revision_meta
-                            )
-                        )
-
-                number_revisions += 1
-                previous_revision = current_revision
-
-            except Exception as e:
-                print(f'Error parsing revision: {e}')
-                print(f"Error: type(previous_revision) = {type(previous_revision)}")
-                print(f"Value: {previous_revision}")
-                raise
-            
-            rev.clear()
-
-        end = time.time()
-        if previous_revision:
-            label = self.get_english_label(previous_revision)
-            self.entities.append({"id": entity_id, "label": label})
-        
-        self.entities_processing_times.append({
-            "entity_id": entity_id,
-            "number_revisions": number_revisions,
-            'number_changes': len(total_changes),
-            "revisions_processing_time": end - start
-        })
-
-        return total_changes, number_revisions
-    
     def process_revisions(self, page_data):
         """
             Process entity's revisions.
@@ -429,7 +336,7 @@ class DumpParser():
                             current_revision = json.loads(json_text)
                         except json.JSONDecodeError as e:
                             print(f'Error decoding JSON in revision {revision_meta["revision_id"]} for entity {entity_id}: {e}. Revision skipped.')
-                            raise
+                            raise e
                     else:
                         current_revision = None
 
@@ -453,7 +360,8 @@ class DumpParser():
 
             except Exception as e:
                 print(f'Error parsing revision: {e}')
-                raise
+                traceback.print_exc()
+                raise e
             
             # Clear the element to free memory
             rev.clear()
@@ -471,7 +379,7 @@ class DumpParser():
 
         return total_changes, number_revisions
 
-    def parse_pages_in_xml_etree(self, file):
+    def parse_pages_in_xml(self, file):
         """
             Parse a bz2 dump file and extract changes between revisions.
             Stores the changes in a JSONL file (bz2) and entities in a JSON file.
@@ -482,6 +390,7 @@ class DumpParser():
 
         parent_dir = os.path.dirname(file)
         revision_dir = os.path.join(parent_dir, "revisions")
+        print(f'creating revisions dir at: {revision_dir}')
         os.makedirs(revision_dir, exist_ok=True)
 
         # Use name of bz2 file as base name
@@ -492,30 +401,66 @@ class DumpParser():
         total_num_revisions = 0
         changes_saved = 0
 
-        with bz2.open(file, mode="rt", encoding="utf-8", errors="ignore") as f:
-            
-            context = ET.iterparse(f, events=('end',))
-            # Iterate over pages in the XML file
-            for event, elem in context:
-                if elem.tag == f'{NS}page':
-                    page_title = elem.find(f'{NS}title').text
+        start = time.time()
+        with bz2.open(file, mode="rb") as f:
+            print('Time to open file: ', time.time() - start)
 
-                    if page_title.startswith("Q"):
-                        print('Processing page:', page_title)
-                        jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" # TODO: remove this so it saves everything in same file
-                        with open(jsonl_output, 'a', encoding='utf-8') as f_out:
+            start = time.time()
+            context = etree.iterparse(f, events=('end',), tag=f'{NS}page')
+            print('Time to generate iterator: ', time.time() - start)
+            try:
+                # Iterate over pages in the XML file
+                for event, elem in context:
+                    
+                    if elem.tag == f'{NS}page': 
+                        try:
+                            page_title = elem.find(f'{NS}title')
+                        except Exception as e:
+                            raise e
+                        
+                        page_title = page_title.text if page_title is not None else ""
+
+                        if page_title != "" and page_title.startswith("Q"):
+
+                            print('Processing page:', page_title)
                             
-                            changes, number_revisions = self.process_revisions((page_title, elem))
-                            print(f'Page {page_title} processed with {number_revisions} revisions and {len(changes)} changes.')
-                            total_num_revisions += number_revisions
-                            # Save each change as a line to JSONL file
-                            for change in changes:
-                                changes_saved += 1
-                                f_out.write(json.dumps(change) + '\n')
-                    else:
-                        print(f'Skipping page {page_title} as it does not start with "Q".')
-                    elem.clear()
+                            try:
+                                changes, number_revisions = self.process_revisions((page_title, elem))
+                                print(f'Page {page_title} processed with {number_revisions} revisions and {len(changes)} changes.')
+                                total_num_revisions += number_revisions
+                            except Exception as e:
+                                print(f'Error in process_revisions')
+                                raise e
+                            
+                            try:
+                                elem.clear()
+                                parent = elem.getparent()
+                                if parent is not None:
+                                    while elem.getprevious() is not None:
+                                        del parent[0]
+                            except Exception as e:
+                                print(f'Error clearing element:')
+                                raise e
+                                
+                            try:
+                                # Save each change as a line to JSONL file
+                                # TODO: remove this so it saves everything in same file
+                                jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" 
+                                os.makedirs(os.path.dirname(jsonl_output), exist_ok=True)
+                                with open(jsonl_output, 'a', encoding='utf-8') as f_out:
+                                    for change in changes:
+                                        changes_saved += 1
+                                        f_out.write(json.dumps(change) + '\n')
+                            except Exception as e:
+                                print('Error writing changes to JSONL file')
+                                raise e
+                        else:
+                            print(f'Skipping page {page_title} as it does not start with "Q".')
 
+            except Exception as e:
+                print(f'Error in loop!!')
+                traceback.print_exc()
+                raise e
         # TODO: uncomment this so it zips change file
         # # Compress the JSONL file
         # bz2_output = jsonl_output + '.bz2'
@@ -525,88 +470,14 @@ class DumpParser():
         # # Remove the original JSONL file
         # os.remove(jsonl_output)
 
-        log_file =  "file_log.json"
-        with open(log_file, 'a', encoding='utf-8') as log:
-            for ent_pt in self.entities_processing_times:
-                log.write(ent_pt)
+        log_file = os.path.abspath("file_log.json")
+        print(f"Writing log to: {log_file}")
+        try:
+            with open(log_file, 'a', encoding='utf-8') as log:
+                for ent_pt in self.entities_processing_times:
+                    log.write(json.dumps(ent_pt) + '\n')
+        except Exception as e:
+            print(f'Error writing to log file: {e}')
+            raise e
 
         return self.entities, changes_saved, (total_num_revisions / len(self.entities)) if self.entities else 0
-
-    def parse_pages_in_xml(self, file):
-            """
-                Parse a bz2 dump file and extract changes between revisions.
-                Stores the changes in a JSONL file (bz2) and entities in a JSON file.
-                
-                Args: bz2 file path
-                Returns: (number of entities, average number of revisions)
-            """
-
-            parent_dir = os.path.dirname(file)
-            revision_dir = os.path.join(parent_dir, "revisions")
-            os.makedirs(revision_dir, exist_ok=True)
-
-            # Use name of bz2 file as base name
-            filename = os.path.basename(file)
-            base = filename.replace(".xml", "").replace(".bz2", "")
-            jsonl_output = f"{revision_dir}/{base}_changes.jsonl" 
-
-            total_num_revisions = 0
-            changes_saved = 0
-
-            start = time.time()
-            with bz2.open(file, mode="rb") as f:
-                print('Time to open file: ', time.time() - start)
-
-                start = time.time()
-                context = etree.iterparse(f, events=('end',), tag=f'{NS}page')
-                print('Time to generate iterator: ', time.time() - start)
-                
-                # Iterate over pages in the XML file
-                for event, elem in context:
-                    
-                    if elem.tag == f'{NS}page': 
-                        page_title = elem.find(f'{NS}title')
-  
-                        if page_title is not None and page_title.text.startswith("Q32"):
-                            page_title = page_title.text
-                            print('Processing page:', page_title)
-
-                            # TODO: remove this so it saves everything in same file
-                            jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" 
-                            with open(jsonl_output, 'a', encoding='utf-8') as f_out:
-                                
-                                changes, number_revisions = self.process_revisions((page_title, elem))
-                                print(f'Page {page_title} processed with {number_revisions} revisions and {len(changes)} changes.')
-                                total_num_revisions += number_revisions
-                                # Save each change as a line to JSONL file
-                                for change in changes:
-                                    changes_saved += 1
-                                    f_out.write(json.dumps(change) + '\n')
-                        else:
-                            page_title = page_title.text
-                            print(f'Skipping page {page_title} as it does not start with "Q".')
-                    
-                    elem.clear()
-                    while elem.getprevious() is not None:
-                        del elem.getparent()[0]
-
-            # TODO: uncomment this so it zips change file
-            # # Compress the JSONL file
-            # bz2_output = jsonl_output + '.bz2'
-            # with open(jsonl_output, 'rb') as f_in, bz2.open(bz2_output, 'wb') as f_out:
-            #     shutil.copyfileobj(f_in, f_out)
-            
-            # # Remove the original JSONL file
-            # os.remove(jsonl_output)
-
-            log_file = os.path.abspath("file_log.json")
-            print(f"Writing log to: {log_file}")
-            try:
-                with open(log_file, 'a', encoding='utf-8') as log:
-                    for ent_pt in self.entities_processing_times:
-                        log.write(json.dumps(ent_pt) + '\n')
-            except Exception as e:
-                print(f'Error writing to log file: {e}')
-                raise
-
-            return self.entities, changes_saved, (total_num_revisions / len(self.entities)) if self.entities else 0

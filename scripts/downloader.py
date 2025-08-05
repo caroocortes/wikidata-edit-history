@@ -3,8 +3,20 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
-from scripts.parser import DumpParser
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import time
+import traceback
+
+import logging
+logging.basicConfig(
+    filename='download_log.log',
+    filemode='a',
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
+from scripts.parser import DumpParser
 
 class DumpDownloader():
 
@@ -36,20 +48,31 @@ class DumpDownloader():
         if os.path.exists(path):
             print(f"Already downloaded: {filename}")
         else:
+
+            session = requests.Session()
+            retries = Retry(total=3, backoff_factor=1,
+                            status_forcelist=[429, 500, 502, 503, 504])
+            session.mount('http://', HTTPAdapter(max_retries=retries))
+            session.mount('https://', HTTPAdapter(max_retries=retries))
+
             print(f"Downloading: {filename}")
             download_start = time.time()
-            with requests.get(url, stream=True) as r:
-                r.raise_for_status()
+            try:
+                with session.get(url, stream=True) as r:
+                    r.raise_for_status()
 
-                size_bytes = int(r.headers.get('Content-Length', 0))
-                size_mb = size_bytes / (1024 * 1024)
+                    size_bytes = int(r.headers.get('Content-Length', 0))
+                    size_mb = size_bytes / (1024 * 1024)
 
-                with open(path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
-            download_end = time.time()
-            download_time = download_end - download_start
-            print(f"Downloaded {filename} ({size_mb:.2f} MB) in {download_time:.2f} seconds.")
+                    with open(path, "wb") as f:
+                        for chunk in r.iter_content(chunk_size=1024*1024):
+                            if chunk:
+                                f.write(chunk)
+                download_end = time.time()
+                download_time = download_end - download_start
+                logging.info(f"Downloaded {filename} ({size_mb:.2f} MB) in {download_time:.2f} seconds.")
+            except Exception as e:
+                logging.error(f"Exception occurred when downloading file {filename}: {e}\n{traceback.format_exc()}")
 
         # Process the downloaded file
         print(f"Processing: {filename}")
@@ -58,7 +81,7 @@ class DumpDownloader():
         entities, changes_saved, revision_avg = dump_parser.parse_pages_in_xml(path)
         end_process = time.time()
         process_time = end_process - start_process
-        print(f"Processed {filename} in {end_process - start_process:.2f} seconds.")
+        logging.info(f"Processed {filename} in {end_process - start_process:.2f} seconds.")
         
         # Remove the downloaded file 
         if os.path.exists(path):
@@ -66,18 +89,16 @@ class DumpDownloader():
         else:
             print("File does not exist, nothing to remove.")
 
-        log_file =  "download_log.txt"
-        if size_mb > 0:
-            with open(log_file, "a") as log:
-                log.write(
-                    f"{filename} size: {size_mb:.2f} MB\t"
-                    f"Entities: {len(entities)}\t"
-                    f"Avg. number of revisions: {revision_avg:.2f}\t"
-                    f"Number of changes saved: {changes_saved}\t"
-                    f"Entities: {','.join(entities)}\t"
-                    f"Processing time: {process_time:.2f}s\t"
-                    f"Download time: {download_time:.2f}s\n"
-                )
+        logging.info(
+            f"Process information: \t"
+            f"{filename} size: {size_mb:.2f} MB\t"
+            f"Number of entities: {len(entities)}\t"
+            f"Avg. number of revisions: {revision_avg:.2f}\t"
+            f"Number of changes saved: {changes_saved}\t"
+            f"Entities: {','.join(entities)}\t"
+            f"Processing time: {process_time:.2f}s\t"
+            f"Download time: {download_time:.2f}s\n"
+        )
     
     def download_dumps(self):
         # Create download directory if it doesn't exist
