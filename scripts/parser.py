@@ -28,7 +28,6 @@ class DumpParser():
         
     def changes_deleted_created_entity(self, previous_revision, revision_meta, change_type):
         changes = []
-        claims = previous_revision.get('claims')
         labels = previous_revision.get('labels', {}).get('en', {}).get('value')
         descriptions = previous_revision.get('descriptions', {}).get('en', {}).get('value')
 
@@ -39,6 +38,7 @@ class DumpParser():
             get_old_new = lambda v: (v, None)
 
         # Process claims
+        claims = previous_revision.get('claims')
         if isinstance(claims, dict):
             for property_id, property_stmts in claims.items():
                 for stmt in property_stmts:
@@ -271,6 +271,7 @@ class DumpParser():
 
                         except Exception as e:
                             print(f'Error parsing revision: {e}')
+                            raise
 
                     entity_id = page.title if page.title is not None else current_revision.get('id')           
                     jsonl_output = f"{snapshot_dir}/{entity_id}_snapshot.jsonl" 
@@ -325,9 +326,11 @@ class DumpParser():
                         json_text = html.unescape(revision_text)
                         try:
                             current_revision = json.loads(json_text)
+                            print(f"DEBUG previous_revision type: {type(current_revision)}, value: {previous_revision}")
                         except json.JSONDecodeError as e:
                             print(f'Error decoding JSON in revision {revision_meta["revision_id"]} for entity {entity_id}: {e}. Revision skipped.')
-                            continue
+                            raise
+
                     else:
                         current_revision = None
 
@@ -351,6 +354,9 @@ class DumpParser():
 
             except Exception as e:
                 print(f'Error parsing revision: {e}')
+                print(f"Error: type(previous_revision) = {type(previous_revision)}")
+                print(f"Value: {previous_revision}")
+                raise
             
             rev.clear()
 
@@ -378,8 +384,6 @@ class DumpParser():
         page_title, page = page_data
         entity_id = page_title
 
-        print(page.tag)
-
         previous_revision = None
         number_revisions = 0
         total_changes = []
@@ -391,7 +395,7 @@ class DumpParser():
         start = time.time()
         # Find all revision elements with namespace
         revisions = page.xpath('./ns:revision', namespaces=ns_map)
-        print(f'Found {len(revisions)}')
+        print(f'Found {len(revisions)} revisions')
         for rev in revisions:
 
             try:
@@ -425,7 +429,7 @@ class DumpParser():
                             current_revision = json.loads(json_text)
                         except json.JSONDecodeError as e:
                             print(f'Error decoding JSON in revision {revision_meta["revision_id"]} for entity {entity_id}: {e}. Revision skipped.')
-                            continue
+                            raise
                     else:
                         current_revision = None
 
@@ -449,6 +453,7 @@ class DumpParser():
 
             except Exception as e:
                 print(f'Error parsing revision: {e}')
+                raise
             
             # Clear the element to free memory
             rev.clear()
@@ -548,10 +553,20 @@ class DumpParser():
             total_num_revisions = 0
             changes_saved = 0
 
+            times = {
+                'open_file': 0,
+                'iter_parse': 0,
+                'process_page': 0,
+            }
+
+            start = time.time()
             with bz2.open(file, mode="rb") as f:
-                print('The file: ', f)
+                print('Time to open file: ', time.time() - start)
+
+                start = time.time()
                 context = etree.iterparse(f, events=('end',), tag=f'{NS}page')
-                print('The context: ', context)
+                print('Time to generate iterator: ', time.time() - start)
+                
                 # Iterate over pages in the XML file
                 for event, elem in context:
                     
@@ -561,7 +576,9 @@ class DumpParser():
                         if page_title is not None and page_title.text.startswith("Q"):
                             page_title = page_title.text
                             print('Processing page:', page_title)
-                            jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" # TODO: remove this so it saves everything in same file
+
+                            # TODO: remove this so it saves everything in same file
+                            jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" 
                             with open(jsonl_output, 'a', encoding='utf-8') as f_out:
                                 
                                 changes, number_revisions = self.process_revisions((page_title, elem))
@@ -588,9 +605,14 @@ class DumpParser():
             # # Remove the original JSONL file
             # os.remove(jsonl_output)
 
-            log_file =  "file_log.json"
-            with open(log_file, 'a', encoding='utf-8') as log:
-                for ent_pt in self.entities_processing_times:
-                    log.write(ent_pt)
+            log_file = os.path.abspath("file_log.json")
+            print(f"Writing log to: {log_file}")
+            try:
+                with open(log_file, 'a', encoding='utf-8') as log:
+                    for ent_pt in self.entities_processing_times:
+                        log.write(json.dumps(ent_pt) + '\n')
+            except Exception as e:
+                print(f'Error writing to log file: {e}')
+                raise
 
             return self.entities, changes_saved, (total_num_revisions / len(self.entities)) if self.entities else 0

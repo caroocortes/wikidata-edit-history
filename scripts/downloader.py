@@ -92,7 +92,6 @@ class DumpDownloader():
             else:
                 executor.map(self.download_file, self.bz2_links[:self.number_of_files])
        
-
     
     
 
