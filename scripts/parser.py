@@ -378,18 +378,22 @@ class DumpParser():
         page_title, page = page_data
         entity_id = page_title
 
+        print(page.tag)
+
         previous_revision = None
         number_revisions = 0
         total_changes = []
 
         # Iterate through each revision in the page using lxml XPath
         # Need to register namespace for XPath queries
-        ns_map = {'ns': NS}
+        ns_map = {'ns': 'http://www.mediawiki.org/xml/export-0.11/'}
 
         start = time.time()
         # Find all revision elements with namespace
-        for rev in page.xpath('./ns:revision', namespaces=ns_map):
-            
+        revisions = page.xpath('./ns:revision', namespaces=ns_map)
+        print(f'Found {len(revisions)}')
+        for rev in revisions:
+
             try:
                 # --- Revision metadata ---
                 revision_meta = {
@@ -544,15 +548,18 @@ class DumpParser():
             total_num_revisions = 0
             changes_saved = 0
 
-            with bz2.open(file, mode="rt", encoding="utf-8", errors="ignore") as f:
-                
-                context = etree.iterparse(file, events=('end', 'start'))
+            with bz2.open(file, mode="rb") as f:
+                print('The file: ', f)
+                context = etree.iterparse(f, events=('end',), tag=f'{NS}page')
+                print('The context: ', context)
                 # Iterate over pages in the XML file
                 for event, elem in context:
-                    if elem.tag == f'{NS}page':
-                        page_title = elem.find(f'{NS}title').text
-
-                        if page_title.startswith("Q"):
+                    
+                    if elem.tag == f'{NS}page': 
+                        page_title = elem.find(f'{NS}title')
+  
+                        if page_title is not None and page_title.text.startswith("Q"):
+                            page_title = page_title.text
                             print('Processing page:', page_title)
                             jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" # TODO: remove this so it saves everything in same file
                             with open(jsonl_output, 'a', encoding='utf-8') as f_out:
@@ -565,8 +572,12 @@ class DumpParser():
                                     changes_saved += 1
                                     f_out.write(json.dumps(change) + '\n')
                         else:
+                            page_title = page_title.text
                             print(f'Skipping page {page_title} as it does not start with "Q".')
-                        elem.clear()
+                    
+                    elem.clear()
+                    while elem.getprevious() is not None:
+                        del elem.getparent()[0]
 
             # TODO: uncomment this so it zips change file
             # # Compress the JSONL file
