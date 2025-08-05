@@ -35,22 +35,21 @@ class DumpDownloader():
         path = os.path.join(self.download_dir, filename)
         if os.path.exists(path):
             print(f"Already downloaded: {filename}")
-            return
-        
-        print(f"Downloading: {filename}")
-        download_start = time.time()
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
+        else:
+            print(f"Downloading: {filename}")
+            download_start = time.time()
+            with requests.get(url, stream=True) as r:
+                r.raise_for_status()
 
-            size_bytes = int(r.headers.get('Content-Length', 0))
-            size_mb = size_bytes / (1024 * 1024)
+                size_bytes = int(r.headers.get('Content-Length', 0))
+                size_mb = size_bytes / (1024 * 1024)
 
-            with open(path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-        download_end = time.time()
-        download_time = download_end - download_start
-        print(f"Downloaded {filename} ({size_mb:.2f} MB) in {download_time:.2f} seconds.")
+                with open(path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            download_end = time.time()
+            download_time = download_end - download_start
+            print(f"Downloaded {filename} ({size_mb:.2f} MB) in {download_time:.2f} seconds.")
 
         # Process the downloaded file
         print(f"Processing: {filename}")
