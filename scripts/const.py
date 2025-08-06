@@ -1,4 +1,7 @@
-DATA_DIR = 'data'
+WIKIDATA_SERVICE_URL = "https://dumps.wikimedia.org/wikidatawiki/20250601/"
+
+DOWNLOAD_LINKS_FILE_PATH = 'data/xml_download_links.txt'
+
 CREATE_PROPERTY = "CREATE_PROPERTY"
 CREATE_PROPERTY_VALUE = "CREATE_PROPERTY_VALUE"
 CREATE_ENTITY = "CREATE_ENTITY" # not sure if this is used

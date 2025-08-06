@@ -1,15 +1,21 @@
-from scripts.downloader import DumpDownloader
-from scripts.parser import DumpParser
+from scripts.download import DumpDownloader
 import os
-from urllib.parse import urljoin
-from const import DATA_DIR
-import bz2
+import argparse
 
-BASE_URL = "https://dumps.wikimedia.org/wikidatawiki/20250601/"
-DOWNLOAD_DIR = f"{DATA_DIR}/wikidata_dumps_20250601" # the only most current one that has the pages edit history, 
-                                                    # the ones from july have this skipped
+# Argument parser
+parser = argparse.ArgumentParser(description="Run script with folder path input.")
+parser.add_argument('-p', '--path', required=True, help='Path to the download folder')
 
-downloader = DumpDownloader(BASE_URL, DOWNLOAD_DIR, 1)
+args = parser.parse_args()
+folder_path = os.path.abspath(args.path)
+
+if not folder_path:
+    folder_path = '/san2/data/wikidata-history-dumps' # server folder (default)
+
+print(f"Using folder: {folder_path}")
+
+# ---------- Download dump files ----------
+downloader = DumpDownloader(folder_path)
 downloader.download_dumps()
 
 # GET SNAPSHOTS
