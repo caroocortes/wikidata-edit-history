@@ -92,7 +92,7 @@ class DumpDownloader():
         file_path = Path(DOWNLOAD_LINKS_FILE_PATH)
         if file_path.is_file():
             with file_path.open("r", encoding="utf-8") as f:
-                bz2_links = f.read()
+                bz2_links = f.read().splitlines()
         else:
             bz2_links = self.get_dump_links()
 
@@ -107,6 +107,6 @@ class DumpDownloader():
                 download_ok = self.download_file(link)
                 if download_ok:
                     count_ok += 1
-                time.sleep(10*60) # 10 minutes
+                time.sleep(1) # 10 minutes
 
             logging.info(f'Finished downloading {count_ok} files.')
