@@ -442,11 +442,11 @@ class DumpParser():
 
         start_process = time.time()
         with bz2.open(file, mode="rb") as f:
-            self.logging.info('Time to open file: ', time.time() - start_process)
+            self.logging.info(f'Time to open file: {time.time() - start_process}')
 
             start = time.time()
             context = etree.iterparse(f, events=('end',), tag=f'{NS}page')
-            self.logging.info('Time to generate iterator: ', time.time() - start)
+            self.logging.info(f'Time to generate iterator: {time.time() - start}')
             
             # Iterate over pages in the XML file
             for event, elem in context:
@@ -456,44 +456,52 @@ class DumpParser():
                     page_title = elem.find(f'{NS}title')
                     page_title = page_title.text if page_title is not None else ""
 
-                    if page_title and page_title.startswith("Q"):
-
-                        print('Processing page:', page_title)
-
+                    if page_title and not page_title.startswith("Q"):
                         try:
-                            changes, number_revisions = self.process_revisions((page_title, elem))
-                            print(f'Page {page_title} processed with {number_revisions} revisions and {len(changes)} changes.')
-                            total_num_revisions += number_revisions
-                        except Exception as e:
-                            self.logging.error(f'Error in process_revisions: {e}')
-                            traceback.print_exc()
-                        
-                        try:
+                            self.logging.info(f'Skipping page {page_title} as it does not start with "Q".')
                             elem.clear()
                             parent = elem.getparent()
                             if parent is not None:
                                 while elem.getprevious() is not None:
                                     del parent[0]
+                            continue
                         except Exception as e:
                             self.logging.info(f'Error clearing element: {e}')
                             traceback.print_exc()
-                            
-                        try:
-                            # Save each change as a line to JSONL file
-                            # TODO: remove this so it saves everything in same file
-                            jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" 
-                            os.makedirs(os.path.dirname(jsonl_output), exist_ok=True)
-                            start = time.time()
-                            with open(jsonl_output, 'a', encoding='utf-8') as f_out:
-                                for change in changes:
-                                    changes_saved += 1
-                                    f_out.write(json.dumps(change) + '\n')
-                            self.logging.info(f'Time to save changes for entity {page_title}: {time.time() - start} seconds')
-                        except Exception as e:
-                            self.logging.error('Error writing changes to JSONL file: {e}')
-                            traceback.print_exc()
-                    else:
-                        self.logging.info(f'Skipping page {page_title} as it does not start with "Q".')
+                    
+                    try:
+                        print('Processing page:', page_title)
+                        changes, number_revisions = self.process_revisions((page_title, elem))
+                        print(f'Page {page_title} processed with {number_revisions} revisions and {len(changes)} changes.')
+                        total_num_revisions += number_revisions
+                    except Exception as e:
+                        self.logging.error(f'Error in process_revisions: {e}')
+                        traceback.print_exc()
+                    
+                    try:
+                        elem.clear()
+                        parent = elem.getparent()
+                        if parent is not None:
+                            while elem.getprevious() is not None:
+                                del parent[0]
+                    except Exception as e:
+                        self.logging.info(f'Error clearing element: {e}')
+                        traceback.print_exc()
+                        
+                    try:
+                        # Save each change as a line to JSONL file
+                        # TODO: remove this so it saves everything in same file
+                        jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" 
+                        os.makedirs(os.path.dirname(jsonl_output), exist_ok=True)
+                        start = time.time()
+                        with open(jsonl_output, 'a', encoding='utf-8') as f_out:
+                            for change in changes:
+                                changes_saved += 1
+                                f_out.write(json.dumps(change) + '\n')
+                        self.logging.info(f'Time to save changes for entity {page_title}: {time.time() - start} seconds')
+                    except Exception as e:
+                        self.logging.error('Error writing changes to JSONL file: {e}')
+                        traceback.print_exc()
 
         self.logging.info(f'Time to process all pages in file {filename}: {time.time() - start_process} seconds')
         
