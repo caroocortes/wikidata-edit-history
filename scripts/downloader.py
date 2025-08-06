@@ -8,11 +8,12 @@ from urllib3.util.retry import Retry
 import time
 import traceback
 import bz2
-from pathlib import Path
+import xml.sax
 
 import logging
 
 from scripts.parser import DumpParser
+from scripts.filter import QPageFilter
 
 class DumpDownloader():
 
@@ -39,30 +40,17 @@ class DumpDownloader():
     
 
     def filter_q_pages(self, input_bz2_path, output_bz2_file):
-        print('Filter Q pages function')
-        with bz2.open(input_bz2_path, mode='rt', encoding='utf-8', errors='ignore') as f_in, \
-            bz2.open(output_bz2_file, "wt", encoding="utf-8") as f_out:
+        with bz2.open(output_bz2_file, 'wt', encoding='utf-8') as out_f:
+            handler = QPageFilter(writer=out_f)
+            parser = xml.sax.make_parser()
+            parser.setContentHandler(handler)
 
-            buffer = []
-            inside_page = False
-            keep = False
+            with bz2.open(input_bz2_path, 'rt', encoding='utf-8') as in_f:
+                try:
+                    parser.parse(in_f)
+                except xml.sax.SAXParseException as e:
+                    print(f"Parsing error: {e}")
 
-            for line in f_in:
-                if '<page>' in line:
-                    buffer = [line]
-                    inside_page = True
-                    keep = False
-                elif inside_page:
-                    buffer.append(line)
-                    if '<title>Q' in line:
-                        keep = True
-                    elif '<title>' in line and not '<title>Q' in line:
-                        logging.info(f'Skipping page that doesnt start with Q: {line}')
-                    if '</page>' in line:
-                        if keep:
-                            f_out.writelines(buffer)
-                        buffer = []
-                        inside_page = False
 
     def download_file(self, url: str):
 

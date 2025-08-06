@@ -1,20 +1,22 @@
-from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 
 class QPageFilter(ContentHandler):
-    def __init__(self):
+    def __init__(self, writer):
         self.in_title = False
         self.in_page = False
-        self.buffer = []
         self.keep = False
+        self.buffer = []
+        self.writer = writer
 
     def startElement(self, name, attrs):
         if name == 'page':
             self.in_page = True
-            self.buffer = []
             self.keep = False
-        if self.in_page:
+            self.buffer = ["<page>"]
+
+        elif self.in_page:
             self.buffer.append(f"<{name}>")
+
         if name == 'title':
             self.in_title = True
 
@@ -22,19 +24,21 @@ class QPageFilter(ContentHandler):
         if self.in_page:
             self.buffer.append(content)
         if self.in_title and content.startswith("Q"):
+            print(f"Keeping page with title: {content}")
             self.keep = True
 
     def endElement(self, name):
-        if self.in_page:
-            self.buffer.append(f"</{name}>")
+        if not self.in_page:
+            return
+
+        self.buffer.append(f"</{name}>")
+
         if name == 'title':
             self.in_title = False
-        if name == 'page':
+
+        elif name == 'page':
             if self.keep:
-                print("".join(self.buffer))  # Or write to file
+                self.writer.write("".join(self.buffer))
+            # Reset state
             self.in_page = False
             self.buffer = []
-
-parser = make_parser()
-parser.setContentHandler(QPageFilter())
-parser.parse("dumpfile.xml")
