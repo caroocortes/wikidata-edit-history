@@ -23,7 +23,20 @@ while IFS= read -r url; do
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Downloading: $filename" | tee -a "$LOG_FILE"
 
     start_time=$(date +%s)
-    wget --quiet --show-progress --continue --tries=3 --timeout=30 --output-document="$output_path" "$url" 2>> "$LOG_FILE"
+    # wget --quiet --continue --tries=3 --timeout=30 --output-document="$output_path" "$url" 2>> "$LOG_FILE"
+
+    aria2c "$url" \
+        -x 2 -s 2 \
+        --continue=true \
+        --timeout=30 \
+        --retry-wait=60 \
+        --max-tries=3 \
+        --summary-interval=60 \
+        --log-level=notice \
+        --log=aria2c_download.log \
+        --dir="$DOWNLOAD_DIR" \
+        --out="$filename"
+
     end_time=$(date +%s)
     elapsed=$((end_time - start_time))
 
@@ -40,6 +53,6 @@ while IFS= read -r url; do
         echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR downloading: $filename" | tee -a "$LOG_FILE"
     fi
 
-    # sleep 8 minutes between downloads
-    sleep 480
+    # sleep 10 minutes between downloads
+    sleep 600
 done < "$URL_LIST"
