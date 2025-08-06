@@ -77,7 +77,7 @@ class DumpDownloader():
         # Process the downloaded file
         print(f"Processing: {filename}")
         start_process = time.time()
-        dump_parser = DumpParser()
+        dump_parser = DumpParser(logging)
         entities, changes_saved, revision_avg = dump_parser.parse_pages_in_xml(path)
         end_process = time.time()
         process_time = end_process - start_process

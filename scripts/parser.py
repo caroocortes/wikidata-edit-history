@@ -8,18 +8,16 @@ import shutil
 import time
 from lxml import etree
 import xml.etree.ElementTree as ET
-from const import CREATE_ENTITY, UPDATE_PROPERTY_VALUE, DELETE_ENTITY, CREATE_PROPERTY, DELETE_PROPERTY, CREATE_PROPERTY_VALUE, DELETE_PROPERTY_VALUE, NS
+from const import *
 import traceback
 
 class DumpParser():
 
-    def __init__(self):
+    def __init__(self, logging):
         self.entities = []
         self.entities_processing_times = []
+        self.logging = logging
         pass
-    
-    def get_english_label(self, revision):
-        return revision.get('labels', {}).get('en', {}).get('value', None)
 
     def get_property_mainsnak(self, stmt, property_=None):
         try:
@@ -27,19 +25,42 @@ class DumpParser():
         except (KeyError, TypeError):
             return None
         
-    def changes_deleted_created_entity(self, previous_revision, revision_meta, change_type):
+    def safe_get_nested(d, *keys, default={}):
+        """
+        Safely access nested dictionary keys, avoiding issues with unexpected list types.
+        Wikidata sets claims, labels and descriptions to [] if there's no value
+
+        Example:
+            safe_get_nested(revision, 'labels', 'en', 'value')
+
+        Will return {} if any part of the path is invalid or not a dict.
+        """
+        current = d
+        for key in keys:
+            if isinstance(current, dict):
+                current = current.get(key, default)
+            else:
+                return default
+        return current
+    
+    def get_english_label(self, revision):
+        return self.safe_get_nested(revision, 'labels', 'en', 'value')
+        
+    def changes_deleted_created_entity(self, revision, revision_meta, change_type):
         changes = []
-        labels = previous_revision.get('labels', {}).get('en', {}).get('value')
-        descriptions = previous_revision.get('descriptions', {}).get('en', {}).get('value')
 
         # Determine old/new values based on change type
         if change_type == CREATE_ENTITY:
             get_old_new = lambda v: (None, v)
         elif change_type == DELETE_ENTITY:
             get_old_new = lambda v: (v, None)
-
+        
+        # If there's no description or label, the revisions shows them as []
+        labels = self.safe_get_nested(revision, 'labels', 'en', 'value')
+        descriptions = self.safe_get_nested(revision, 'descriptions', 'en', 'value')
+        
         # Process claims
-        claims = previous_revision.get('claims')
+        claims = revision.get('claims')
         if isinstance(claims, dict):
             for property_id, property_stmts in claims.items():
                 for stmt in property_stmts:
@@ -54,16 +75,49 @@ class DumpParser():
 
         # Process labels and descriptions (non-claim properties)
         for pid, val in [('label', labels), ('description', descriptions)]:
-            old_value, new_value = get_old_new(val)
-            changes.append({
-                **revision_meta,
-                "property_id": pid,
-                "old_value": old_value,
-                "new_value": new_value,
-                "change_type": change_type
-            })
+            if val:
+                old_value, new_value = get_old_new(val)
+                changes.append({
+                    **revision_meta,
+                    "property_id": pid,
+                    "old_value": old_value,
+                    "new_value": new_value,
+                    "change_type": change_type
+                })
         
         return changes
+    
+    def change_type(self, old_value, new_value, case, old_hash=None, new_hash=None):
+        """ 
+            Returns the change type.
+
+            section can have 3 types:
+                - CASE_0 : labels and descriptions -> only have 1 value 
+                - CASE_1 : new properties in curr_rev
+                - CASE_2 : deleted properties in curr_rev
+                - CASE_3 : same properties in both revisions
+        """
+
+        if case == CASE_0:
+            if not old_value and new_value:
+                return CREATE_PROPERTY
+            elif old_value and not new_value:
+                return DELETE_PROPERTY
+        
+        if case == CASE_1:
+            return CREATE_PROPERTY
+        
+        if case == CASE_2:
+            return DELETE_PROPERTY
+        
+        elif case == CASE_3:
+            if old_value and not new_value:
+                return DELETE_PROPERTY_VALUE
+            elif new_value and not old_value:
+                return CREATE_PROPERTY_VALUE
+            elif old_value and new_value and old_hash != new_hash:
+                return UPDATE_PROPERTY_VALUE
+        
 
     def get_changes_from_revisions(self, entity_id, current_revision, previous_revision, revision_meta):
         
@@ -77,8 +131,8 @@ class DumpParser():
             # --- Label change ---
             prev_label = None
             if previous_revision:
-                prev_label = previous_revision.get('labels', {}).get('en', {}).get('value')
-            curr_label = current_revision.get('labels', {}).get('en', {}).get('value')
+                prev_label = self.safe_get_nested(previous_revision, 'labels', 'en', 'value')
+            curr_label = self.safe_get_nested(current_revision, 'labels', 'en', 'value')
 
             if curr_label != prev_label:
                 changes.append({
@@ -87,7 +141,7 @@ class DumpParser():
                     "property_id": "label",
                     "old_value": prev_label,
                     "new_value": curr_label,
-                    "change_type": CREATE_PROPERTY if not prev_label else UPDATE_PROPERTY_VALUE
+                    "change_type": self.change_type(prev_label, curr_label, CASE_0)
                 })
 
             # --- Description change ---
@@ -103,14 +157,15 @@ class DumpParser():
                     "property_id": "description",
                     "old_value": prev_desc,
                     "new_value": curr_desc,
-                    "change_type": CREATE_PROPERTY if not prev_desc else UPDATE_PROPERTY_VALUE
+                    "change_type": self.change_type(prev_desc, curr_desc, CASE_0)
                 })
 
             # --- Statements (P-IDs) ---
             prev_claims_raw = previous_revision.get('claims') if previous_revision else {}
             curr_claims_raw = current_revision.get('claims')
 
-            prev_claims = prev_claims_raw if isinstance(prev_claims_raw, dict) else {} # The first revisions' 'claims' is []
+            # The first revisions' 'claims' is []
+            prev_claims = prev_claims_raw if isinstance(prev_claims_raw, dict) else {} 
             curr_claims = curr_claims_raw if isinstance(curr_claims_raw, dict) else {}
 
             prev_claims_pids = set(prev_claims.keys())
@@ -130,7 +185,7 @@ class DumpParser():
                             "property_id": new_pid,
                             "old_value": None,
                             "new_value": new_value,
-                            "change_type": CREATE_PROPERTY
+                            "change_type": self.change_type(None, new_value, CASE_1)
                         })
 
             # --- Deleted statements in current revision ---
@@ -148,7 +203,7 @@ class DumpParser():
                             "property_id": removed_pid,
                             "old_value": old_value,
                             "new_value": None,
-                            "change_type": DELETE_PROPERTY
+                            "change_type": self.change_type(old_value, None, CASE_2)
                         })
 
             # --- Check updates of statements between revisions ---
@@ -172,40 +227,25 @@ class DumpParser():
                     new_value = self.get_property_mainsnak(curr_stmt, 'datavalue')
                     old_value = self.get_property_mainsnak(prev_stmt, 'datavalue')
 
-                    if prev_stmt and curr_stmt is None:
-                        # 'Statement removed for existing property: p_id: {pid}, value: {old_value}'
+                    if prev_stmt and not curr_stmt:
+                        change_type = self.change_type(old_value, None, CASE_3)
+
+                    elif curr_stmt and not prev_stmt:
+                        change_type = self.change_type(None, new_value, CASE_3)
+
+                    elif prev_stmt and curr_stmt:
+                        change_type = self.change_type(old_value, new_value, CASE_3,
+                                                    old_hash=self.get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None,
+                                                    new_hash=self.get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None)
+
+                    if change_type:
                         changes.append({
                             **revision_meta,
                             "entity_id": entity_id,
                             "property_id": pid,
-                            "old_value": old_value,
-                            "new_value": None,
-                            "change_type": DELETE_PROPERTY_VALUE
-                        })
-
-                    elif curr_stmt and prev_stmt is None:
-                        # New value for existing property: p_id: {pid}, value: {new_value}'
-                        changes.append({
-                            **revision_meta,
-                            "entity_id": entity_id,
-                            "property_id": pid,
-                            "old_value": None,
-                            "new_value": new_value,
-                            "change_type": CREATE_PROPERTY_VALUE
-                        })
-
-                    prev_hash = self.get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
-                    curr_hash = self.get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
-
-                    if prev_hash and curr_hash and new_value and old_value and prev_hash != curr_hash:
-                        # Statement updated: p_id: {pid}, old value: {old_value}, new value: {new_value}'
-                        changes.append({
-                            **revision_meta,
-                            "entity_id": entity_id,
-                            "property_id": pid,
-                            "old_value": old_value,
-                            "new_value": new_value,
-                            "change_type": UPDATE_PROPERTY_VALUE
+                            "old_value": old_value if change_type != CREATE_PROPERTY_VALUE else None,
+                            "new_value": new_value if change_type != DELETE_PROPERTY_VALUE else None,
+                            "change_type": change_type
                         })
 
             return changes
@@ -302,7 +342,6 @@ class DumpParser():
         start = time.time()
         # Find all revision elements with namespace
         revisions = page.xpath('./ns:revision', namespaces=ns_map)
-        print(f'Found {len(revisions)} revisions')
         for rev in revisions:
 
             try:
@@ -401,66 +440,63 @@ class DumpParser():
         total_num_revisions = 0
         changes_saved = 0
 
-        start = time.time()
+        start_process = time.time()
         with bz2.open(file, mode="rb") as f:
-            print('Time to open file: ', time.time() - start)
+            self.logging.info('Time to open file: ', time.time() - start_process)
 
             start = time.time()
             context = etree.iterparse(f, events=('end',), tag=f'{NS}page')
-            print('Time to generate iterator: ', time.time() - start)
-            try:
-                # Iterate over pages in the XML file
-                for event, elem in context:
-                    
-                    if elem.tag == f'{NS}page': 
+            self.logging.info('Time to generate iterator: ', time.time() - start)
+            
+            # Iterate over pages in the XML file
+            for event, elem in context:
+                
+                if elem.tag == f'{NS}page': 
+                  
+                    page_title = elem.find(f'{NS}title')
+                    page_title = page_title.text if page_title is not None else ""
+
+                    if page_title and page_title.startswith("Q"):
+
+                        print('Processing page:', page_title)
+
                         try:
-                            page_title = elem.find(f'{NS}title')
+                            changes, number_revisions = self.process_revisions((page_title, elem))
+                            print(f'Page {page_title} processed with {number_revisions} revisions and {len(changes)} changes.')
+                            total_num_revisions += number_revisions
                         except Exception as e:
-                            raise e
+                            self.logging.error(f'Error in process_revisions: {e}')
+                            traceback.print_exc()
                         
-                        page_title = page_title.text if page_title is not None else ""
-
-                        if page_title != "" and page_title.startswith("Q"):
-
-                            print('Processing page:', page_title)
+                        try:
+                            elem.clear()
+                            parent = elem.getparent()
+                            if parent is not None:
+                                while elem.getprevious() is not None:
+                                    del parent[0]
+                        except Exception as e:
+                            self.logging.info(f'Error clearing element: {e}')
+                            traceback.print_exc()
                             
-                            try:
-                                changes, number_revisions = self.process_revisions((page_title, elem))
-                                print(f'Page {page_title} processed with {number_revisions} revisions and {len(changes)} changes.')
-                                total_num_revisions += number_revisions
-                            except Exception as e:
-                                print(f'Error in process_revisions')
-                                raise e
-                            
-                            try:
-                                elem.clear()
-                                parent = elem.getparent()
-                                if parent is not None:
-                                    while elem.getprevious() is not None:
-                                        del parent[0]
-                            except Exception as e:
-                                print(f'Error clearing element:')
-                                raise e
-                                
-                            try:
-                                # Save each change as a line to JSONL file
-                                # TODO: remove this so it saves everything in same file
-                                jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" 
-                                os.makedirs(os.path.dirname(jsonl_output), exist_ok=True)
-                                with open(jsonl_output, 'a', encoding='utf-8') as f_out:
-                                    for change in changes:
-                                        changes_saved += 1
-                                        f_out.write(json.dumps(change) + '\n')
-                            except Exception as e:
-                                print('Error writing changes to JSONL file')
-                                raise e
-                        else:
-                            print(f'Skipping page {page_title} as it does not start with "Q".')
+                        try:
+                            # Save each change as a line to JSONL file
+                            # TODO: remove this so it saves everything in same file
+                            jsonl_output = f"{revision_dir}/{page_title}_changes.jsonl" 
+                            os.makedirs(os.path.dirname(jsonl_output), exist_ok=True)
+                            start = time.time()
+                            with open(jsonl_output, 'a', encoding='utf-8') as f_out:
+                                for change in changes:
+                                    changes_saved += 1
+                                    f_out.write(json.dumps(change) + '\n')
+                            self.logging.info(f'Time to save changes for entity {page_title}: {time.time() - start} seconds')
+                        except Exception as e:
+                            self.logging.error('Error writing changes to JSONL file: {e}')
+                            traceback.print_exc()
+                    else:
+                        self.logging.info(f'Skipping page {page_title} as it does not start with "Q".')
 
-            except Exception as e:
-                print(f'Error in loop!!')
-                traceback.print_exc()
-                raise e
+        self.logging.info(f'Time to process all pages in file {filename}: {time.time() - start_process} seconds')
+        
         # TODO: uncomment this so it zips change file
         # # Compress the JSONL file
         # bz2_output = jsonl_output + '.bz2'
@@ -470,14 +506,13 @@ class DumpParser():
         # # Remove the original JSONL file
         # os.remove(jsonl_output)
 
-        log_file = os.path.abspath("file_log.json")
+        log_file = os.path.abspath(f"entities_log_{base}.json")
         print(f"Writing log to: {log_file}")
         try:
             with open(log_file, 'a', encoding='utf-8') as log:
                 for ent_pt in self.entities_processing_times:
                     log.write(json.dumps(ent_pt) + '\n')
         except Exception as e:
-            print(f'Error writing to log file: {e}')
-            raise e
+            self.logging.error(f'Error writing to log file: {e}')
 
         return self.entities, changes_saved, (total_num_revisions / len(self.entities)) if self.entities else 0

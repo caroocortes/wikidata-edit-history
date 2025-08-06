@@ -7,5 +7,10 @@ DELETE_ENTITY = "DELETE_ENTITY"
 DELETE_PROPERTY = "DELETE_PROPERTY"
 DELETE_PROPERTY_VALUE = "DELETE_PROPERTY_VALUE"
 
+CASE_0 = 0
+CASE_1 = 1
+CASE_2 = 2
+CASE_3 = 3
+
 # Wikidata's XML namespace
 NS = '{http://www.mediawiki.org/xml/export-0.11/}'
