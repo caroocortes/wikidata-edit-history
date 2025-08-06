@@ -15,7 +15,7 @@ logging.basicConfig(
     filename=f'download_log.log',
     filemode='a',
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.INFO,
 )
 
 class DumpDownloader():
@@ -107,6 +107,6 @@ class DumpDownloader():
                 download_ok = self.download_file(link)
                 if download_ok:
                     count_ok += 1
-                time.sleep(1) # 10 minutes
+                time.sleep(10*60) # 10 minutes
 
             logging.info(f'Finished downloading {count_ok} files.')
