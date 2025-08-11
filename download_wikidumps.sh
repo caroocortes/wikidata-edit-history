@@ -32,8 +32,7 @@ while IFS= read -r url; do
         --retry-wait=60 \
         --max-tries=3 \
         --summary-interval=60 \
-        --log-level=notice \
-        --log=aria2c_download.log \
+        --log-level=warn \
         --dir="$DOWNLOAD_DIR" \
         --out="$filename"
 

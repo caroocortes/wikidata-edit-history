@@ -1,0 +1,2589 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd"
+           version="0.11" xml:lang="en">
+
+  <page>
+    <title>Q60</title>
+    <ns>120</ns>
+    <id>12345</id>
+    <revision>
+      <id>999</id>
+      <timestamp>2025-01-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Initial creation</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "New York City"
+            }
+          },
+          "descriptions": [],
+          "claims": []
+        }
+      </text>
+    </revision>
+
+     <revision>
+      <id>1000</id>
+      <timestamp>2025-01-01T10:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Added description</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "New York City"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "largest city in New York and the United States of America"
+            }
+          },
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1001</id>
+      <timestamp>2025-01-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Added property</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "New York City"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "largest city in New York and the United States of America"
+            }
+          },
+          "claims": {
+            "P625": [
+              {
+                "id": "Q60$abcde1234",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P625",
+                  "hash": "Q60$abcde12341",
+                  "datavalue": {
+                    "value": {
+                      "latitude": 52.516666666667,
+                      "longitude": 13.383333333333,
+                      "altitude": null,
+                      "precision": 0.016666666666667,
+                      "globe": "http://www.wikidata.org/entity/Q2"
+                    },
+                    "type": "globecoordinate"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1002</id>
+      <timestamp>2025-02-01T10:10:00Z</timestamp>
+      <contributor>
+        <username>AnotherUser</username>
+        <id>2</id>
+      </contributor>
+      <comment>Updated coordinates (value + datatype metadata) and description</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "New York City"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "largest city in the USA"
+            }
+          },
+          "claims": {
+            "P625": [
+              {
+                "id": "Q60$abcde1234",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P625",
+                  "hash": "Q60$abcde12342",
+                  "datavalue": {
+                    "value": {
+                      "latitude": 52.52,
+                      "longitude": 13.405,
+                      "altitude": null,
+                      "precision": 0.01,
+                      "globe": "http://www.wikidata.org/entity/Q2"
+                    },
+                    "type": "globecoordinate"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+    <revision>
+      <id>1003</id>
+      <timestamp>2025-03-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser</username>
+        <id>3</id>
+      </contributor>
+      <comment>Added new property P31</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": { "en": { "language": "en", "value": "New York City" }},
+          "descriptions": { "en": { "language": "en", "value": "largest city in the USA" }},
+          "claims": {
+            "P625": [
+              {
+                "id": "Q60$abcde1234",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P625",
+                  "hash": "Q60$abcde12342",
+                  "datavalue": {
+                    "value": {
+                      "latitude": 52.52,
+                      "longitude": 13.405,
+                      "altitude": null,
+                      "precision": 0.01,
+                      "globe": "http://www.wikidata.org/entity/Q2"
+                    },
+                    "type": "globecoordinate"
+                  }
+                }
+              }
+            ],
+            "P31": [{
+              "id": "Q60$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q60$createP311",
+                "datavalue": {
+                  "value": { "id": "Q515" },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1004</id>
+      <timestamp>2025-04-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser2</username>
+        <id>4</id>
+      </contributor>
+      <comment>Changed datatype of P31 from wikibase-item to string</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": { "en": { "language": "en", "value": "New York City" }},
+          "descriptions": { "en": { "language": "en", "value": "largest city in the USA" }},
+          "claims": {
+            "P625": [
+              {
+                "id": "Q60$abcde1234",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P625",
+                  "hash": "Q60$abcde12342",
+                  "datavalue": {
+                    "value": {
+                      "latitude": 52.52,
+                      "longitude": 13.405,
+                      "altitude": null,
+                      "precision": 0.01,
+                      "globe": "http://www.wikidata.org/entity/Q2"
+                    },
+                    "type": "globecoordinate"
+                  }
+                }
+              }
+            ],
+            "P31": [{
+              "id": "Q60$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "datatype": "string",
+                "hash": "Q60$createP312",
+                "datavalue": {
+                  "value": "city",
+                  "type": "string"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1005</id>
+      <timestamp>2025-05-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser3</username>
+        <id>5</id>
+      </contributor>
+      <comment>Updated precision in P625</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": { "en": { "language": "en", "value": "New York City" }},
+          "descriptions": { "en": { "language": "en", "value": "largest city in the USA" }},
+          "claims": {
+            "P31": [{
+              "id": "Q60$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q60$createP312",
+                "datavalue": {
+                  "value": "city",
+                  "type": "string"
+                }
+              }
+            }],
+            "P625": [{
+              "id": "Q60$abcde1234",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "hash": "Q60$abcde12343",
+                "datavalue": {
+                  "value": {
+                    "latitude": 52.52,
+                    "longitude": 13.405,
+                    "altitude": null,
+                    "precision": 0.0001,
+                    "globe": "http://www.wikidata.org/entity/Q2"
+                  },
+                  "type": "globecoordinate"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1006</id>
+      <timestamp>2025-06-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser4</username>
+        <id>6</id>
+      </contributor>
+      <comment>Deleted property P31</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": { "en": { "language": "en", "value": "New York City" }},
+          "descriptions": { "en": { "language": "en", "value": "largest city in the USA" }},
+          "claims": {
+            "P625": [{
+              "id": "Q60$abcde1234",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "hash": "Q60$abcde12343",
+                "datavalue": {
+                  "value": {
+                    "latitude": 52.52,
+                    "longitude": 13.405,
+                    "altitude": null,
+                    "precision": 0.0001,
+                    "globe": "http://www.wikidata.org/entity/Q2"
+                  },
+                  "type": "globecoordinate"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1007</id>
+      <timestamp>2025-06-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser4</username>
+        <id>6</id>
+      </contributor>
+      <comment>New value for property P625</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": { "en": { "language": "en", "value": "New York City" }},
+          "descriptions": { "en": { "language": "en", "value": "largest city in the USA" }},
+          "claims": {
+            "P625": [{
+              "id": "Q60$abcde1234",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "hash": "Q60$abcde12343",
+                "datavalue": {
+                  "value": {
+                    "latitude": 52.52,
+                    "longitude": 13.405,
+                    "altitude": null,
+                    "precision": 0.0001,
+                    "globe": "http://www.wikidata.org/entity/Q2"
+                  },
+                  "type": "globecoordinate"
+                }
+              }
+            },
+            {
+              "id": "Q60$abcde12345",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "hash": "Q60$abcde123451",
+                "datavalue": {
+                  "value": "some string",
+                  "type": "string"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1008</id>
+      <timestamp>2025-06-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser5</username>
+        <id>6</id>
+      </contributor>
+      <comment>Update latitude in P625</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": { "en": { "language": "en", "value": "New York City" }},
+          "descriptions": { "en": { "language": "en", "value": "largest city in the USA" }},
+          "claims": {
+            "P625": [{
+              "id": "Q60$abcde1234",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "hash": "Q60$abcde12344",
+                "datavalue": {
+                  "value": {
+                    "latitude": 52.555,
+                    "longitude": 13.405,
+                    "altitude": null,
+                    "precision": 0.0001,
+                    "globe": "http://www.wikidata.org/entity/Q2"
+                  },
+                  "type": "globecoordinate"
+                }
+              }
+            },
+            {
+              "id": "Q60$abcde12345",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "hash": "Q60$abcde123451",
+                "datavalue": {
+                  "value": "some string",
+                  "type": "string"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1009</id>
+      <timestamp>2025-06-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser4</username>
+        <id>6</id>
+      </contributor>
+      <comment>Deleted value for property P625 and changed label</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": { "en": { "language": "en", "value": "NYC" }},
+          "descriptions": { "en": { "language": "en", "value": "largest city in the USA" }},
+          "claims": {
+            "P625": [{
+              "id": "Q60$abcde12345",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "datatype": "string",
+                "hash": "Q60$abcde123451",
+                "datavalue": {
+                  "value": "some string",
+                  "type": "string"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1010</id>
+      <timestamp>2025-06-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser4</username>
+        <id>6</id>
+      </contributor>
+      <comment>Deleted description</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": { "en": { "language": "en", "value": "NYC" }},
+          "descriptions": [],
+          "claims": {
+            "P625": [{
+              "id": "Q60$abcde12345",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "datatype": "string",
+                "hash": "Q60$abcde123451",
+                "datavalue": {
+                  "value": "some string",
+                  "type": "string"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1011</id>
+      <timestamp>2025-06-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser4</username>
+        <id>6</id>
+      </contributor>
+      <comment>Deleted label</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q60",
+          "type": "item",
+          "labels": [],
+          "descriptions": [],
+          "claims": {
+            "P625": [{
+              "id": "Q60$abcde12345",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P625",
+                "datatype": "string",
+                "hash": "Q60$abcde123451",
+                "datavalue": {
+                  "value": "some string",
+                  "type": "string"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1012</id>
+      <timestamp>2025-07-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>TestUser5</username>
+        <id>7</id>
+      </contributor>
+      <comment>Entity deleted</comment>
+      <text xml:space="preserve">
+        { }
+      </text>
+    </revision>
+
+  </page>
+  <page>
+    <title>Q61</title>
+    <ns>0</ns>
+    <id>12346</id>
+    <revision>
+      <id>1013</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Initial creation with description in multiple languages</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": [],
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1014</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add label</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Dog"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1015</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add type (P31 - new property) and change label</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [{
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1016</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add property</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [{
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [{
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279",
+                "datavalue": {
+                  "value": "Canis",
+                  "type": "string"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1017</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Change property P279 datatype from string to entity and added new value to P31 and P279</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$new_valueP31",
+                "datavalue": {
+                  "value": "bird",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$new_valueP279",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q192",
+                    "numeric-id": 192
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1018</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Update value of P31 and P279</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$updatevalueP31",
+                "datavalue": {
+                  "value": "frog",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$updateP279",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149895",
+                    "numeric-id": 149895
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1019</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Delete value of P31 and update value of P279</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$new_valueP279",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1020</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Delete all claims</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1021</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Revert edit from revision 1020</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$new_valueP279",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1022</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add number of legs (P1)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$new_valueP279",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$new_valueP1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+3",
+                      "upperBound": "+4",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q712226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1023</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Change datatype of P1 from quantity to string</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$new_valueP279",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$change_datatypeP1",
+                  "datavalue": {
+                    "value": "3 legs",
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1024</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Change datatype of P1 from string to quantity (revert changes)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$new_valueP279",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$new_valueP1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+3",
+                      "upperBound": "+4",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q712226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1025</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Update upper bound in P1</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$new_valueP279",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$updateP1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+3",
+                      "upperBound": "+5",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q712226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1026</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Update upper bound and value in P1 and delete property value for P279 and add date of birth P2</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update2P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+4",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q712226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P2" : [
+            {
+              "id": "Q61$new_valueP2",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$new_valueP2",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-31T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 11,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1027</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Update value and added new property value for P2</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update2P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+4",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q712226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P2" : [
+            {
+              "id": "Q61$new_valueP2",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$updateP2",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-25T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 11,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                  },
+                  "type": "time"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_value2P2",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$new_value2P2",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-10T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 11,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1028</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Delete property value for P2, update metadata of existing value in P2 and update metadata of existing value for P1</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update3P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+5",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q71226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P2" : [
+            {
+              "id": "Q61$new_valueP2",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$update2P2",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-25T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q19857"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+
+    <revision>
+      <id>1029</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Delete property P2 and add property P3</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update2P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+5",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q71226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P3" : [
+            {
+              "id": "Q61$new_valueP3",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$new_valueP3",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-29T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q198527"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1030</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Update value of P3 and update metadata of P1</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            }],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update3P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+6",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q71226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P3" : [
+            {
+              "id": "Q61$new_valueP3",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$updateP3",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-01T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q198527"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1031</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add new value for property P31</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$createP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$createP31",
+                "datavalue": {
+                  "value": "domesticated animal",
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "id": "Q61$new_valueP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$new_valueP31",
+                "datavalue": {
+                  "value": "canine",
+                  "type": "string"
+                }
+              }
+            }
+            ],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update2P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+6",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q71226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P3" : [
+            {
+              "id": "Q61$new_valueP3",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$new_valueP3",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-01T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q198527"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1032</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Remove value for P31 and added new property P4</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$new_valueP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$new_valueP31",
+                "datavalue": {
+                  "value": "canine",
+                  "type": "string"
+                }
+              }
+            }
+            ],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update2P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+6",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q71226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P3" : [
+            {
+              "id": "Q61$new_valueP3",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$new_valueP3",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-01T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q198527"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ],
+            "P4" : [
+            {
+              "id": "Q61$P4",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$createP4",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-01T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q198527"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>1033</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Change datatype of P4 from time to globecoordinate</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$new_valueP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$new_valueP31",
+                "datavalue": {
+                  "value": "canine",
+                  "type": "string"
+                }
+              }
+            }
+            ],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update2P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+6",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q71226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P3" : [
+            {
+              "id": "Q61$new_valueP3",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P3",
+                "hash": "Q61$new_valueP3",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-01T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q198527"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ],
+            "P4" : [
+            {
+              "id": "Q61$P4",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P4",
+                "hash": "Q61$change_datatypeP4",
+                "datavalue" : {
+                  "value": {
+                    "latitude": 52.516666666667,
+                    "longitude": 13.383333333333,
+                    "altitude": null,
+                    "precision": 0.016666666666667,
+                    "globe": "http:\/\/www.wikidata.org\/entity\/Q2"
+                  },
+                  "type": "globecoordinate"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+  </page>
+</mediawiki>
