@@ -23,7 +23,7 @@ if not dump_dir.exists():
 all_files = [f for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
 files_to_parse = all_files[:args.number_files] if args.number_files else all_files
 
-handler = DumpParser()
+handler = DumpParser(max_workers=1)
 parser = xml.sax.make_parser()
 parser.setContentHandler(handler)
 

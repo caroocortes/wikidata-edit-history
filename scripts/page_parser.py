@@ -10,7 +10,8 @@ from scripts.utils import initialize_csv_files
 class PageParser(ContentHandler):
     def __init__(self):
         # TODO: remove this since it will be save in a DB
-        self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
+        print('initializing page parser!!!')
+        _, self.change_file_path, self.revision_file_path = initialize_csv_files()
         self.set_initial_state()    
 
     def set_initial_state(self):
@@ -92,7 +93,7 @@ class PageParser(ContentHandler):
     
     @staticmethod
     def _get_english_label(revision):
-        label = PageParser()._safe_get_nested(revision, 'labels', 'en', 'value') 
+        label = PageParser._safe_get_nested(revision, 'labels', 'en', 'value') 
         return label if not isinstance(label, dict) else None
     
     @staticmethod
@@ -104,10 +105,10 @@ class PageParser(ContentHandler):
         if not statement:
             return None, None, None
         
-        snaktype = PageParser()._get_property_mainsnak(statement, 'snaktype')
+        snaktype = PageParser._get_property_mainsnak(statement, 'snaktype')
         if snaktype == 'value':
 
-            datavalue = PageParser()._get_property_mainsnak(statement, 'datavalue')
+            datavalue = PageParser._get_property_mainsnak(statement, 'datavalue')
             
             value_json = datavalue.get("value", None)
             datatype = datavalue.get("type", None)
@@ -160,8 +161,8 @@ class PageParser(ContentHandler):
             "revision_id": self.revision_meta['revision_id'],
             "property_id": property_id,
             "value_id": value_id,
-            "old_value": PageParser()._jsonify_value(old_value),
-            "new_value": PageParser()._jsonify_value(new_value),
+            "old_value": PageParser._jsonify_value(old_value),
+            "new_value": PageParser._jsonify_value(new_value),
             "datatype": datatype,
             "datatype_metadata": datatype_metadata,
             "change_type": change_type
@@ -274,13 +275,13 @@ class PageParser(ContentHandler):
         changes = []
 
         # Process claims
-        claims = PageParser()._safe_get_nested(revision, 'claims')
+        claims = PageParser._safe_get_nested(revision, 'claims')
         
         for property_id, property_stmts in claims.items():
             for stmt in property_stmts:
                 
                 
-                value, datatype, datatype_metadata = PageParser()._parse_datavalue(stmt)
+                value, datatype, datatype_metadata = PageParser._parse_datavalue(stmt)
                 datavalue_id = stmt.get('id', None)
                 
                 old_value = None if change_type == CREATE_ENTITY else value
@@ -316,8 +317,8 @@ class PageParser(ContentHandler):
                         )
 
         # If there's no description or label, the revisions shows them as []
-        labels = PageParser()._safe_get_nested(revision, 'labels', 'en', 'value')
-        descriptions = PageParser()._safe_get_nested(revision, 'descriptions', 'en', 'value')
+        labels = PageParser._safe_get_nested(revision, 'labels', 'en', 'value')
+        descriptions = PageParser._safe_get_nested(revision, 'descriptions', 'en', 'value')
 
         # Process labels and descriptions (non-claim properties)
         for pid, val in [('label', labels), ('description', descriptions)]:
@@ -359,8 +360,8 @@ class PageParser(ContentHandler):
         # --- Label change ---
         prev_label = None
         if previous_revision:
-            prev_label = PageParser()._safe_get_nested(previous_revision, 'labels', 'en', 'value')
-        curr_label = PageParser()._safe_get_nested(current_revision, 'labels', 'en', 'value')
+            prev_label = PageParser._safe_get_nested(previous_revision, 'labels', 'en', 'value')
+        curr_label = PageParser._safe_get_nested(current_revision, 'labels', 'en', 'value')
         
         if curr_label != prev_label:
             changes.append(
@@ -371,15 +372,15 @@ class PageParser(ContentHandler):
                     new_value=curr_label if not isinstance(curr_label, dict) else None,
                     datatype='string',
                     datatype_metadata=None,
-                    change_type=PageParser()._description_label_change_type(prev_label, curr_label)
+                    change_type=PageParser._description_label_change_type(prev_label, curr_label)
                 )
             )
 
         # --- Description change ---
         prev_desc = None
         if previous_revision:
-            prev_desc = PageParser()._safe_get_nested(previous_revision, 'descriptions', 'en', 'value')
-        curr_desc = PageParser()._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
+            prev_desc = PageParser._safe_get_nested(previous_revision, 'descriptions', 'en', 'value')
+        curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
 
         if curr_desc != prev_desc:
             changes.append(
@@ -390,7 +391,7 @@ class PageParser(ContentHandler):
                     new_value=curr_desc if not isinstance(curr_desc, dict) else None,
                     datatype='string',
                     datatype_metadata=None,
-                    change_type=PageParser()._description_label_change_type(prev_desc, curr_desc)
+                    change_type=PageParser._description_label_change_type(prev_desc, curr_desc)
                 )
             )
 
@@ -401,7 +402,7 @@ class PageParser(ContentHandler):
         for new_pid in new_pids:
             curr_statements = curr_claims.get(new_pid, [])
             for s in curr_statements:
-                new_value, new_datatype, new_datatype_metadata = PageParser()._parse_datavalue(s)
+                new_value, new_datatype, new_datatype_metadata = PageParser._parse_datavalue(s)
                 datavalue_id = s.get('id', None)
 
                 changes.append(self._handle_value_changes(new_datatype, new_value, None, datavalue_id, new_pid, CREATE_PROPERTY))
@@ -416,7 +417,7 @@ class PageParser(ContentHandler):
         for removed_pid in removed_pids:
             prev_statements = prev_claims.get(removed_pid, [])
             for s in prev_statements:
-                old_value, old_datatype, old_datatype_metadata = PageParser()._parse_datavalue(s)
+                old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(s)
                 datavalue_id = s.get('id', None)
 
                 changes.append(self._handle_value_changes(None, None, old_value, datavalue_id, removed_pid, DELETE_PROPERTY))
@@ -444,11 +445,11 @@ class PageParser(ContentHandler):
                 prev_stmt = prev_by_id.get(sid)
                 curr_stmt = curr_by_id.get(sid)
 
-                new_value, new_datatype, new_datatype_metadata = PageParser()._parse_datavalue(curr_stmt)
-                old_value, old_datatype, old_datatype_metadata = PageParser()._parse_datavalue(prev_stmt)
+                new_value, new_datatype, new_datatype_metadata = PageParser._parse_datavalue(curr_stmt)
+                old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(prev_stmt)
 
-                old_hash = PageParser()._get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
-                new_hash = PageParser()._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
+                old_hash = PageParser._get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
+                new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
 
                 if prev_stmt and not curr_stmt:
                     # Property value was removed -> We set datatype = None
@@ -485,9 +486,9 @@ class PageParser(ContentHandler):
         else:
             changes = []
             
-            curr_label = PageParser()._safe_get_nested(current_revision, 'labels', 'en', 'value')
-            curr_desc = PageParser()._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
-            curr_claims = PageParser()._safe_get_nested(current_revision, 'claims')
+            curr_label = PageParser._safe_get_nested(current_revision, 'labels', 'en', 'value')
+            curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
+            curr_claims = PageParser._safe_get_nested(current_revision, 'claims')
 
             if not curr_claims and not curr_label and not curr_desc:
                 # Entity was deleted
@@ -497,7 +498,7 @@ class PageParser(ContentHandler):
             changes.extend(self._handle_description_label_change(previous_revision, current_revision))
 
             # --- Claims (P-IDs) ---
-            prev_claims = PageParser()._safe_get_nested(previous_revision, 'claims')
+            prev_claims = PageParser._safe_get_nested(previous_revision, 'claims')
 
             prev_claims_pids = set(prev_claims.keys())
             curr_claims_pids = set(curr_claims.keys())
@@ -524,6 +525,7 @@ class PageParser(ContentHandler):
         Called when the parser finds a starting tag (e.g. <page>)
         """
         if name == 'title':
+            self.entity_id = ''
             self.in_title = True
 
         if name == 'revision':
@@ -561,7 +563,9 @@ class PageParser(ContentHandler):
                 self.revision_meta['revision_id'] = content
             
             if self.in_comment:
-                self.revision_meta['comment'] = content
+                if not 'comment' in self.revision_meta:
+                    self.revision_meta['comment'] = ''
+                self.revision_meta['comment'] += content
             
             if self.in_timestamp:
                 self.revision_meta['timestamp'] = content
@@ -584,9 +588,10 @@ class PageParser(ContentHandler):
         """ 
             Called when a tag ends (e.g. </page>)
         """
-        if not self.in_revision or not self.in_title:
-            return
         
+        if self.in_title: # at </title> 
+            self.in_title = False
+
         if name == 'revision': # at </revision> of revision and we keep the entity
 
             # Transform revision text to json
@@ -602,7 +607,7 @@ class PageParser(ContentHandler):
                     current_revision = None
             else:
        
-                curr_label = PageParser()._get_english_label(current_revision)
+                curr_label = PageParser._get_english_label(current_revision)
                 if curr_label and self.entity_label != curr_label: 
                     # Keep most current label
                     self.entity_label = curr_label
@@ -628,9 +633,6 @@ class PageParser(ContentHandler):
             self.in_revision = False
             self.revision_meta = {}
             self.revision_text = ''
-
-        if name == 'title': # at </title> 
-            self.in_title = False
 
         if self.in_revision:
             if name == 'id': # at </id>

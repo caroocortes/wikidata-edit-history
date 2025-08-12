@@ -8,8 +8,12 @@ import multiprocessing
 from scripts.page_parser import PageParser
 from scripts.const import *
 
+from scripts.utils import initialize_csv_files
+
 class DumpParser(xml.sax.ContentHandler):
     def __init__(self, max_workers=None):
+
+        self.entity_file_path, _,_ = initialize_csv_files()
         
         self.set_initial_state()  
         self.entities = []   
@@ -110,7 +114,9 @@ class DumpParser(xml.sax.ContentHandler):
             print(f"Keeping page with title: {self.entity_id}")
             self.keep = True
             self.in_title = False
-            self.page_buffer.append(DumpParser._serialize_end_tag(name))
+            self.page_buffer.append(self.entity_id) # save entity_id
+            self.page_buffer.append(DumpParser._serialize_end_tag(name)) # save </title> tag
+
         elif name =='title' and not self.entity_id.startswith("Q"):
             print(f'Not keeping page {self.entity_id}')
             self.set_initial_state() # sets buffer to []
@@ -120,7 +126,6 @@ class DumpParser(xml.sax.ContentHandler):
             if self.keep:
 
                 self.page_buffer.append(DumpParser._serialize_end_tag(name)) # save </page> tag
-                
                 raw_page_xml = ''.join(self.page_buffer)
                 self.page_buffer.clear()
                 # Submit the page processing to worker

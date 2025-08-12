@@ -1,13 +1,13 @@
 import xml.sax
-from scripts.dump_parser import PageParser
+from scripts.dump_parser import DumpParser
 from argparse import ArgumentParser
 
 arg_parser = ArgumentParser()
-arg_parser.add_argument("-f", "--file", type=int, help="File to run test. See folder test/", metavar="FILE")
+arg_parser.add_argument("-f", "--file", help="File to run test. See folder test/", metavar="FILE")
 
 args = arg_parser.parse_args()
 
-handler = PageParser()
+handler = DumpParser()
 parser = xml.sax.make_parser()
 parser.setContentHandler(handler)
 
