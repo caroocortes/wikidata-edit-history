@@ -9,8 +9,6 @@ from pathlib import Path
 from scripts.utils import human_readable_size
 from scripts.dump_parser import DumpParser
 
-# ------------------------ RUN PARSER ON WIKIDATA DUMP ------------------------------------------
-
 arg_parser = ArgumentParser()
 arg_parser.add_argument("-n", "--number_files", type=int, help="Number of xml.bz2 files to process", metavar="NUMBER_OF_FILES")
 arg_parser.add_argument("-dir", "--directory", help="Directory where xml.bz2 files are stored", metavar="DUMP_DIR")
@@ -18,7 +16,6 @@ arg_parser.add_argument("-dir", "--directory", help="Directory where xml.bz2 fil
 args = arg_parser.parse_args()
 
 dump_dir = Path(args.directory)
-print('EL DUMP DIR: ', dump_dir)
 if not dump_dir.exists():
     print("The dump directory doesn't exist")
     raise SystemExit(1)
@@ -32,7 +29,6 @@ parser.setContentHandler(handler)
 
 for input_bz2 in all_files:
     file_path = os.path.join(dump_dir, input_bz2)
-    print(file_path)
     base = input_bz2.replace(".xml", "").replace(".bz2", "")
 
     logging.basicConfig(
@@ -61,4 +57,3 @@ for input_bz2 in all_files:
         f"Number of entities: {len(handler.entities)}\t"
         f"Entities: {','.join(handler.entities)}\t"
     )
-# ------------------------------------------------------------------
