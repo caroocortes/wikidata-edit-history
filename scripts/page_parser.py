@@ -10,7 +10,6 @@ from scripts.utils import initialize_csv_files
 class PageParser(ContentHandler):
     def __init__(self):
         # TODO: remove this since it will be save in a DB
-        print('initializing page parser!!!')
         _, self.change_file_path, self.revision_file_path = initialize_csv_files()
         self.set_initial_state()    
 
@@ -132,7 +131,10 @@ class PageParser(ContentHandler):
                             if datatype != 'globecoordinate' and k not in ("altitude", "before", "after"):
                                 value = v
                 else:
-                    value = value_json.get('id')
+                    if 'id' in value_json:
+                        value = value_json.get('id')
+                    else:
+                        value = 'Q' + value_json.get('numeric-id')
             else:
                 value = value_json
 
