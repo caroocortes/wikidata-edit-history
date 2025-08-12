@@ -9,7 +9,7 @@ from pathlib import Path
 from scripts.utils import human_readable_size
 from scripts.dump_parser import DumpParser
 
-def process_file(input_bz2, dump_dir):
+def process_file(input_bz2, dump_dir, parser):
     file_path = os.path.join(dump_dir, input_bz2)
     base = input_bz2.replace(".xml", "").replace(".bz2", "")
 
@@ -52,17 +52,17 @@ if not dump_dir.exists():
     print("The dump directory doesn't exist")
     raise SystemExit(1)
 
+handler = DumpParser(max_workers=1)
+parser = xml.sax.make_parser()
+parser.setContentHandler(handler)
+
 if args.file:
     input_bz2 = args.file
-    process_file(input_bz2, dump_dir)
+    process_file(input_bz2, dump_dir, parser)
 else:
 
     all_files = [f for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
     files_to_parse = all_files[:args.number_files] if args.number_files else all_files
 
-    handler = DumpParser(max_workers=1)
-    parser = xml.sax.make_parser()
-    parser.setContentHandler(handler)
-
     for input_bz2 in all_files:
-        process_file(input_bz2, dump_dir)
+        process_file(input_bz2, dump_dir, parser)
