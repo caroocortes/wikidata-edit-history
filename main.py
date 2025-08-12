@@ -41,7 +41,7 @@ def process_file(input_bz2, dump_dir):
     )
 
 arg_parser = ArgumentParser()
-arg_parser.add_argument("-f", "--file", type=int, help="xml.bz2 file to process", metavar="FILE")
+arg_parser.add_argument("-f", "--file", help="xml.bz2 file to process", metavar="FILE")
 arg_parser.add_argument("-n", "--number_files", type=int, help="Number of xml.bz2 files to process", metavar="NUMBER_OF_FILES")
 arg_parser.add_argument("-dir", "--directory", help="Directory where xml.bz2 files are stored", metavar="DUMP_DIR")
 
