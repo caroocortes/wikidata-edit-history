@@ -48,6 +48,8 @@ class DumpParser(xml.sax.ContentHandler):
             'entity_id': handler.entity_id,
             'label': handler.entity_label
         })
+
+        return handler.changes, handler.revision
     
     @staticmethod
     def _serialize_start_tag(name, attrs):
@@ -103,6 +105,8 @@ class DumpParser(xml.sax.ContentHandler):
                 # TODO: change to save to DB
                 df_entities = pd.DataFrame(self.entities)
                 df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
+
+                self.executor.shutdown(wait=True)
             else:
                 return
         
@@ -132,6 +136,35 @@ class DumpParser(xml.sax.ContentHandler):
                 print(f'Submitted process_page_xml for entity_id {self.entity_id}')
                 future = self.executor.submit(self.process_page_xml, raw_page_xml)
                 self.futures.append(future)
+
+                if len(self.futures) >= 20: # limits number of running tasks at a time
+                    batch_changes = []
+                    batch_revisions = []
+                    for f in self.futures:
+                        changes, revisions = f.result()
+                        batch_revisions.extend(revisions)
+                        batch_changes.extend(changes)
+
+                        if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
+                            print('save to file or db')
+
+                            df_changes = pd.DataFrame(batch_changes)
+                            df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+
+                            df_revisions = pd.DataFrame(batch_revisions)
+                            df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+
+                    if batch_changes:
+                        print('Save remaining changes (if limit was never reached)')
+                        df_changes = pd.DataFrame(batch_changes)
+                        df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+
+                    if batch_revisions:
+                        print('Save remaining revisions (if limit was never reached)')
+                        df_revisions = pd.DataFrame(batch_revisions)
+                        df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+
+                    self.futures.clear()
 
             # Reset state
             self.set_initial_state()

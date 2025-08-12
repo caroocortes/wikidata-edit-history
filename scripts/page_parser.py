@@ -11,11 +11,11 @@ class PageParser(ContentHandler):
     def __init__(self):
         # TODO: remove this since it will be save in a DB
         _, self.change_file_path, self.revision_file_path = initialize_csv_files()
+        self.changes = []
+        self.revision = []
         self.set_initial_state()    
 
     def set_initial_state(self):
-        self.changes = []
-        self.revision = []
         self.entity_id = ''
         self.entity_label = ''
         
@@ -660,10 +660,9 @@ class PageParser(ContentHandler):
             print(f'Time it took to process entity {self.entity_id} with {self.num_revisions} revisions: {self.end_time_entity - self.start_time_entity} seconds')
             print(f'Number of revisions without changes: {self.revisions_without_changes}')
 
-            # TODO: change to save in DB
-            df_changes = pd.DataFrame(self.changes)
-            df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+            # # TODO: change to save in DB
+            # df_changes = pd.DataFrame(self.changes)
+            # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
 
-            df_revisions = pd.DataFrame(self.revision)
-            df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
-
+            # df_revisions = pd.DataFrame(self.revision)
+            # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
