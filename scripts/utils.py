@@ -14,15 +14,22 @@ def human_readable_size(size, decimal_places=2):
             return f"{size:.{decimal_places}f} {unit}"
         size /= 1024
 
-def initialize_csv_files():
+def initialize_csv_files(suffix=None):
     output_dir = Path("data/output_csvs")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    files_info = {
-        "entity.csv": ["Entity_ID", "Label"],
-        "change.csv": ["Revision_ID", "Property_ID", "SubValue_Key", "Value_ID", "Old_Value", "New_Value", "Datatype", "Datatype_Metadata", "Change_Type"],
-        "revision.csv": ["Entity_ID", "Revision_ID", "Timestamp", "User", "Comment"]
-    }
+    if suffix:
+        files_info = {
+            f"entity_{suffix}.csv": ["Entity_ID", "Label"],
+            f"{suffix}.jsonl": ["Entity_ID", "Revision_ID", "Property_ID", "Value_ID", "Old_Value", "New_Value", "Datatype", "Datatype_Metadata", "Change_Type"],
+            f"revision_{suffix}.csv": ["Entity_ID", "Revision_ID", "Timestamp", "User", "Comment"]
+        }
+    else:
+        files_info = {
+            "entity.csv": ["Entity_ID", "Label"],
+            "change.csv": ["Entity_ID", "Revision_ID", "Property_ID", "Value_ID", "Old_Value", "New_Value", "Datatype", "Datatype_Metadata", "Change_Type"],
+            "revision.csv": ["Entity_ID", "Revision_ID", "Timestamp", "User", "Comment"]
+        }
 
     writers = {}
     paths = {}
@@ -40,11 +47,19 @@ def initialize_csv_files():
         writers[filename] = writer
         paths[filename] = str(file_path)
 
-    return (
-        paths['entity.csv'],
-        paths['change.csv'],
-        paths['revision.csv']
-    )
+    if suffix:
+        return (
+            paths[f'entity_{suffix}.csv'],
+            paths[f'{suffix}.jsonl'],
+            paths[f'revision_{suffix}.csv']
+        )
+
+    else:
+        return (
+            paths['entity.csv'],
+            paths['change.csv'],
+            paths['revision.csv']
+        )
 
 def fetch_wikidata_properties():
     """

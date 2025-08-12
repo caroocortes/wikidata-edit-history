@@ -1,0 +1,1527 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd"
+           version="0.11" xml:lang="en">
+
+  <page>
+    <title>Q183</title>
+    <ns>0</ns>
+    <id>183</id>
+    <revision>
+      <id>1</id>
+      <timestamp>2025-08-11T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Created a country in europe</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": [],
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>2</id>
+      <timestamp>2025-08-11T00:02:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Added description</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            }
+          },
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>3</id>
+      <timestamp>2025-08-11T00:03:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Added description in spanish</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>4</id>
+      <timestamp>2025-01-01T00:04:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Create P31</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1create",
+                  "datavalue": {
+                    "value": "country",
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+
+      </text>
+    </revision>
+
+    <revision>
+      <id>5</id>
+      <timestamp>2025-01-01T00:05:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Changed datatype (string to wikibase item) of property value (P31 - instanceof)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1update",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q6256",
+                      "numeric-id": 6256
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ]
+          }
+        }
+
+      </text>
+    </revision>
+
+    <revision>
+      <id>6</id>
+      <timestamp>2025-01-01T00:06:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>New value for property P31 - instanceof</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1update",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q6256",
+                      "numeric-id": 6256
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              },
+              {
+                "id": "Q183$P31_2",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_2create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q3624078",
+                      "numeric-id": 3624078
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>7</id>
+      <timestamp>2025-01-01T00:07:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>New property (P571 - inception)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1update",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q6256",
+                      "numeric-id": 6256
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              },
+              {
+                "id": "Q183$P31_2",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_2create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q3624078",
+                      "numeric-id": 3624078
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ],
+            "P571": [
+              {
+                "id": "Q183$P571_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P571",
+                  "hash": "Q183$P571_1create",
+                  "datavalue": {
+                    "value": "641",
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>8</id>
+      <timestamp>2025-01-01T00:08:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Changed datatype (string to time) + value for property P571 - inception</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1update",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q6256",
+                      "numeric-id": 6256
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              },
+              {
+                "id": "Q183$P31_2",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_2create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q3624078",
+                      "numeric-id": 3624078
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ],
+            "P571": [
+              {
+                "id": "Q183$P571_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P571",
+                  "hash": "Q183$P571_1update",
+                  "datavalue": {
+                    "value": {
+                      "time": "+1867-07-01T00:00:00Z",
+                      "timezone": 0,
+                      "before": 0,
+                      "after": 0,
+                      "precision": 11,
+                      "calendarmodel": "http:\/\/www.wikidata.org\/entity\/Q1985727"
+                    },
+                    "type": "time"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>9</id>
+      <timestamp>2025-01-01T00:09:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add official name (P1448) and population (P1082)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1update",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q6256",
+                      "numeric-id": 6256
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              },
+              {
+                "id": "Q183$P31_2",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_2create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q3624078",
+                      "numeric-id": 3624078
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ],
+            "P571": [
+              {
+                "id": "Q183$P571_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P571",
+                  "hash": "Q183$P571_1update",
+                  "datavalue": {
+                    "value": {
+                      "time": "+1867-07-01T00:00:00Z",
+                      "timezone": 0,
+                      "before": 0,
+                      "after": 0,
+                      "precision": 11,
+                      "calendarmodel": "http:\/\/www.wikidata.org\/entity\/Q1985727"
+                    },
+                    "type": "time"
+                  }
+                }
+              }
+            ],
+            "P1448": [
+              {
+                "id": "Q183$P1448_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1448",
+                  "hash": "Q183$P1448_1create",
+                  "datavalue": {
+                    "value": "Federal Republic of Germany",
+                    "type": "string"
+                  }
+                }
+              }
+            ],
+            "P1082": [
+              {
+                "id": "Q183$P1082_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1082",
+                  "hash": "Q183$P1082_1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+70,945,000",
+                      "upperBound": "+100,000,000",
+                      "lowerBound": "+10",
+                      "unit": "http://www.wikidata.org/entity/Q712226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>10</id>
+      <timestamp>2025-01-01T00:10:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Change datatype (quantity to string) of property population (P1082)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1update",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q6256",
+                      "numeric-id": 6256
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              },
+              {
+                "id": "Q183$P31_2",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_2create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q3624078",
+                      "numeric-id": 3624078
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ],
+            "P571": [
+              {
+                "id": "Q183$P571_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P571",
+                  "hash": "Q183$P571_1update",
+                  "datavalue": {
+                    "value": {
+                      "time": "+1867-07-01T00:00:00Z",
+                      "timezone": 0,
+                      "before": 0,
+                      "after": 0,
+                      "precision": 11,
+                      "calendarmodel": "http:\/\/www.wikidata.org\/entity\/Q1985727"
+                    },
+                    "type": "time"
+                  }
+                }
+              }
+            ],
+            "P1448": [
+              {
+                "id": "Q183$P1448_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1448",
+                  "hash": "Q183$P1448_1create",
+                  "datavalue": {
+                    "value": "Federal Republic of Germany",
+                    "type": "string"
+                  }
+                }
+              }
+            ],
+            "P1082": [
+              {
+                "id": "Q183$P1082_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1082",
+                  "hash": "Q183$P1082_1update",
+                  "datavalue": {
+                    "value": "+70,945,000",
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+
+    <revision>
+      <id>11</id>
+      <timestamp>2025-01-01T00:11:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add property coordinate location (P625)+ change datatype of population (P1082)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1update",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q6256",
+                      "numeric-id": 6256
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              },
+              {
+                "id": "Q183$P31_2",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_2create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q3624078",
+                      "numeric-id": 3624078
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ],
+            "P571": [
+              {
+                "id": "Q183$P571_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P571",
+                  "hash": "Q183$P571_1update",
+                  "datavalue": {
+                    "value": {
+                      "time": "+1867-07-01T00:00:00Z",
+                      "timezone": 0,
+                      "before": 0,
+                      "after": 0,
+                      "precision": 11,
+                      "calendarmodel": "http:\/\/www.wikidata.org\/entity\/Q1985727"
+                    },
+                    "type": "time"
+                  }
+                }
+              }
+            ],
+            "P1448": [
+              {
+                "id": "Q183$P1448_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1448",
+                  "hash": "Q183$P1448_1create",
+                  "datavalue": {
+                    "value": "Federal Republic of Germany",
+                    "type": "string"
+                  }
+                }
+              }
+            ],
+            "P1082": [
+              {
+                "id": "Q183$P1082_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1082",
+                  "hash": "Q183$P1082_1update2",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+70,945,000",
+                      "upperBound": "+100,000,000",
+                      "lowerBound": "+10",
+                      "unit": "http://www.wikidata.org/entity/Q712226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P625": [
+              {
+                "id": "Q183$P625_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P625",
+                  "hash": "Q183$P625_1",
+                  "datavalue": {
+                    "value": {
+                      "latitude": 51.30,
+                      "longitude": 10.30,
+                      "altitude": null,
+                      "precision": 0.016,
+                      "globe": "http:\/\/www.wikidata.org\/entity\/Q2"
+                    },
+                    "type": "globecoordinate"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>12</id>
+      <timestamp>2025-01-01T00:12:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Udpate value of population and lowerBound (P1082) and update calendar in inception (P571)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q183",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Germany"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "country in Central Europe"
+            },
+            "es": {
+              "language": "es",
+              "value": "país en Europa central"
+            }
+          },
+          "claims": {
+            "P31": [
+              {
+                "id": "Q183$P31_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_1update",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q6256",
+                      "numeric-id": 6256
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              },
+              {
+                "id": "Q183$P31_2",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P31",
+                  "hash": "Q183$P31_2create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q3624078",
+                      "numeric-id": 3624078
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ],
+            "P571": [
+              {
+                "id": "Q183$P571_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P571",
+                  "hash": "Q183$P571_1update2",
+                  "datavalue": {
+                    "value": {
+                      "time": "+1867-07-01T00:00:00Z",
+                      "timezone": 0,
+                      "before": 0,
+                      "after": 0,
+                      "precision": 11,
+                      "calendarmodel": "http:\/\/www.wikidata.org\/entity\/Q19857"
+                    },
+                    "type": "time"
+                  }
+                }
+              }
+            ],
+            "P1448": [
+              {
+                "id": "Q183$P1448_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1448",
+                  "hash": "Q183$P1448_1create",
+                  "datavalue": {
+                    "value": "Federal Republic of Germany",
+                    "type": "string"
+                  }
+                }
+              }
+            ],
+            "P1082": [
+              {
+                "id": "Q183$P1082_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1082",
+                  "hash": "Q183$P1082_1update3",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+70,980,000",
+                      "upperBound": "+100,000,000",
+                      "lowerBound": "+1000",
+                      "unit": "http://www.wikidata.org/entity/Q712226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P625": [
+              {
+                "id": "Q183$P625_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P625",
+                  "hash": "Q183$P625_1",
+                  "datavalue": {
+                    "value": {
+                      "latitude": 51.30,
+                      "longitude": 10.30,
+                      "altitude": null,
+                      "precision": 0.016,
+                      "globe": "http:\/\/www.wikidata.org\/entity\/Q2"
+                    },
+                    "type": "globecoordinate"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+  </page>
+  <page>
+    <title>Q76</title>
+    <ns>0</ns>
+    <id>76</id>
+    <revision>
+      <id>1</id>
+      <timestamp>2025-08-11T00:13:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Initial creation of Barack Obama with description in multiple languages</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": [],
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>2</id>
+      <timestamp>2025-08-11T00:14:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add label</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Barack Obama"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": []
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>3</id>
+      <timestamp>2025-08-11T00:15:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add property country (P17)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Barack Obama"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": {
+            "P17": [
+              {
+                "id": "Q76$P17_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P27",
+                  "hash": "Q76$P17_1create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q30",
+                      "numeric-id": 30
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>4</id>
+      <timestamp>2025-08-11T00:16:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add country of citizenship (P27) and remove property country (P17)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Barack Obama"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": {
+            "P27": [
+              {
+                "id": "Q76$P27_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P27",
+                  "hash": "Q76$P27_1create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q30",
+                      "numeric-id": 30
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              },
+              {
+                "id": "Q76$P27_2",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P27",
+                  "hash": "Q76$P27_2create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q114",
+                      "numeric-id": 114
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>5</id>
+      <timestamp>2025-08-11T00:17:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Remove one of the values for country of citizenship (P27)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Barack Obama"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": {
+            "P27": [
+              {
+                "id": "Q76$P27_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P27",
+                  "hash": "Q76$P27_1create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q30",
+                      "numeric-id": 30
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>6</id>
+      <timestamp>2025-08-11T00:18:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Change label</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Barack Obama, President of the United States"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": {
+            "P27": [
+              {
+                "id": "Q76$P27_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P27",
+                  "hash": "Q76$P27_1create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q30",
+                      "numeric-id": 30
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>7</id>
+      <timestamp>2025-08-11T00:19:00Z</timestamp>
+      <contributor>
+        <username>AnotherUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Revert change in label</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Barack Obama"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": {
+            "P27": [
+              {
+                "id": "Q76$P27_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P27",
+                  "hash": "Q76$P27_1create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q30",
+                      "numeric-id": 30
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>8</id>
+      <timestamp>2025-08-11T00:20:00Z</timestamp>
+      <contributor>
+        <username>AnotherUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Add date of birth (P569)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Barack Obama"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": {
+            "P27": [
+              {
+                "id": "Q76$P27_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P27",
+                  "hash": "Q76$P27_1create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q30",
+                      "numeric-id": 30
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ],
+            "P569": [
+              {
+                "id": "Q76$P569_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P569",
+                  "hash": "Q76$P569_1create",
+                  "datavalue": {
+                    "value": {
+                      "time": "+1961-08-04T00:00:00Z",
+                      "timezone": 0,
+                      "before": 0,
+                      "after": 0,
+                      "precision": 11,
+                      "calendarmodel": "http:\/\/www.wikidata.org\/entity\/Q1985727"
+                    },
+                    "type": "time"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+    <revision>
+      <id>9</id>
+      <timestamp>2025-08-11T00:20:00Z</timestamp>
+      <contributor>
+        <username>AnotherUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Change date of birth (P569) datatype (time to string)</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q76",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Barack Obama"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "president of the United States from 2009 to 2017"
+            },
+            "es": {
+              "language": "es",
+              "value": "44º Presidente de los Estados Unidos"
+            }
+          },
+          "claims": {
+            "P27": [
+              {
+                "id": "Q76$P27_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P27",
+                  "hash": "Q76$P27_1create",
+                  "datavalue": {
+                    "value": {
+                      "entity-type": "item",
+                      "id": "Q30",
+                      "numeric-id": 30
+                    },
+                    "type": "wikibase-entityid"
+                  }
+                }
+              }
+            ],
+            "P569": [
+              {
+                "id": "Q76$P569_1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P569",
+                  "hash": "Q76$P569_1update",
+                  "datavalue": {
+                    "value": "1961-08-04",
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
+  </page>
+</mediawiki>

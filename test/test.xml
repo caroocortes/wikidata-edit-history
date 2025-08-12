@@ -2585,5 +2585,141 @@
       </text>
     </revision>
 
+    <revision>
+      <id>1034</id>
+      <timestamp>2025-02-01T00:00:00Z</timestamp>
+      <contributor>
+        <username>ExampleUser</username>
+        <id>1</id>
+      </contributor>
+      <comment>Revert to previous revision (1033) - globecoordinate to time</comment>
+      <text xml:space="preserve">
+        {
+          "id": "Q61",
+          "type": "item",
+          "labels": {
+            "en": {
+              "language": "en",
+              "value": "Doggy"
+            }
+          },
+          "descriptions": {
+            "en": {
+              "language": "en",
+              "value": "domestic animal"
+            },
+            "es": {
+              "language": "es",
+              "value": "mamífero carnívoro doméstico de la familia"
+            }
+          },
+          "claims": {
+            "P31": [
+            {
+              "id": "Q61$new_valueP31",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P31",
+                "hash": "Q61$new_valueP31",
+                "datavalue": {
+                  "value": "canine",
+                  "type": "string"
+                }
+              }
+            }
+            ],
+            "P279": [
+            {
+              "id": "Q61$createP279",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P279",
+                "hash": "Q61$createP279changedatatype",
+                "datavalue": {
+                  "value": {
+                    "entity-type": "item",
+                    "id": "Q149892",
+                    "numeric-id": 149892
+                  },
+                  "type": "wikibase-entityid"
+                }
+              }
+            }],
+            "P1": [
+              {
+                "id": "Q61$new_valueP1",
+                "type": "statement",
+                "rank": "normal",
+                "mainsnak": {
+                  "snaktype": "value",
+                  "property": "P1",
+                  "hash": "Q61$update2P1",
+                  "datavalue": {
+                    "value": {
+                      "amount": "+4",
+                      "upperBound": "+6",
+                      "lowerBound": "+1",
+                      "unit": "http://www.wikidata.org/entity/Q71226"
+                    },
+                    "type": "quantity"
+                  }
+                }
+              }
+            ],
+            "P3" : [
+            {
+              "id": "Q61$new_valueP3",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$new_valueP3",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-01T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q198527"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ],
+            "P4" : [
+            {
+              "id": "Q61$P4",
+              "type": "statement",
+              "rank": "normal",
+              "mainsnak": {
+                "snaktype": "value",
+                "property": "P2",
+                "hash": "Q61$change_datatype_againP4",
+                "datavalue" : {
+                  "value": {
+                    "time": "+2001-12-01T00:00:00Z",
+                    "timezone": 0,
+                    "before": 0,
+                    "after": 0,
+                    "precision": 12,
+                    "calendarmodel": "http://www.wikidata.org/entity/Q198527"
+                  },
+                  "type": "time"
+                }
+              }
+            }
+            ]
+          }
+        }
+      </text>
+    </revision>
+
   </page>
 </mediawiki>
