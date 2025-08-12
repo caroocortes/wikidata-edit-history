@@ -133,7 +133,7 @@ class PageParser(ContentHandler):
                     if 'id' in value_json:
                         value = value_json.get('id')
                     else:
-                        value = 'Q' + value_json.get('numeric-id')
+                        value = 'Q' + str(value_json.get('numeric-id'))
             else:
                 value = value_json
 
