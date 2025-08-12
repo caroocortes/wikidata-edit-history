@@ -12,8 +12,7 @@ from scripts.utils import initialize_csv_files
 
 class DumpParser(xml.sax.ContentHandler):
     def __init__(self, max_workers=None):
-
-        self.entity_file_path, _,_ = initialize_csv_files()
+        self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
         
         self.set_initial_state()  
         self.entities = []   

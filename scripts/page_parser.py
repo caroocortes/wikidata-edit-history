@@ -10,7 +10,6 @@ from scripts.utils import initialize_csv_files
 class PageParser(ContentHandler):
     def __init__(self):
         # TODO: remove this since it will be save in a DB
-        _, self.change_file_path, self.revision_file_path = initialize_csv_files()
         self.changes = []
         self.revision = []
         self.set_initial_state()    
