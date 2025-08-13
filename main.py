@@ -56,7 +56,7 @@ def process_file(input_bz2, dump_dir, parser):
     size = os.path.getsize(file_path)
 
     logging.info(
-        f"Processed {input_bz2} in {process_time:.2f} seconds.\t"
+        f"Processed {input_bz2} in {process_time} seconds.\t"
         f"Process information: \t"
         f"{base} size: {human_readable_size(size):.2f} MB\t"
         f"Number of entities: {len(handler.entities)}\t"
