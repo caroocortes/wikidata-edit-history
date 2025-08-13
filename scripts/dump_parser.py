@@ -4,6 +4,7 @@ import io
 import re
 import concurrent.futures
 import multiprocessing
+from concurrent.futures import wait, as_completed
 from xml.sax.saxutils import escape
 
 from scripts.page_parser import PageParser
@@ -212,10 +213,12 @@ class DumpParser(xml.sax.ContentHandler):
                 future = self.executor.submit(process_page_xml, raw_page_xml)
                 self.futures.append(future)
 
-                if len(self.futures) >= 20: # limits number of running tasks at a time
+                if len(self.futures) >= 15: # limits number of running tasks at a time
+                    print('waiting for futures to complete')
+                    wait(self.futures)
                     batch_changes = []
                     batch_revisions = []
-                    for f in self.futures:
+                    for f in as_completed(self.futures):
                         entity_id, entity_label, changes, revisions = f.result()
                         batch_revisions.extend(revisions)
                         batch_changes.extend(changes)
