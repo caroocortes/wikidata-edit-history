@@ -6,7 +6,6 @@ import os
 import csv
 import time
 from pathlib import Path
-from os.path import join, dirname
 from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import execute_batch
@@ -330,3 +329,14 @@ def create_db_schema():
 
     except Exception as e:
         print(f'Error when saving or connecting to DB: {e}')
+
+
+if "__main__":
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS, 
+        host="localhost",
+        port="5432"
+    )
+    insert_rows(conn, 'Entity', [{'id': '1', 'label': 'prueba'}])
