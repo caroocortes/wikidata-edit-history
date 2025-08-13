@@ -1,13 +1,12 @@
 import xml.sax
 import pandas as pd
 import io
-
+import re
 import concurrent.futures
 import multiprocessing
 
 from scripts.page_parser import PageParser
 from scripts.const import *
-
 from scripts.utils import initialize_csv_files
 
 class DumpParser(xml.sax.ContentHandler):
@@ -49,7 +48,15 @@ class DumpParser(xml.sax.ContentHandler):
         })
 
         return handler.changes, handler.revision
-    
+
+    @staticmethod
+    def fix_invalid_xml_chars(s):
+        # Escape bare ampersands
+        s = re.sub(r'&(?![a-zA-Z]+;|#[0-9]+;|#x[0-9A-Fa-f]+;)', '&amp;', s)
+        # Remove control chars not allowed in XML 1.0
+        s = re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD]', '', s)
+        return s
+
     @staticmethod
     def _serialize_start_tag(name, attrs):
         """Convert a start tag and its attributes into an XML string."""
@@ -85,12 +92,14 @@ class DumpParser(xml.sax.ContentHandler):
         """ 
             Called when parser finds text inside tags (e.g. <title>Q12</title>)
         """
+        
+        clean_content = DumpParser.fix_invalid_xml_chars(content)
 
         if self.in_title :
-            self.entity_id += content
+            self.entity_id += clean_content
         
         if self.in_page and self.keep:
-            self.page_buffer.append(content)
+            self.page_buffer.append(clean_content)
 
     def endElement(self, name):
         """ 
