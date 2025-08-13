@@ -10,6 +10,36 @@ from scripts.page_parser import PageParser
 from scripts.const import *
 from scripts.utils import initialize_csv_files
 
+def process_page_xml(page_xml_str):
+    parser = xml.sax.make_parser()
+    
+    handler = PageParser()
+    parser.setContentHandler(handler)
+    
+    try:
+        # Parse page content (revisions)
+
+        parser.parse(io.StringIO(page_xml_str))
+
+        return handler.entity_id, handler.entity_label, handler.changes, handler.revision
+    except xml.sax.SAXParseException as e:
+        print('ERROR IN PAGE PARSER')
+        err_line = e.getLineNumber()
+        err_col = e.getColumnNumber()
+
+        print(f"Error at line {err_line}, column {err_col}")
+
+        all_lines = page_xml_str.splitlines()
+        start = max(err_line - 4, 0)  # 2 lines before
+        end = min(err_line + 1, len(all_lines))  # 1 line after
+
+        print("\n--- XML snippet around error ---")
+        for i in range(start, end):
+            prefix = ">>" if i + 1 == err_line else "  "
+            print(f"{prefix} Line {i+1}: {all_lines[i]}")
+        print("-------------------------------")
+        raise e
+
 class DumpParser(xml.sax.ContentHandler):
     def __init__(self, max_workers=None):
         self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
@@ -40,7 +70,7 @@ class DumpParser(xml.sax.ContentHandler):
         self.in_contributor = False          # True if inside a <contributor> block
         self.in_contributor_username = False # True if inside the contributor's <username>
         
-    def process_page_xml(self, page_xml_str):
+    def process_page_xml_class(self, page_xml_str):
         parser = xml.sax.make_parser()
     
         handler = PageParser()
@@ -179,7 +209,7 @@ class DumpParser(xml.sax.ContentHandler):
                 self.page_buffer.clear()
                 # Submit the page processing to worker
                 print(f'Submitted process_page_xml for entity_id {self.entity_id}')
-                future = self.executor.submit(self.process_page_xml, raw_page_xml)
+                future = self.executor.submit(process_page_xml, raw_page_xml)
                 self.futures.append(future)
 
                 if len(self.futures) >= 20: # limits number of running tasks at a time
