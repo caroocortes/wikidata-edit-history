@@ -49,6 +49,7 @@ class DumpParser(xml.sax.ContentHandler):
 
         return handler.changes, handler.revision
 
+    # TODO: some <text></text> return a parsing error
     @staticmethod
     def fix_invalid_xml_chars(s):
         # Escape bare ampersands
@@ -92,14 +93,12 @@ class DumpParser(xml.sax.ContentHandler):
         """ 
             Called when parser finds text inside tags (e.g. <title>Q12</title>)
         """
-        
-        clean_content = DumpParser.fix_invalid_xml_chars(content)
 
         if self.in_title :
-            self.entity_id += clean_content
+            self.entity_id += content
         
         if self.in_page and self.keep:
-            self.page_buffer.append(clean_content)
+            self.page_buffer.append(content)
 
     def endElement(self, name):
         """ 
