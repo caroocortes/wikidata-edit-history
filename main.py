@@ -3,11 +3,39 @@ import xml.sax
 import time
 import bz2
 import logging
+import re
 from argparse import ArgumentParser
 from pathlib import Path
 
 from scripts.utils import human_readable_size
 from scripts.dump_parser import DumpParser
+
+class CleanXMLStream:
+    def __init__(self, f):
+        self.f = f
+
+    def readline(self):
+        line = self.f.readline()
+        if not line:
+            return ""
+        # Escape bare &
+        line = re.sub(r'&(?![a-zA-Z]+;|#[0-9]+;|#x[0-9A-Fa-f]+;)', '&amp;', line)
+        # Remove illegal XML 1.0 characters
+        line = re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD]', '', line)
+        return line
+
+    def read(self, size=-1):
+        # Fallback if parser uses read() instead of readline()
+        return ''.join(iter(self.readline, ''))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        line = self.readline()
+        if line == "":
+            raise StopIteration
+        return line
 
 def process_file(input_bz2, dump_dir, parser):
     file_path = os.path.join(dump_dir, input_bz2)
@@ -24,7 +52,7 @@ def process_file(input_bz2, dump_dir, parser):
     start_process = time.time()
     with bz2.open(file_path, 'rt', encoding='utf-8') as in_f:
         try:
-            parser.parse(in_f)
+            parser.parse(CleanXMLStream(in_f))
         except xml.sax.SAXParseException as e:
             print(f"Parsing error: {e}")
 
