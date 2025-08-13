@@ -117,7 +117,7 @@ class PageParser(ContentHandler):
             datatype_metadata = {}
 
             if isinstance(value_json, dict):
-                # complex datatypes - time, quantity, globecoordinate
+                # complex datatypes - time, quantity, globecoordinate, monolingualtext
                 # we consider entity as a simple type
                 if datatype == 'globecoordinate':
                     value = {
@@ -126,7 +126,9 @@ class PageParser(ContentHandler):
                     }
                 if datatype != 'wikibase-entityid':
                     for k, v in value_json.items():
-                        if k not in ("time", "amount", "latitude", "longitude", "altitude", "before", "after"): # altitude (DEPRECATED), before and after (UNUSED)
+                        # time, amount, text, latitude, longitude hold the actual value of time, quantity, 
+                        # monolingualtext and globecoordinate datatypes, the rest is metadata
+                        if k not in ("time", "amount", "text", "latitude", "longitude", "altitude", "before", "after"): # altitude (DEPRECATED), before and after (UNUSED)
                             datatype_metadata[k] = v
                         else:
                             if datatype != 'globecoordinate' and k not in ("altitude", "before", "after"):
@@ -134,7 +136,7 @@ class PageParser(ContentHandler):
                 else:
                     if 'id' in value_json:
                         value = value_json.get('id')
-                    else:
+                    else: # not all entities have numeric-id or id
                         value = 'Q' + str(value_json.get('numeric-id'))
             else:
                 value = value_json

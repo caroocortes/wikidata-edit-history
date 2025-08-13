@@ -51,13 +51,7 @@ class DumpParser(xml.sax.ContentHandler):
 
             parser.parse(io.StringIO(page_xml_str))
 
-            # Update with new entity
-            self.entities.append({
-                'entity_id': handler.entity_id,
-                'label': handler.entity_label
-            })
-
-            return handler.changes, handler.revision
+            return handler.entity_id, handler.entity_label, handler.changes, handler.revision
         except xml.sax.SAXParseException as e:
             print('ERROR IN PAGE PARSER')
             err_line = e.getLineNumber()
@@ -192,9 +186,15 @@ class DumpParser(xml.sax.ContentHandler):
                     batch_changes = []
                     batch_revisions = []
                     for f in self.futures:
-                        changes, revisions = f.result()
+                        entity_id, entity_label, changes, revisions = f.result()
                         batch_revisions.extend(revisions)
                         batch_changes.extend(changes)
+
+                        # Update with new entity
+                        self.entities.append({
+                            'entity_id': entity_id,
+                            'label': entity_label
+                        })
 
                         if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
                             print('save to file or db')
