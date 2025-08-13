@@ -4,6 +4,7 @@ import json
 import pandas as pd
 import time
 import re
+from xml.sax.saxutils import escape
 
 from scripts.const import *
 from scripts.utils import initialize_csv_files
@@ -155,14 +156,6 @@ class PageParser(ContentHandler):
             return val
         # everything else -> dump as JSON string
         return json.dumps(str(val))
-
-    @staticmethod
-    def fix_invalid_xml_chars(s):
-        # Escape bare ampersands
-        s = re.sub(r'&(?![a-zA-Z]+;|#[0-9]+;|#x[0-9A-Fa-f]+;)', '&amp;', s)
-        # Remove control chars not allowed in XML 1.0
-        s = re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD]', '', s)
-        return s
 
     def change_json(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type):
         return {
@@ -562,36 +555,35 @@ class PageParser(ContentHandler):
         """ 
             Called when parser finds text inside tags (e.g. <title>Q12</title>)
         """
-        clean_content = PageParser.fix_invalid_xml_chars(content)
         if self.in_revision:
 
             if 'entity_id' not in self.revision_meta:
                 self.revision_meta['entity_id'] = self.entity_id
 
             if self.in_revision_id:
-                self.revision_meta['revision_id'] = clean_content
+                self.revision_meta['revision_id'] = content
             
             if self.in_comment:
                 if not 'comment' in self.revision_meta:
                     self.revision_meta['comment'] = ''
-                self.revision_meta['comment'] += clean_content
+                self.revision_meta['comment'] += content
             
             if self.in_timestamp:
-                self.revision_meta['timestamp'] = clean_content
+                self.revision_meta['timestamp'] = content
             
             if self.in_contributor_id or self.in_contributor_username:
                 if 'user' not in self.revision_meta:
                     self.revision_meta.setdefault('user', '')
-                    self.revision_meta['user'] = clean_content
+                    self.revision_meta['user'] = content
                 else:
-                    self.revision_meta['user'] += ' - ' + clean_content
+                    self.revision_meta['user'] += ' - ' + content
 
             if self.in_revision_text:
-                self.revision_text += clean_content
+                self.revision_text += content
 
         if self.in_title:
             self.start_time_entity = time.time() # TODO: remove
-            self.entity_id += clean_content
+            self.entity_id += content
         
     def endElement(self, name):
         """ 

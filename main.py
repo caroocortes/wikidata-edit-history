@@ -10,7 +10,7 @@ from pathlib import Path
 from scripts.utils import human_readable_size
 from scripts.dump_parser import DumpParser
 
-def process_file(input_bz2, dump_dir, parser):
+def process_file(input_bz2, dump_dir, parser, handler):
     file_path = os.path.join(dump_dir, input_bz2)
     base = input_bz2.replace(".xml", "").replace(".bz2", "")
 
@@ -23,11 +23,11 @@ def process_file(input_bz2, dump_dir, parser):
 
     print(f"Processing: {input_bz2}")
     start_process = time.time()
-    with bz2.open(file_path, 'rt') as in_f:
+    with bz2.open(file_path, 'rt', encoding='utf-8') as in_f:
         try:
             parser.parse(in_f)
         except xml.sax.SAXParseException as e:
-            print(f"Parsing error: {e}")
+            print(f"Parsing error in DumpParser: {e}")
 
             # Get the error position
             err_line = e.getLineNumber()
@@ -36,10 +36,10 @@ def process_file(input_bz2, dump_dir, parser):
             print(f"Error at line {err_line}, column {err_col}")
 
             # Reopen the file and get surrounding lines
-            with bz2.open(file_path, 'rt', encoding='utf-8', errors='replace') as f_err:
+            with bz2.open(file_path, 'rt', encoding='utf-8') as f_err:
                 lines = []
                 for i, line in enumerate(f_err, start=1):
-                    if i >= err_line - 10 and i <= err_line + 3:  # 2 lines before, 1 after
+                    if i >= err_line - 14 and i <= err_line + 4:  # 2 lines before, 2 after
                         lines.append((i, line.rstrip("\n")))
                     if i > err_line + 1:
                         break
@@ -60,7 +60,7 @@ def process_file(input_bz2, dump_dir, parser):
         f"Process information: \t"
         f"{base} size: {human_readable_size(size)} MB\t"
         f"Number of entities: {len(handler.entities)}\t"
-        f"Entities: {','.join(handler.entities)}\t"
+        f"Entities: {','.join([e['entity_id'] for e in handler.entities])}\t"
     )
 
 arg_parser = ArgumentParser()
@@ -75,17 +75,17 @@ if not dump_dir.exists():
     print("The dump directory doesn't exist")
     raise SystemExit(1)
 
-handler = DumpParser(max_workers=1)
+handler = DumpParser()
 parser = xml.sax.make_parser()
 parser.setContentHandler(handler)
 
 if args.file:
     input_bz2 = args.file
-    process_file(input_bz2, dump_dir, parser)
+    process_file(input_bz2, dump_dir, parser, handler)
 else:
 
     all_files = [f for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
     files_to_parse = all_files[:args.number_files] if args.number_files else all_files
 
     for input_bz2 in all_files:
-        process_file(input_bz2, dump_dir, parser)
+        process_file(input_bz2, dump_dir, parser, handler)

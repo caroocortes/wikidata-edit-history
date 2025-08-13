@@ -4,6 +4,7 @@ import io
 import re
 import concurrent.futures
 import multiprocessing
+from xml.sax.saxutils import escape
 
 from scripts.page_parser import PageParser
 from scripts.const import *
@@ -18,7 +19,7 @@ class DumpParser(xml.sax.ContentHandler):
         self.futures = []  
 
         if max_workers is None:
-            max_workers = multiprocessing.cpu_count() - 5
+            max_workers = multiprocessing.cpu_count() - 8
             print('Number of workers to use: ', max_workers)
 
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
@@ -31,6 +32,13 @@ class DumpParser(xml.sax.ContentHandler):
         self.in_title = False                 # True if inside a <title> tag
         self.in_page = False                  # True if inside a <page> block
         self.keep = False                     # if True, keep the current page information
+
+        self.in_revision = False             # True if inside a <revision> block
+        self.in_revision_id = False          # True if inside the <id> of a revision
+        self.in_comment = False              # True if inside the <comment> tag of a revision
+
+        self.in_contributor = False          # True if inside a <contributor> block
+        self.in_contributor_username = False # True if inside the contributor's <username>
         
     def process_page_xml(self, page_xml_str):
         parser = xml.sax.make_parser()
@@ -38,25 +46,36 @@ class DumpParser(xml.sax.ContentHandler):
         handler = PageParser()
         parser.setContentHandler(handler)
         
-        # Parse page content (revisions)
-        parser.parse(io.StringIO(page_xml_str))
+        try:
+            # Parse page content (revisions)
 
-        # Update with new entity
-        self.entities.append({
-            'entity_id': handler.entity_id,
-            'label': handler.entity_label
-        })
+            parser.parse(io.StringIO(page_xml_str))
 
-        return handler.changes, handler.revision
+            # Update with new entity
+            self.entities.append({
+                'entity_id': handler.entity_id,
+                'label': handler.entity_label
+            })
 
-    # TODO: some <text></text> return a parsing error
-    @staticmethod
-    def fix_invalid_xml_chars(s):
-        # Escape bare ampersands
-        s = re.sub(r'&(?![a-zA-Z]+;|#[0-9]+;|#x[0-9A-Fa-f]+;)', '&amp;', s)
-        # Remove control chars not allowed in XML 1.0
-        s = re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD]', '', s)
-        return s
+            return handler.changes, handler.revision
+        except xml.sax.SAXParseException as e:
+            print('ERROR IN PAGE PARSER')
+            err_line = e.getLineNumber()
+            err_col = e.getColumnNumber()
+
+            print(f"Error at line {err_line}, column {err_col}")
+
+            all_lines = page_xml_str.splitlines()
+            start = max(err_line - 4, 0)  # 2 lines before
+            end = min(err_line + 1, len(all_lines))  # 1 line after
+
+            print("\n--- XML snippet around error ---")
+            for i in range(start, end):
+                prefix = ">>" if i + 1 == err_line else "  "
+                print(f"{prefix} Line {i+1}: {all_lines[i]}")
+            print("-------------------------------")
+            raise e
+
 
     @staticmethod
     def _serialize_start_tag(name, attrs):
@@ -86,6 +105,20 @@ class DumpParser(xml.sax.ContentHandler):
             self.in_title = True
             self.page_buffer.append(DumpParser._serialize_start_tag(name, attrs))
 
+        if name == 'revision':
+            self.in_revision = True
+
+        # Fields whose content needs to be escaped because of &, <, > (not valid XML)
+        if self.in_revision:
+            if name == 'comment':
+                self.in_comment = True
+            elif name == 'contributor':
+                self.in_contributor = True
+
+        if self.in_contributor:
+            if name == 'username':
+                self.in_contributor_username = True
+
         if self.in_page and self.keep:
             self.page_buffer.append(DumpParser._serialize_start_tag(name, attrs))
 
@@ -97,8 +130,12 @@ class DumpParser(xml.sax.ContentHandler):
         if self.in_title :
             self.entity_id += content
         
+        if self.in_revision: # Comment and Username aren't escaped (like <text></text> is) so it raises errors with the XML parser
+            if self.in_comment or self.in_contributor_username:
+                content = escape(content)
+
         if self.in_page and self.keep:
-            self.page_buffer.append(content)
+            self.page_buffer.append(escape(content))
 
     def endElement(self, name):
         """ 
@@ -116,9 +153,16 @@ class DumpParser(xml.sax.ContentHandler):
                 self.executor.shutdown(wait=True)
             else:
                 return
-        
-        if self.in_page and self.keep:
-            self.page_buffer.append(DumpParser._serialize_end_tag(name))
+            
+        if self.in_revision:
+            if name == 'comment': # at </comment>
+                self.in_comment = False
+            elif name == 'contributor': # at </contributor>
+                self.in_contributor = False
+
+        if self.in_contributor:
+            if name == 'username': # at </username> inside of <contributor></contributor>
+                self.in_contributor_username = False
         
         if name == 'title' and self.entity_id.startswith("Q"): # at </title> 
             # If the page title starts with Q, we process the revision
@@ -126,17 +170,17 @@ class DumpParser(xml.sax.ContentHandler):
             self.keep = True
             self.in_title = False
             self.page_buffer.append(self.entity_id) # save entity_id
-            self.page_buffer.append(DumpParser._serialize_end_tag(name)) # save </title> tag
 
         elif name =='title' and not self.entity_id.startswith("Q"):
             print(f'Not keeping page {self.entity_id}')
-            self.set_initial_state() # sets buffer to []
-            self.in_page = True # reset that I'm still inside the page
         
+        # saves all end tags for the page if it's kept
+        if self.in_page and self.keep:
+            self.page_buffer.append(DumpParser._serialize_end_tag(name))
+
         if name == 'page': # at </page>
             if self.keep:
-
-                self.page_buffer.append(DumpParser._serialize_end_tag(name)) # save </page> tag
+                # NOTE: </page> is save in previous if
                 raw_page_xml = ''.join(self.page_buffer)
                 self.page_buffer.clear()
                 # Submit the page processing to worker
@@ -173,6 +217,6 @@ class DumpParser(xml.sax.ContentHandler):
 
                     self.futures.clear()
 
-            # Reset state
+            # Reset state because I reached a </page>
             self.set_initial_state()
 
