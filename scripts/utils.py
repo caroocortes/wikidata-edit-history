@@ -6,7 +6,17 @@ import os
 import csv
 import time
 from pathlib import Path
+from os.path import join, dirname
+from dotenv import load_dotenv
+import psycopg2
+from psycopg2.extras import execute_batch
 
+dotenv_path = '../.env'
+load_dotenv(dotenv_path)
+
+DB_USER = os.environ.get("DB_USER")
+DB_PASS = os.environ.get("DB_PASS")
+DB_NAME = os.environ.get("DB_NAME")
 
 def human_readable_size(size, decimal_places=2):
     for unit in ['B','KB','MB','GB','TB']:
@@ -229,6 +239,26 @@ def fetch_entity_types():
     pd.DataFrame(entities).to_csv(entity_file_path, index=False)
     print(f"Saved {len(entities)} entity-class pairs to '{entity_file_path}'")
 
+def insert_rows(conn, table_name, rows):
+    if not rows:
+        return
+
+    columns = list(rows[0].keys())
+    col_names = ', '.join(columns)
+    placeholders = ', '.join(['%s'] * len(columns))
+
+    query = f"""
+        INSERT INTO {table_name} ({col_names})
+        VALUES ({placeholders})
+        ON CONFLICT DO NOTHING
+    """
+    
+    values = [tuple(row[col] for col in columns) for row in rows]
+
+    with conn.cursor() as cur:
+        execute_batch(cur, query, values)
+    conn.commit()
+
 def create_db_schema():
 
     query = """
@@ -259,7 +289,7 @@ def create_db_schema():
         CREATE TABLE Revision (
             Revision_Id TEXT,
             Entity_Id TEXT,
-            Timestamp TIMESTAMP,
+            Timestamp TIMESTAMP WITH TIME ZONE,
             User_Id TEXT,
             Comment TEXT,
             PRIMARY KEY (Revision_Id, Entity_Id)
@@ -271,24 +301,21 @@ def create_db_schema():
             Property_Id TEXT,
             SubValue_Key TEXT,
             Value_Id TEXT,
-            Old_Value TEXT,
-            New_Value TEXT,
+            Old_Value JSONB,
+            New_Value JSONB,
             Datatype TEXT,
             Datatype_Metadata TEXT,
             Change_Type TEXT,
             PRIMARY KEY (Revision_Id, Property_Id, SubValue_Key, Value_Id, Datatype_Metadata)
             FOREIGN KEY (Revision_Id) REFERENCES Revision(Revision_Id),
-            FOREIGN KEY (Property_Id) REFERENCES Property(Id)
         );
     """
     try:
-        # TODO: maybe need a handler to do this?
-        # TODO: change this
-        print('Connection wont work since the connection params are not correct. Change them in utils.py - create_db_schema :)')
+        # TODO: maybe need to open a single connection and use it to save things
         conn = psycopg2.connect(
-            dbname="your_dbname",
-            user="your_username",
-            password="your_password", 
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS, 
             host="localhost",
             port="5432"
         )

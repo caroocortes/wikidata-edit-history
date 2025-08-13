@@ -1,15 +1,17 @@
 import xml.sax
 import pandas as pd
 import io
-import re
 import concurrent.futures
 import multiprocessing
 from concurrent.futures import wait, as_completed
 from xml.sax.saxutils import escape
+import psycopg2
+from dotenv import load_dotenv
+import os
 
 from scripts.page_parser import PageParser
 from scripts.const import *
-from scripts.utils import initialize_csv_files
+from scripts.utils import initialize_csv_files, insert_rows
 
 def process_page_xml(page_xml_str):
     parser = xml.sax.make_parser()
@@ -43,7 +45,22 @@ def process_page_xml(page_xml_str):
 
 class DumpParser(xml.sax.ContentHandler):
     def __init__(self, max_workers=None):
-        self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
+        # self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
+
+        dotenv_path = '../.env'
+        load_dotenv(dotenv_path)
+
+        DB_USER = os.environ.get("DB_USER")
+        DB_PASS = os.environ.get("DB_PASS")
+        DB_NAME = os.environ.get("DB_NAME")
+
+        self.conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS, 
+            host="localhost",
+            port="5432"
+        )
         
         self.set_initial_state()  
         self.entities = []   
@@ -172,8 +189,10 @@ class DumpParser(xml.sax.ContentHandler):
                 print(f"Finished processing file with {len(self.entities)} entities")
 
                 # TODO: change to save to DB
-                df_entities = pd.DataFrame(self.entities)
-                df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
+                # df_entities = pd.DataFrame(self.entities)
+                # df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
+
+                insert_rows(self.conn, 'Entity', self.entities)
 
                 self.executor.shutdown(wait=True)
             else:
@@ -209,7 +228,7 @@ class DumpParser(xml.sax.ContentHandler):
                 raw_page_xml = ''.join(self.page_buffer)
                 self.page_buffer.clear()
                 # Submit the page processing to worker
-                print(f'Submitted process_page_xml for entity_id {self.entity_id}')
+
                 future = self.executor.submit(process_page_xml, raw_page_xml)
                 self.futures.append(future)
 
@@ -225,28 +244,31 @@ class DumpParser(xml.sax.ContentHandler):
 
                         # Update with new entity
                         self.entities.append({
-                            'entity_id': entity_id,
+                            'id': entity_id,
                             'label': entity_label
                         })
 
                         if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
-                            print('save to file or db')
 
-                            df_changes = pd.DataFrame(batch_changes)
-                            df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+                            # df_changes = pd.DataFrame(batch_changes)
+                            # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
 
-                            df_revisions = pd.DataFrame(batch_revisions)
-                            df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+                            # df_revisions = pd.DataFrame(batch_revisions)
+                            # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
 
-                    if batch_changes:
-                        print('Save remaining changes (if limit was never reached)')
-                        df_changes = pd.DataFrame(batch_changes)
-                        df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+                            insert_rows(self.conn, 'Revision', batch_revisions)
+
+                            insert_rows(self.conn, 'Change', batch_changes)
 
                     if batch_revisions:
-                        print('Save remaining revisions (if limit was never reached)')
-                        df_revisions = pd.DataFrame(batch_revisions)
-                        df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+                        # df_revisions = pd.DataFrame(batch_revisions)
+                        # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+                        insert_rows(self.conn, 'Revision', batch_revisions)
+
+                    if batch_changes:
+                        # df_changes = pd.DataFrame(batch_changes)
+                        # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+                        insert_rows(self.conn, 'Change', batch_changes)
 
                     self.futures.clear()
 
