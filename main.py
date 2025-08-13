@@ -28,9 +28,32 @@ def process_file(input_bz2, dump_dir, parser):
         except xml.sax.SAXParseException as e:
             print(f"Parsing error: {e}")
 
+            # Get the error position
+            err_line = e.getLineNumber()
+            err_col = e.getColumnNumber()
+
+            print(f"Error at line {err_line}, column {err_col}")
+
+            # Reopen the file and get surrounding lines
+            with bz2.open(file_path, 'rt', encoding='utf-8', errors='replace') as f_err:
+                lines = []
+                for i, line in enumerate(f_err, start=1):
+                    if i >= err_line - 2 and i <= err_line + 1:  # 2 lines before, 1 after
+                        lines.append((i, line.rstrip("\n")))
+                    if i > err_line + 1:
+                        break
+
+            print("\n--- XML snippet around error ---")
+            for ln, txt in lines:
+                prefix = ">>" if ln == err_line else "  "
+                print(f"{prefix} Line {ln}: {txt}")
+            print("-------------------------------")
+
+            raise e  # keep raising if you want to stop
+
     end_process = time.time()
     process_time = end_process - start_process
-    size = os.path.getsize(input_bz2)
+    size = os.path.getsize(file_path)
 
     logging.info(
         f"Processed {input_bz2} in {process_time:.2f} seconds.\t"
