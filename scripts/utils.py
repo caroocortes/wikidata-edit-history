@@ -6,6 +6,8 @@ import time
 from pathlib import Path
 import re
 from psycopg2.extras import execute_batch
+import psycopg2
+from psycopg2.extras import execute_values
 
 def human_readable_size(size, decimal_places=2):
     for unit in ['B','KB','MB','GB','TB']:
@@ -285,6 +287,50 @@ def insert_rows(conn, table_name, rows, columns):
         print("\nOriginal batch insert error:")
         print(e)
 
+def load_csv_to_db(csv_path, table_name):
+    """
+        Stores csv in BD
+        CSV column names must match the column names in the table
+    """
+    
+    # Load CSV
+    df = pd.read_csv(csv_path, dtype=str)
+    
+    # Prepare data for insertion
+    cols = list(df.columns)
+    values = [tuple(x) for x in df.to_numpy()]
+    
+    # Build INSERT statement
+    cols_str = ', '.join(cols)
+    placeholders = ', '.join(['%s'] * len(cols))
+    insert_query = f"INSERT INTO {table_name} ({cols_str}) VALUES ({placeholders}) ON CONFLICT DO NOTHING;"
+    
+    # Connect and insert
+    DB_USER = os.environ.get("DB_USER")
+    DB_PASS = os.environ.get("DB_PASS")
+    DB_NAME = os.environ.get("DB_NAME")
+    DB_HOST = os.environ.get("DB_HOST")
+    DB_PORT = os.environ.get("DB_PORT")
+
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS, 
+        host=DB_HOST,
+        port=DB_PORT
+    )
+    cur = conn.cursor()
+    try:
+        execute_values(cur, insert_query, values)
+        conn.commit()
+        print(f"Inserted {len(values)} rows into {table_name}.")
+    except Exception as e:
+        conn.rollback()
+        print("Error inserting data:", e)
+    finally:
+        cur.close()
+        conn.close()
+
 def create_db_schema(conn):
 
     query = """
@@ -346,3 +392,6 @@ def create_db_schema(conn):
 
     except Exception as e:
         print(f'Error when saving or connecting to DB: {e}')
+
+if "__main__":
+    load_csv_to_db('../data/property.csv', 'property')

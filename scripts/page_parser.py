@@ -243,21 +243,6 @@ class PageParser(ContentHandler):
                 else: 
                     change_magnitude = None
 
-                if self.revision_id == '2230711552' and self.entity_id == 'Q11084186':
-                    print('EL CHANGE DE LA REVISION 2230711552 PARA LA ENTITY Q11084186 !!!!!!!!!!!!!!!!!')
-                    
-                    print(self.change_json(
-                        property_id,
-                        value_id=datavalue_id,
-                        old_value=old_meta,
-                        new_value=new_meta,
-                        datatype=new_datatype,
-                        datatype_metadata=key,
-                        change_type=change_type, 
-                        change_magnitude=change_magnitude
-                    ))
-                    print('la datatype_metadata!!!')
-
                 if old_meta != new_meta: # save only what changed
                     changes.append(self.change_json(
                         property_id,
@@ -497,17 +482,9 @@ class PageParser(ContentHandler):
         for removed_pid in removed_pids:
             prev_statements = prev_claims.get(removed_pid, [])
 
-            if removed_pid == 'P1538':
-                print('EL STATEMENT DE LA PROPERTY P1538 !!!!!!!!!!!!!!!!!')
-                print(prev_statements)
-
             for s in prev_statements:
                 old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(s)
-                if removed_pid == 'P1538':
-                    print('EL OLD_VALUE DE LA PROPERTY P1538 :', old_value)
-                    print('EL OLD_DATATYPE DE LA PROPERTY P1538 :', old_datatype)
-                    print('EL OLD_DATATYPE_METADATA DE LA PROPERTY P1538 :', old_datatype_metadata)
-                
+
                 datavalue_id = s.get('id', None)
 
                 changes.append(self._handle_value_changes(None, None, old_value, datavalue_id, removed_pid, DELETE_PROPERTY))
