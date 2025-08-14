@@ -101,7 +101,7 @@ if "__main__":
         if input_bz2 in processed_files:
             print(f"{input_bz2} has already been processed. Skipping.")
         else:
-            process_file(os.join(dump_dir, input_bz2))
+            process_file(os.path.join(dump_dir, input_bz2))
             with open(processed_log, "a") as f:
                 f.write(f"{input_bz2}\n")
     else:
