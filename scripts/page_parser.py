@@ -531,10 +531,10 @@ class PageParser(ContentHandler):
                         # Datatype change -> value and metadata change
                         if old_datatype == new_datatype and old_datatype != 'wikibase-entityid':
                             # only value change
-                            print(new_datatype_metadata)
-                            print(new_value)
-                            print(old_value)
-                            print(new_datatype)
+                            print('PRINT EL NEW DATATYPE ', new_datatype_metadata)
+                            print('EL NEW VALUE', new_value)
+                            print('EL OLD VALUE', old_value)
+                            print('EL DATATYPE', new_datatype)
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
                             changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, change_magnitude=change_magnitude))
                         else:
