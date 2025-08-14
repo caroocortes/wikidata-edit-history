@@ -211,6 +211,9 @@ class PageParser(ContentHandler):
         return json.dumps(str(val))
 
     def change_json(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type, change_magnitude=None):
+        
+        old_value = old_value if old_value else ''
+        new_value = new_value if new_value else ''
         return (
             self.revision_meta['revision_id'] if self.revision_meta['revision_id'] else '',
             self.entity_id if self.entity_id else '',
@@ -624,8 +627,11 @@ class PageParser(ContentHandler):
             if 'entity_id' not in self.revision_meta:
                 self.revision_meta['entity_id'] = self.entity_id
 
+            # always accumulate because the parser can split strings (content doesn't have the whole text inside the tags)
             if self.in_revision_id:
-                self.revision_meta['revision_id'] = content
+                if not 'revision_id' in self.revision_meta:
+                    self.revision_meta['revision_id'] = ''
+                self.revision_meta['revision_id'] += content
             
             if self.in_comment:
                 if not 'comment' in self.revision_meta:
@@ -633,14 +639,20 @@ class PageParser(ContentHandler):
                 self.revision_meta['comment'] += content
             
             if self.in_timestamp:
-                self.revision_meta['timestamp'] = content
+                if not 'timestamp' in self.revision_meta:
+                    self.revision_meta['timestamp'] = ''
+                self.revision_meta['timestamp'] += content
             
             if self.in_contributor_id or self.in_contributor_username:
-                if 'user_info' not in self.revision_meta:
-                    self.revision_meta.setdefault('user_info', '')
-                    self.revision_meta['user_info'] = content
+                if 'user_id' not in self.revision_meta:
+                    self.revision_meta['user_id'] = ''
                 else:
-                    self.revision_meta['user_info'] += ' - ' + content
+                    self.revision_meta['user_id'] += content
+                
+                if 'username' not in self.revision_meta:
+                    self.revision_meta['username'] = ''
+                else:
+                    self.revision_meta['username'] += content
 
             if self.in_revision_text:
                 self.revision_text += content
@@ -691,7 +703,8 @@ class PageParser(ContentHandler):
                     self.revision_meta.get('revision_id', ''),
                     self.revision_meta.get('entity_id', ''),
                     self.revision_meta.get('timestamp', ''),
-                    self.revision_meta.get('user_info', ''),
+                    self.revision_meta.get('username', ''),
+                    self.revision_meta.get('user_id', ''),
                     self.revision_meta.get('comment', '')
                 )
                 self.revision.append(revision_meta)

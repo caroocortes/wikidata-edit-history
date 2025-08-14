@@ -258,11 +258,34 @@ def insert_rows(conn, table_name, rows, columns):
                 conn.commit()
             except Exception as e_row:
                 conn.rollback()
-                bad_rows.append(row)
+                bad_rows.append((row, str(e_row)))
 
-        print("Problematic rows:")
-        for br in bad_rows:
-            print(br)
+                # Try to parse PK columns from the error
+                # Example error: duplicate key value violates unique constraint "entity_pkey"
+                # DETAIL: Key (revision_id, entity_id)=(123, 'abc') already exists.
+                match = re.search(r"Key \((.*?)\)=\((.*?)\)", str(e_row))
+                if match:
+                    key_cols = [col.strip() for col in match.group(1).split(',')]
+                    key_vals = [val.strip() for val in match.group(2).split(',')]
+
+                    # Build WHERE clause dynamically
+                    where_clause = ' AND '.join([f"{col} = %s" for col in key_cols])
+                    select_query = f"SELECT * FROM {table_name} WHERE {where_clause}"
+
+                    try:
+                        with conn.cursor() as cur:
+                            cur.execute(select_query, key_vals)
+                            existing = cur.fetchone()
+                            if existing:
+                                print(f"Existing conflicting row for {dict(zip(key_cols, key_vals))}: {existing}")
+                    except Exception as select_err:
+                        print(f"Error checking for existing row: {select_err}")
+
+        print("\nProblematic rows:")
+        for br, err in bad_rows:
+            print(f"{br} -> {err}")
+
+        print("\nOriginal batch insert error:")
         print(e)
 
 def create_db_schema(conn):
