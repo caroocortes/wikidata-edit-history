@@ -11,6 +11,13 @@ import concurrent.futures
 from scripts.utils import human_readable_size
 from scripts.dump_parser import DumpParser
 
+logging.basicConfig(
+    filename=f'parser_log_files.log',
+    filemode='a',
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,
+)
+
 def process_file(file_path):
 
     handler = DumpParser(max_workers=10)
@@ -18,13 +25,6 @@ def process_file(file_path):
     parser.setContentHandler(handler)
     input_bz2 = os.path.basename(file_path)
     base = input_bz2.replace(".xml", "").replace(".bz2", "")
-
-    logging.basicConfig(
-        filename=f'parser_log_{base}.log',
-        filemode='a',
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        level=logging.INFO,
-    )
 
     print(f"Processing: {file_path}")
     start_process = time.time()
