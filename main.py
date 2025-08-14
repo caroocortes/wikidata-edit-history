@@ -20,7 +20,7 @@ logging.basicConfig(
 
 def process_file(file_path):
 
-    handler = DumpParser(max_workers=10)
+    handler = DumpParser()
     parser = xml.sax.make_parser()
     parser.setContentHandler(handler)
     input_bz2 = os.path.basename(file_path)
