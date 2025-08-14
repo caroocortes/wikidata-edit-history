@@ -314,7 +314,7 @@ class PageParser(ContentHandler):
                     datatype_metadata=key,
                     change_type=change_type
                 ))
-
+            
             remaining_keys = big_set - keys_to_skip
             for key in remaining_keys:
                 
@@ -331,7 +331,7 @@ class PageParser(ContentHandler):
                     old_value=old_meta,
                     new_value=new_meta,
                     datatype=new_datatype,
-                    datatype_metadata=key if not big_old else None, # We only want datatype_metadata != None for the new_datatype
+                    datatype_metadata=key,
                     change_type=change_type
                 ))
 
