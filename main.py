@@ -26,7 +26,7 @@ def process_file(file_path):
         level=logging.INFO,
     )
 
-    print(f"Processing: {input_bz2}")
+    print(f"Processing: {file_path}")
     start_process = time.time()
     with bz2.open(file_path, 'rt', encoding='utf-8') as in_f:
         try:
