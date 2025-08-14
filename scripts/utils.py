@@ -398,4 +398,4 @@ def create_db_schema(conn):
         print(f'Error when saving or connecting to DB: {e}')
 
 if "__main__":
-    load_csv_to_db('../data/property.csv', 'property')
+    load_csv_to_db('../data/output_csvs/property.csv', 'property')
