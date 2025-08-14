@@ -1,17 +1,16 @@
 from xml.sax.handler import ContentHandler
 import html
 import json
-import pandas as pd
 import time
-import re
-from xml.sax.saxutils import escape
+
+from datetime import datetime
+import Levenshtein
+from math import radians, cos, sin, asin, sqrt
 
 from scripts.const import *
-from scripts.utils import initialize_csv_files
 
 class PageParser(ContentHandler):
     def __init__(self):
-        # TODO: remove this since it will be save in a DB
         self.changes = []
         self.revision = []
         self.set_initial_state()    
@@ -55,6 +54,53 @@ class PageParser(ContentHandler):
             print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped.')
             raise e
     
+    @staticmethod
+    def haversine_metric(lon1, lat1, lon2, lat2):
+        """
+        Calculate the great circle distance in kilometers between two points 
+        on the earth (specified in decimal degrees)
+        """
+        # convert decimal degrees to radians 
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+        # haversine formula 
+        dlon = lon2 - lon1 
+        dlat = lat2 - lat1 
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * asin(sqrt(a)) 
+        r = 6371 # Radius of earth in kilometers.
+        return c * r
+
+    @staticmethod
+    def magnitude_of_change(old_value, new_value, datatype):
+        
+        if datatype == 'quantity':
+            new_num = float(new_value)
+            old_num = float(old_value)
+            return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
+        
+        if datatype == 'time':
+            try:
+                old_str = str(old_value).lstrip('+').rstrip('Z')
+                new_str = str(new_value).lstrip('+').rstrip('Z')
+
+                old_dt = datetime.strptime(old_str, "%Y-%m-%dT%H:%M:%S")
+                new_dt = datetime.strptime(new_str, "%Y-%m-%dT%H:%M:%S")
+
+                return float((new_dt - old_dt).days)
+            except ValueError:
+                pass
+        
+        if datatype == 'globecoordinate':
+            lat1, lon1 = float(old_value['latitude']), float(old_value['longitude'])
+            lat2, lon2 = float(new_value['latitude']), float(new_value['longitude'])
+            return float(PageParser.haversine_metric(lon1, lat1, lon2, lat2))
+        
+        if datatype == 'string' or datatype == 'monolingualtext': # for entities doesn't make sense to compare ids
+            return float(Levenshtein.distance(old_value, new_value))
+         
+        return None
+
     @staticmethod
     def _get_property_mainsnak(stmt, property_=None):
         """
@@ -159,18 +205,19 @@ class PageParser(ContentHandler):
         # everything else -> dump as JSON string
         return json.dumps(str(val))
 
-    def change_json(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type):
-        return {
-            "entity_id": self.entity_id,
-            "revision_id": self.revision_meta['revision_id'],
-            "property_id": property_id,
-            "value_id": value_id,
-            "old_value": PageParser._jsonify_value(old_value),
-            "new_value": PageParser._jsonify_value(new_value),
-            "datatype": datatype,
-            "datatype_metadata": datatype_metadata,
-            "change_type": change_type
-        }
+    def change_json(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type, change_magnitude=None):
+        return (
+            self.revision_meta['revision_id'] if self.revision_meta['revision_id'] else '',
+            self.entity_id if self.entity_id else '',
+            property_id if property_id else '',
+            value_id if value_id else '',
+            PageParser._jsonify_value(old_value),
+            PageParser._jsonify_value(new_value),
+            datatype,
+            datatype_metadata if datatype_metadata else '', # can't be None since datatype_metadata is part of the key of the table
+            change_type,
+            change_magnitude
+        )
 
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, datavalue_id, old_datatype, new_datatype, property_id, change_type):
         
@@ -182,6 +229,8 @@ class PageParser(ContentHandler):
                 old_meta = (old_datatype_metadata or {}).get(key, None)
                 new_meta = (new_datatype_metadata or {}).get(key, None)
 
+                change_magnitude = PageParser.magnitude_of_change(old_meta, new_meta, new_datatype)
+
                 if old_meta != new_meta: # save only what changed
                     changes.append(self.change_json(
                         property_id,
@@ -190,7 +239,8 @@ class PageParser(ContentHandler):
                         new_value=new_meta,
                         datatype=new_datatype,
                         datatype_metadata=key,
-                        change_type=change_type
+                        change_type=change_type, 
+                        change_magnitude=change_magnitude
                     ))
 
         else: # different datatypes
@@ -260,10 +310,8 @@ class PageParser(ContentHandler):
 
         return changes
     
-    def _handle_value_changes(self, new_datatype, new_value, old_value, datavalue_id, property_id, change_type):
-        """
-            Helper function to store value changes.
-        """
+    def _handle_value_changes(self, new_datatype, new_value, old_value, datavalue_id, property_id, change_type, change_magnitude=None):
+
         return self.change_json(
                 property_id, 
                 value_id=datavalue_id,
@@ -271,7 +319,8 @@ class PageParser(ContentHandler):
                 new_value=new_value,
                 datatype=new_datatype,
                 datatype_metadata=None,
-                change_type=change_type
+                change_type=change_type,
+                change_magnitude=change_magnitude
             )
         
     
@@ -475,7 +524,12 @@ class PageParser(ContentHandler):
                     # Property was updated
                     if (old_datatype != new_datatype) or (old_value != new_value):
                         # Datatype change -> value and metadata change
-                        changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE))
+                        if old_datatype == new_datatype and old_datatype != 'wikibase-entityid':
+                            # only value change
+                            change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
+                            changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, change_magnitude=change_magnitude))
+                        else:
+                            changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE))
                     
                     if (old_datatype != new_datatype) or (old_datatype_metadata != new_datatype_metadata):
                         # Datatype change -> value and metadata change
@@ -625,7 +679,8 @@ class PageParser(ContentHandler):
                 self.changes.extend(change)
 
                 # Save revision metadata to Revision
-                self.revision.append(self.revision_meta)
+                revision_meta = (self.revision_meta['revision_id'], self.revision_meta['entity_id'], self.revision_meta['timestamp'], self.revision_meta['user'], self.revision_meta['comment'])
+                self.revision.append(revision_meta)
             else:
                 self.revisions_without_changes += 1
 

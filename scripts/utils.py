@@ -10,13 +10,6 @@ from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import execute_batch
 
-dotenv_path = '../.env'
-load_dotenv(dotenv_path)
-
-DB_USER = os.environ.get("DB_USER")
-DB_PASS = os.environ.get("DB_PASS")
-DB_NAME = os.environ.get("DB_NAME")
-
 def human_readable_size(size, decimal_places=2):
     for unit in ['B','KB','MB','GB','TB']:
         if size < 1024:
@@ -238,11 +231,10 @@ def fetch_entity_types():
     pd.DataFrame(entities).to_csv(entity_file_path, index=False)
     print(f"Saved {len(entities)} entity-class pairs to '{entity_file_path}'")
 
-def insert_rows(conn, table_name, rows):
+def insert_rows(conn, table_name, rows, columns):
     if not rows:
         return
 
-    columns = list(rows[0].keys())
     col_names = ', '.join(columns)
     placeholders = ', '.join(['%s'] * len(columns))
 
@@ -251,12 +243,16 @@ def insert_rows(conn, table_name, rows):
         VALUES ({placeholders})
         ON CONFLICT DO NOTHING
     """
-    
-    values = [tuple(row[col] for col in columns) for row in rows]
 
-    with conn.cursor() as cur:
-        execute_batch(cur, query, values)
-    conn.commit()
+    try:
+
+        with conn.cursor() as cur:
+            execute_batch(cur, query, rows)
+        conn.commit()
+
+    except Exception as e:
+        print(f'There was an error when trying to save to table {table_name}, {len(rows)} rows')
+        print(e)
 
 def create_db_schema():
 
@@ -332,11 +328,21 @@ def create_db_schema():
 
 
 if "__main__":
+
+    dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+    load_dotenv(dotenv_path)
+
+    DB_USER = os.environ.get("DB_USER")
+    DB_PASS = os.environ.get("DB_PASS")
+    DB_NAME = os.environ.get("DB_NAME")
+    DB_HOST = os.environ.get("DB_HOST")
+    DB_PORT = os.environ.get("DB_PORT")
+
     conn = psycopg2.connect(
         dbname=DB_NAME,
         user=DB_USER,
         password=DB_PASS, 
-        host="localhost",
-        port="5432"
+        host=DB_HOST,
+        port=DB_PORT
     )
-    insert_rows(conn, 'Entity', [{'id': '1', 'label': 'prueba'}])
+    insert_rows(conn, 'entity', [{'id': '1', 'label': 'prueba'}])
