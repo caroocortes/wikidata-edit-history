@@ -90,7 +90,7 @@ if "__main__":
     processed_log = "processed_files.txt"
 
     # Read already processed files
-    if processed_log.exists():
+    if os.path.isfile(processed_log):
         with open(processed_log, "r") as f:
             processed_files = set(line.strip() for line in f)
     else:
