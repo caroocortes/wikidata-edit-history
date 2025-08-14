@@ -303,8 +303,7 @@ def load_csv_to_db(csv_path, table_name):
     
     # Build INSERT statement
     cols_str = ', '.join(cols)
-    placeholders = ', '.join(['%s'] * len(cols))
-    insert_query = f"INSERT INTO {table_name} ({cols_str}) VALUES ({placeholders}) ON CONFLICT DO NOTHING;"
+    insert_query = f"INSERT INTO {table_name} ({cols_str}) VALUES %s ON CONFLICT DO NOTHING;"
     
     dotenv_path = Path(__file__).resolve().parent.parent / ".env"
     load_dotenv(dotenv_path)
