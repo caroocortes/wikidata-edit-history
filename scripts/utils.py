@@ -250,9 +250,19 @@ def insert_rows(conn, table_name, rows, columns):
 
     except Exception as e:
         conn.rollback()  # reset the transaction
-        print(query)
-        print(f'There was an error when trying to save to table {table_name}, {len(rows)} rows')
-        print(rows[:10])
+        bad_rows = []
+        for row in rows:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(query, row)
+                conn.commit()
+            except Exception as e_row:
+                conn.rollback()
+                bad_rows.append(row)
+
+        print("Problematic rows:")
+        for br in bad_rows:
+            print(br)
         print(e)
 
 def create_db_schema(conn):
