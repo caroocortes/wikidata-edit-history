@@ -212,15 +212,15 @@ class PageParser(ContentHandler):
 
     def change_json(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type, change_magnitude=None):
         
-        old_value = old_value if old_value else ''
-        new_value = new_value if new_value else ''
+        old_value = PageParser._jsonify_value(old_value) if old_value else None
+        new_value = PageParser._jsonify_value(new_value) if new_value else None
         return (
             self.revision_meta['revision_id'] if self.revision_meta['revision_id'] else '',
             self.entity_id if self.entity_id else '',
             property_id if property_id else '',
             value_id if value_id else '',
-            PageParser._jsonify_value(old_value),
-            PageParser._jsonify_value(new_value),
+            old_value,
+            new_value,
             datatype,
             datatype_metadata if datatype_metadata else '', # can't be None since datatype_metadata is part of the key of the table
             change_type,

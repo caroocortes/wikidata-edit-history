@@ -1,13 +1,10 @@
-
-import psycopg2
 import requests
 import pandas as pd
 import os
 import csv
 import time
 from pathlib import Path
-from dotenv import load_dotenv
-import psycopg2
+import re
 from psycopg2.extras import execute_batch
 
 def human_readable_size(size, decimal_places=2):
