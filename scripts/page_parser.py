@@ -82,9 +82,9 @@ class PageParser(ContentHandler):
         return cleaned
 
     @staticmethod
-    def magnitude_of_change(old_value, new_value, datatype):
+    def magnitude_of_change(old_value, new_value, datatype, metadata=False):
         
-        if new_value is not None and old_value is not None:
+        if new_value is not None and old_value is not None and not metadata:
             if datatype == 'quantity':
                 new_num = float(new_value)
                 old_num = float(old_value)
@@ -99,13 +99,25 @@ class PageParser(ContentHandler):
 
                 return float((new_dt - old_dt).days)
             
-            if datatype == 'globecoordinate':
+            # Calculate distande in km between 2 points
+            if datatype == 'globecoordinate' and isinstance(old_value) and isinstance(new_value):
                 lat1, lon1 = float(old_value['latitude']), float(old_value['longitude'])
                 lat2, lon2 = float(new_value['latitude']), float(new_value['longitude'])
                 return float(PageParser.haversine_metric(lon1, lat1, lon2, lat2))
             
             if datatype == 'string' or datatype == 'monolingualtext': # for entities doesn't make sense to compare ids
                 return float(Levenshtein.distance(old_value, new_value))
+        elif metadata:
+            # Calculate magnitude of change for datatype metadata
+            # the values will be:
+            # - globecoordinate: precision
+            # - quantity: lowerBound and upperBound
+            # - time: timezone and precision
+            
+            new_num = float(new_value)
+            old_num = float(old_value)
+            return float(new_num - old_num)
+
         else:
             return None
 
@@ -239,7 +251,7 @@ class PageParser(ContentHandler):
                 new_meta = (new_datatype_metadata or {}).get(key, None)
 
                 if key not in ('calendarmodel', 'globe', 'unit'): # this metadata stores an entity link so we don't calculate the magnitude of change
-                    change_magnitude = PageParser.magnitude_of_change(old_meta, new_meta, new_datatype)
+                    change_magnitude = PageParser.magnitude_of_change(old_meta, new_meta, new_datatype, metadata=True)
                 else: 
                     change_magnitude = None
 
