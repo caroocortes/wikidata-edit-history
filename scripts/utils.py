@@ -241,7 +241,6 @@ def insert_rows(conn, table_name, rows, columns):
     query = f"""
         INSERT INTO {table_name} ({col_names})
         VALUES ({placeholders})
-        ON CONFLICT DO NOTHING
     """
 
     try:
@@ -250,6 +249,8 @@ def insert_rows(conn, table_name, rows, columns):
         conn.commit()
 
     except Exception as e:
+        conn.rollback()  # reset the transaction
+        print(query)
         print(f'There was an error when trying to save to table {table_name}, {len(rows)} rows')
         print(rows[:10])
         print(e)
