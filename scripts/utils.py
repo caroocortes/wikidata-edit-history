@@ -399,5 +399,5 @@ def create_db_schema(conn):
 
 if "__main__":
     script_dir = os.path.dirname(__file__)
-    csv_path = os.path.join(script_dir, '../../data/output_csvs/property.csv')
+    csv_path = os.path.join(script_dir, 'data/output_csvs/property.csv')
     load_csv_to_db(csv_path, 'property')
