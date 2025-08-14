@@ -111,10 +111,10 @@ def fetch_class_label():
 
         NOTE: fetch_entity_types needs to be ran before running this method, since it depends on the list of entity_id, class_id pairs
     """
-    output_dir = '../data/output_csvs'
+    output_dir = 'data/output_csvs'
     os.makedirs(output_dir, exist_ok=True)
 
-    input_csv_path = '../data/output_csvs/entity_types.csv'
+    input_csv_path = 'data/output_csvs/entity_types.csv'
     df = pd.read_csv(input_csv_path, dtype=str)
     class_ids = set(df['class_id'].dropna().unique())
     print(f"Loaded {len(class_ids)} unique class IDs from {input_csv_path}")
@@ -158,7 +158,7 @@ def fetch_class_label():
             class_id = result["class"]["value"].split("/")[-1]
             class_label = result["classLabel"]["value"]
 
-            classes.append({"class_id": class_id, "label": class_label})
+            classes.append({"class_id": class_id, "class_label": class_label})
 
         time.sleep(10)
 
@@ -166,23 +166,44 @@ def fetch_class_label():
     pd.DataFrame(classes).to_csv(class_file_path, index=False)
     print(f"Saved {len(classes)} class-label pairs to '{class_file_path}'")
 
+    load_csv_to_db(class_file_path, 'class')
+
 def fetch_entity_types():
     """ 
         Obtains entity_id, class_id, class_label from wikidata's SPARQL query service
     """
-    output_dir = '../data/output_csvs'
+    output_dir = 'data/output_csvs'
     os.makedirs(output_dir, exist_ok=True)
 
-    input_csv_path = '../data/output_csvs/entity.csv'
-    df = pd.read_csv(input_csv_path, dtype=str)
-    entity_ids = set(df['Entity_ID'].dropna().unique())
-    print(f"Loaded {len(entity_ids)} unique entity IDs from {input_csv_path}")
+    # input_csv_path = 'data/output_csvs/entity.csv'
+    # df = pd.read_csv(input_csv_path, dtype=str)
+    # entity_ids = set(df['Entity_ID'].dropna().unique())
+    # print(f"Loaded {len(entity_ids)} unique entity IDs from {input_csv_path}")
+
+
+    DB_USER = os.environ.get("DB_USER")
+    DB_PASS = os.environ.get("DB_PASS")
+    DB_NAME = os.environ.get("DB_NAME")
+    DB_HOST = os.environ.get("DB_HOST")
+    DB_PORT = os.environ.get("DB_PORT")
+
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS, 
+        host=DB_HOST,
+        port=DB_PORT
+    )
+
+    df = pd.read_sql(f"SELECT * FROM entity", conn)
+
+    entity_ids = set(df['entity_iD'].dropna().unique())
+    print(f"Loaded {len(entity_ids)} unique entity IDs from table entity")
+
+    conn.close()
 
     entity_file_path = f'{output_dir}/entity_types.csv'
-    class_file_path = f'{output_dir}/class.csv'
-
     entities = []
-    classes = {}
     
     url = "https://query.wikidata.org/sparql"
     headers = {"Accept": "application/sparql-results+json"}
@@ -230,6 +251,8 @@ def fetch_entity_types():
     # Save to CSV
     pd.DataFrame(entities).to_csv(entity_file_path, index=False)
     print(f"Saved {len(entities)} entity-class pairs to '{entity_file_path}'")
+
+    load_csv_to_db(entity_file_path, 'entity_type')
 
 def insert_rows(conn, table_name, rows, columns):
     if not rows:
@@ -396,6 +419,3 @@ def create_db_schema(conn):
     except Exception as e:
         print(f'Error when saving or connecting to DB: {e}')
 
-if "__main__":
-    csv_path = 'data/output_csvs/property.csv'
-    load_csv_to_db(csv_path, 'property')
