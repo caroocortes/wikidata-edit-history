@@ -107,7 +107,7 @@ class PageParser(ContentHandler):
             
             if datatype == 'string' or datatype == 'monolingualtext': # for entities doesn't make sense to compare ids
                 return float(Levenshtein.distance(old_value, new_value))
-        elif metadata:
+        elif new_value is not None and old_value is not None and metadata:
             # Calculate magnitude of change for datatype metadata
             # the values will be:
             # - globecoordinate: precision
