@@ -91,8 +91,8 @@ class PageParser(ContentHandler):
                 return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
             
             if datatype == 'time':
-                old_str = PageParser.remove_leading_zeros(str(old_value).lstrip('+').rstrip('Z'))
-                new_str = PageParser.remove_leading_zeros(str(new_value).lstrip('+').rstrip('Z'))
+                old_str = PageParser.remove_leading_zeros(str(old_value).lstrip('+').rstrip('Z')).replace('-00', '-01', 2)
+                new_str = PageParser.remove_leading_zeros(str(new_value).lstrip('+').rstrip('Z')).replace('-00', '-01', 2)
 
                 old_dt = datetime.strptime(old_str, "%Y-%m-%dT%H:%M:%S")
                 new_dt = datetime.strptime(new_str, "%Y-%m-%dT%H:%M:%S")
