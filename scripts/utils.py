@@ -8,6 +8,7 @@ import re
 from psycopg2.extras import execute_batch
 import psycopg2
 from psycopg2.extras import execute_values
+from dotenv import load_dotenv
 
 def human_readable_size(size, decimal_places=2):
     for unit in ['B','KB','MB','GB','TB']:
@@ -305,6 +306,9 @@ def load_csv_to_db(csv_path, table_name):
     placeholders = ', '.join(['%s'] * len(cols))
     insert_query = f"INSERT INTO {table_name} ({cols_str}) VALUES ({placeholders}) ON CONFLICT DO NOTHING;"
     
+    dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+    load_dotenv(dotenv_path)
+
     # Connect and insert
     DB_USER = os.environ.get("DB_USER")
     DB_PASS = os.environ.get("DB_PASS")
