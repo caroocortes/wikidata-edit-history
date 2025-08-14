@@ -683,7 +683,13 @@ class PageParser(ContentHandler):
                 self.changes.extend(change)
 
                 # Save revision metadata to Revision
-                revision_meta = (self.revision_meta['revision_id'], self.revision_meta['entity_id'], self.revision_meta['timestamp'], self.revision_meta['user'], self.revision_meta['comment'])
+                revision_meta = (
+                    self.revision_meta.get('revision_id', ''),
+                    self.revision_meta.get('entity_id', ''),
+                    self.revision_meta.get('timestamp', ''),
+                    self.revision_meta.get('user', ''),
+                    self.revision_meta.get('comment', '')
+                )
                 self.revision.append(revision_meta)
             else:
                 self.revisions_without_changes += 1
