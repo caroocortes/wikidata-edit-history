@@ -74,13 +74,13 @@ class PageParser(ContentHandler):
     @staticmethod
     def magnitude_of_change(old_value, new_value, datatype):
         
-        if datatype == 'quantity':
-            new_num = float(new_value)
-            old_num = float(old_value)
-            return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
-        
-        if datatype == 'time':
-            try:
+        if new_value and old_value:
+            if datatype == 'quantity':
+                new_num = float(new_value)
+                old_num = float(old_value)
+                return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
+            
+            if datatype == 'time':
                 old_str = str(old_value).lstrip('+').rstrip('Z')
                 new_str = str(new_value).lstrip('+').rstrip('Z')
 
@@ -88,18 +88,16 @@ class PageParser(ContentHandler):
                 new_dt = datetime.strptime(new_str, "%Y-%m-%dT%H:%M:%S")
 
                 return float((new_dt - old_dt).days)
-            except ValueError:
-                pass
-        
-        if datatype == 'globecoordinate':
-            lat1, lon1 = float(old_value['latitude']), float(old_value['longitude'])
-            lat2, lon2 = float(new_value['latitude']), float(new_value['longitude'])
-            return float(PageParser.haversine_metric(lon1, lat1, lon2, lat2))
-        
-        if datatype == 'string' or datatype == 'monolingualtext': # for entities doesn't make sense to compare ids
-            return float(Levenshtein.distance(old_value, new_value))
-         
-        return None
+            
+            if datatype == 'globecoordinate':
+                lat1, lon1 = float(old_value['latitude']), float(old_value['longitude'])
+                lat2, lon2 = float(new_value['latitude']), float(new_value['longitude'])
+                return float(PageParser.haversine_metric(lon1, lat1, lon2, lat2))
+            
+            if datatype == 'string' or datatype == 'monolingualtext': # for entities doesn't make sense to compare ids
+                return float(Levenshtein.distance(old_value, new_value))
+        else:
+            return None
 
     @staticmethod
     def _get_property_mainsnak(stmt, property_=None):
