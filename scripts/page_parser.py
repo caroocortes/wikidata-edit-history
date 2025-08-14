@@ -229,11 +229,7 @@ class PageParser(ContentHandler):
                 old_meta = (old_datatype_metadata or {}).get(key, None)
                 new_meta = (new_datatype_metadata or {}).get(key, None)
 
-                print('LA KEY!!!!!!', key)
-                sys.stdout.flush()
                 if key not in ('calendarmodel', 'globe', 'unit'): # this metadata stores an entity link so we don't calculate the magnitude of change
-                    print('VA A CALCULAR LA MAGNITUDE OF CHANGE!!!!!!!')
-                    sys.stdout.flush()
                     change_magnitude = PageParser.magnitude_of_change(old_meta, new_meta, new_datatype)
                 else: 
                     change_magnitude = None
@@ -533,11 +529,6 @@ class PageParser(ContentHandler):
                         # Datatype change -> value and metadata change
                         if old_datatype == new_datatype and old_datatype != 'wikibase-entityid':
                             # only value change
-                            print('PRINT EL NEW DATATYPE ', new_datatype_metadata)
-                            print('EL NEW VALUE', new_value)
-                            print('EL OLD VALUE', old_value)
-                            print('EL DATATYPE', new_datatype)
-                            sys.stdout.flush()
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
                             changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, change_magnitude=change_magnitude))
                         else:
@@ -691,6 +682,8 @@ class PageParser(ContentHandler):
                 self.changes.extend(change)
 
                 # Save revision metadata to Revision
+                print(self.revision_meta)
+                sys.stdout.flush()
                 revision_meta = (self.revision_meta['revision_id'], self.revision_meta['entity_id'], self.revision_meta['timestamp'], self.revision_meta['user'], self.revision_meta['comment'])
                 self.revision.append(revision_meta)
             else:
