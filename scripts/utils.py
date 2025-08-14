@@ -325,24 +325,3 @@ def create_db_schema():
 
     except Exception as e:
         print(f'Error when saving or connecting to DB: {e}')
-
-
-if "__main__":
-
-    dotenv_path = Path(__file__).resolve().parent.parent / ".env"
-    load_dotenv(dotenv_path)
-
-    DB_USER = os.environ.get("DB_USER")
-    DB_PASS = os.environ.get("DB_PASS")
-    DB_NAME = os.environ.get("DB_NAME")
-    DB_HOST = os.environ.get("DB_HOST")
-    DB_PORT = os.environ.get("DB_PORT")
-
-    conn = psycopg2.connect(
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS, 
-        host=DB_HOST,
-        port=DB_PORT
-    )
-    insert_rows(conn, 'entity', [{'id': '1', 'label': 'prueba'}])
