@@ -100,7 +100,7 @@ class PageParser(ContentHandler):
                 return float((new_dt - old_dt).days)
             
             # Calculate distande in km between 2 points
-            if datatype == 'globecoordinate' and isinstance(old_value) and isinstance(new_value):
+            if datatype == 'globecoordinate' and isinstance(old_value, dict) and isinstance(new_value, dict):
                 lat1, lon1 = float(old_value['latitude']), float(old_value['longitude'])
                 lat2, lon2 = float(new_value['latitude']), float(new_value['longitude'])
                 return float(PageParser.haversine_metric(lon1, lat1, lon2, lat2))
