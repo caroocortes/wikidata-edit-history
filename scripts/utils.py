@@ -398,6 +398,5 @@ def create_db_schema(conn):
         print(f'Error when saving or connecting to DB: {e}')
 
 if "__main__":
-    script_dir = os.path.dirname(__file__)
-    csv_path = os.path.join(script_dir, 'data/output_csvs/property.csv')
+    csv_path = 'data/output_csvs/property.csv'
     load_csv_to_db(csv_path, 'property')
