@@ -98,17 +98,15 @@ if "__main__":
 
     if args.file:
         input_bz2 = args.file
-        process_file(input_bz2, dump_dir)
-
         if input_bz2 in processed_files:
             print(f"{input_bz2} has already been processed. Skipping.")
         else:
-            process_file(input_bz2, dump_dir)
+            process_file(os.join(dump_dir, input_bz2))
             with open(processed_log, "a") as f:
                 f.write(f"{input_bz2}\n")
     else:
         max_workers = 3
-        all_files = [os.path.join(dump_dir, f) for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
+        all_files = [f for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
         
         # Only keep those that haven't been processed
         files_to_parse = [os.path.join(dump_dir, f) for f in all_files if f not in processed_files]
