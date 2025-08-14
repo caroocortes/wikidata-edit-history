@@ -245,13 +245,13 @@ def insert_rows(conn, table_name, rows, columns):
     """
 
     try:
-
         with conn.cursor() as cur:
             execute_batch(cur, query, rows)
         conn.commit()
 
     except Exception as e:
         print(f'There was an error when trying to save to table {table_name}, {len(rows)} rows')
+        print(rows[:10])
         print(e)
 
 def create_db_schema(conn):

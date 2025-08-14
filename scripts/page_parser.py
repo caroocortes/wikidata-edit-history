@@ -38,7 +38,7 @@ class PageParser(ContentHandler):
 
         self.revision_meta = {
             'comment': '',
-            'user': ''
+            'user_info': ''
         }
         self.revision_text = ""
 
@@ -75,6 +75,13 @@ class PageParser(ContentHandler):
         return c * r
 
     @staticmethod
+    def remove_leading_zeros(val):
+        parts = val.split('-', 1)  # split only at the first '-'
+        parts[0] = str(int(parts[0]))  # convert to int and back to string
+        cleaned = '-'.join(parts)
+        return cleaned
+
+    @staticmethod
     def magnitude_of_change(old_value, new_value, datatype):
         
         if new_value is not None and old_value is not None:
@@ -84,8 +91,8 @@ class PageParser(ContentHandler):
                 return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
             
             if datatype == 'time':
-                old_str = str(old_value).lstrip('+').rstrip('Z')
-                new_str = str(new_value).lstrip('+').rstrip('Z')
+                old_str = PageParser.remove_leading_zeros(str(old_value).lstrip('+').rstrip('Z'))
+                new_str = PageParser.remove_leading_zeros(str(new_value).lstrip('+').rstrip('Z'))
 
                 old_dt = datetime.strptime(old_str, "%Y-%m-%dT%H:%M:%S")
                 new_dt = datetime.strptime(new_str, "%Y-%m-%dT%H:%M:%S")
@@ -201,9 +208,6 @@ class PageParser(ContentHandler):
             Used to cast new_value and old_value
         """
         # None, bool, int, float are already valid JSON types
-        if val is None or isinstance(val, (bool, int, float, dict, list)):
-            return val
-        # everything else -> dump as JSON string
         return json.dumps(str(val))
 
     def change_json(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type, change_magnitude=None):
@@ -632,11 +636,11 @@ class PageParser(ContentHandler):
                 self.revision_meta['timestamp'] = content
             
             if self.in_contributor_id or self.in_contributor_username:
-                if 'user' not in self.revision_meta:
-                    self.revision_meta.setdefault('user', '')
-                    self.revision_meta['user'] = content
+                if 'user_info' not in self.revision_meta:
+                    self.revision_meta.setdefault('user_info', '')
+                    self.revision_meta['user_info'] = content
                 else:
-                    self.revision_meta['user'] += ' - ' + content
+                    self.revision_meta['user_info'] += ' - ' + content
 
             if self.in_revision_text:
                 self.revision_text += content
@@ -687,7 +691,7 @@ class PageParser(ContentHandler):
                     self.revision_meta.get('revision_id', ''),
                     self.revision_meta.get('entity_id', ''),
                     self.revision_meta.get('timestamp', ''),
-                    self.revision_meta.get('user', ''),
+                    self.revision_meta.get('user_info', ''),
                     self.revision_meta.get('comment', '')
                 )
                 self.revision.append(revision_meta)
