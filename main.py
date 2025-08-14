@@ -86,16 +86,39 @@ if "__main__":
     if not dump_dir.exists():
         print("The dump directory doesn't exist")
         raise SystemExit(1)
+    
+    processed_log = "processed_files.txt"
+
+    # Read already processed files
+    if processed_log.exists():
+        with open(processed_log, "r") as f:
+            processed_files = set(line.strip() for line in f)
+    else:
+        processed_files = set()
 
     if args.file:
         input_bz2 = args.file
         process_file(input_bz2, dump_dir)
+
+        if input_bz2 in processed_files:
+            print(f"{input_bz2} has already been processed. Skipping.")
+        else:
+            process_file(input_bz2, dump_dir)
+            with open(processed_log, "a") as f:
+                f.write(f"{input_bz2}\n")
     else:
         max_workers = 3
-        all_files = [f for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
-        files_to_parse = all_files[:args.number_files] if args.number_files else all_files
+        all_files = [os.path.join(dump_dir, f) for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
+        
+        # Only keep those that haven't been processed
+        files_to_parse = [os.path.join(dump_dir, f) for f in all_files if f not in processed_files]
+
+        # Limit number of files if -n was provided
+        if args.number_files:
+            files_to_parse = files_to_parse[:args.number_files]
 
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             for process_time, num_entities, file_base_name, size in executor.map(process_file, files_to_parse):
                 print(f"Finished processing {file_base_name} ({size} MB, {num_entities} entities) in {process_time} seconds")
-            
+                with open(processed_log, "a") as f:
+                    f.write(f"{file_base_name}\n")

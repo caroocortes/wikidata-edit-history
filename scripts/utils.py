@@ -254,7 +254,7 @@ def insert_rows(conn, table_name, rows, columns):
         print(f'There was an error when trying to save to table {table_name}, {len(rows)} rows')
         print(e)
 
-def create_db_schema():
+def create_db_schema(conn):
 
     query = """
 
@@ -306,22 +306,12 @@ def create_db_schema():
         );
     """
     try:
-        # TODO: maybe need to open a single connection and use it to save things
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS, 
-            host="localhost",
-            port="5432"
-        )
-
         cursor = conn.cursor()
 
         cursor.execute(query=query)
 
         conn.commit()
-        cursor.close() 
-        conn.close()
+        cursor.close()
 
     except Exception as e:
         print(f'Error when saving or connecting to DB: {e}')
