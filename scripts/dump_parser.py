@@ -2,7 +2,6 @@ import xml.sax
 import pandas as pd
 import io
 import concurrent.futures
-import multiprocessing
 from pathlib import Path
 from concurrent.futures import wait, as_completed
 from xml.sax.saxutils import escape
@@ -10,9 +9,10 @@ import psycopg2
 from dotenv import load_dotenv
 import os
 
+
 from scripts.page_parser import PageParser
 from scripts.const import *
-from scripts.utils import insert_rows
+from scripts.utils import insert_rows, initialize_csv_files
 
 def process_page_xml(page_xml_str):
     parser = xml.sax.make_parser()
@@ -46,7 +46,7 @@ def process_page_xml(page_xml_str):
 
 class DumpParser(xml.sax.ContentHandler):
     def __init__(self, max_workers=None):
-        # self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
+        self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
 
         dotenv_path = Path(__file__).resolve().parent.parent / ".env"
         load_dotenv(dotenv_path)
@@ -244,24 +244,24 @@ class DumpParser(xml.sax.ContentHandler):
 
                         if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
 
-                            # df_changes = pd.DataFrame(batch_changes)
-                            # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+                            df_changes = pd.DataFrame(batch_changes)
+                            df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
 
-                            # df_revisions = pd.DataFrame(batch_revisions)
-                            # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+                            df_revisions = pd.DataFrame(batch_revisions)
+                            df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
 
                             insert_rows(self.conn, 'revision', batch_revisions, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
 
                             insert_rows(self.conn, 'change', batch_changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
 
                     if batch_revisions:
-                        # df_revisions = pd.DataFrame(batch_revisions)
-                        # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+                        df_revisions = pd.DataFrame(batch_revisions)
+                        df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
                         insert_rows(self.conn, 'revision', batch_revisions, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
 
                     if batch_changes:
-                        # df_changes = pd.DataFrame(batch_changes)
-                        # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+                        df_changes = pd.DataFrame(batch_changes)
+                        df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
                         insert_rows(self.conn, 'change', batch_changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
 
                     self.futures.clear()
