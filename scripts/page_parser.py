@@ -74,7 +74,7 @@ class PageParser(ContentHandler):
     @staticmethod
     def magnitude_of_change(old_value, new_value, datatype):
         
-        if new_value and old_value:
+        if new_value is not None and old_value is not None:
             if datatype == 'quantity':
                 new_num = float(new_value)
                 old_num = float(old_value)
