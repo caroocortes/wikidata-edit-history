@@ -230,7 +230,7 @@ class PageParser(ContentHandler):
                 new_meta = (new_datatype_metadata or {}).get(key, None)
 
                 if key not in ('calendarmodel', 'globe', 'unit'): # this metadata stores an entity link so we don't calculate the magnitude of change
-                    print(key)
+                    print('LA KEY!!!!!', key)
                     change_magnitude = PageParser.magnitude_of_change(old_meta, new_meta, new_datatype)
                 else: 
                     change_magnitude = None
