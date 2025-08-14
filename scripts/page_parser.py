@@ -2,7 +2,7 @@ from xml.sax.handler import ContentHandler
 import html
 import json
 import time
-
+import sys
 from datetime import datetime
 import Levenshtein
 from math import radians, cos, sin, asin, sqrt
@@ -229,9 +229,11 @@ class PageParser(ContentHandler):
                 old_meta = (old_datatype_metadata or {}).get(key, None)
                 new_meta = (new_datatype_metadata or {}).get(key, None)
 
-                print('LA KEY!!!!!!')
+                print('LA KEY!!!!!!', key)
+                sys.stdout.flush()
                 if key not in ('calendarmodel', 'globe', 'unit'): # this metadata stores an entity link so we don't calculate the magnitude of change
                     print('VA A CALCULAR LA MAGNITUDE OF CHANGE!!!!!!!')
+                    sys.stdout.flush()
                     change_magnitude = PageParser.magnitude_of_change(old_meta, new_meta, new_datatype)
                 else: 
                     change_magnitude = None
@@ -535,6 +537,7 @@ class PageParser(ContentHandler):
                             print('EL NEW VALUE', new_value)
                             print('EL OLD VALUE', old_value)
                             print('EL DATATYPE', new_datatype)
+                            sys.stdout.flush()
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
                             changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, change_magnitude=change_magnitude))
                         else:
