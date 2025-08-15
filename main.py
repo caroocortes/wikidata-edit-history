@@ -70,7 +70,7 @@ def process_file(file_path):
         f"Number of entities: {handler.num_entities}\t"
     )
 
-    return process_time, num_entities, input_bz2, size_hr
+    return process_time, num_entities, file_path, size_hr
 
 
 if "__main__":
@@ -105,19 +105,24 @@ if "__main__":
                 f.write(f"{input_bz2}\n")
     else:
         max_workers = 3
-        all_files = [f for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
+        dump_dir = Path(dump_dir)  # make sure it's a Path object
 
+        # List all .bz2 files in dump_dir
+        all_files = [f for f in dump_dir.iterdir() if f.is_file() and f.suffix == '.bz2']
+
+        # Sort by modification time (oldest first)
         files_sorted = sorted(all_files, key=lambda f: f.stat().st_mtime)
-        
-        # Only keep those that haven't been processed
-        files_to_parse = [os.path.join(dump_dir, f) for f in files_sorted if f not in processed_files]
+
+        # Only keep files that haven't been processed
+        files_to_parse = [f for f in files_sorted if f.name not in processed_files]
 
         # Limit number of files if -n was provided
         if args.number_files:
             files_to_parse = files_to_parse[:args.number_files]
 
+        # Pass full paths to process_file
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-            for process_time, num_entities, file_base_name, size in executor.map(process_file, files_to_parse):
-                print(f"Finished processing {file_base_name} ({size} MB, {num_entities} entities) in {process_time} seconds")
+            for process_time, num_entities, file_path, size in executor.map(process_file, files_to_parse):
+                print(f"Finished processing {file_path} ({size} MB, {num_entities} entities) in {process_time} seconds")
                 with open(processed_log, "a") as f:
-                    f.write(f"{file_base_name}\n") 
+                    f.write(f"{file_path}\n")
