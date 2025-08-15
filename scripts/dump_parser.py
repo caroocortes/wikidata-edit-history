@@ -45,7 +45,7 @@ def process_page_xml(page_xml_str):
         raise e
 
 class DumpParser(xml.sax.ContentHandler):
-    def __init__(self, max_workers=None):
+    def __init__(self, file_path=None, max_workers=None):
         self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
 
         dotenv_path = Path(__file__).resolve().parent.parent / ".env"
@@ -64,9 +64,9 @@ class DumpParser(xml.sax.ContentHandler):
             host=DB_HOST,
             port=DB_PORT
         )
-            
+        self.file_path = file_path # save file path
         self.set_initial_state()  
-        self.entities = []   
+        self.num_entities = 0  
         self.futures = []  
 
         if max_workers is None:
@@ -189,7 +189,7 @@ class DumpParser(xml.sax.ContentHandler):
         if not self.in_page:
             if name == 'mediawiki':
                 # End of XML file
-                print(f"Finished processing file with {len(self.entities)} entities")
+                print(f"Finished processing file with {len(self.num_entities)} entities")
 
                 self.conn.close() # close connection to DB
                 self.executor.shutdown(wait=True)
@@ -240,7 +240,9 @@ class DumpParser(xml.sax.ContentHandler):
                         batch_revisions.extend(revisions)
                         batch_changes.extend(changes)
 
-                        insert_rows(self.conn, 'entity', [(entity_id, entity_label)], columns=['entity_id', 'entity_label'])
+                        self.num_entities += 1
+
+                        insert_rows(self.conn, 'entity', [(entity_id, entity_label, self.file_path)], columns=['entity_id', 'entity_label', 'file_path'])
 
                         if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
 

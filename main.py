@@ -20,11 +20,12 @@ logging.basicConfig(
 
 def process_file(file_path):
 
-    handler = DumpParser()
-    parser = xml.sax.make_parser()
-    parser.setContentHandler(handler)
     input_bz2 = os.path.basename(file_path)
     base = input_bz2.replace(".xml", "").replace(".bz2", "")
+
+    handler = DumpParser(file_path=input_bz2)
+    parser = xml.sax.make_parser()
+    parser.setContentHandler(handler)
 
     print(f"Processing: {file_path}")
     start_process = time.time()
@@ -61,14 +62,12 @@ def process_file(file_path):
     size = os.path.getsize(file_path)
 
     size_hr = human_readable_size(size)
-    num_entities = len(handler.entities)
 
     logging.info(
         f"Processed {input_bz2} in {process_time:.2f} seconds.\t"
         f"Process information: \t"
         f"{base} size: {human_readable_size(size)} MB\t"
-        f"Number of entities: {num_entities}\t"
-        f"Entities: {','.join([e['entity_id'] for e in handler.entities])}\t"
+        f"Number of entities: {handler.num_entities}\t"
     )
 
     return process_time, num_entities, input_bz2, size_hr
@@ -107,9 +106,11 @@ if "__main__":
     else:
         max_workers = 3
         all_files = [f for f in os.listdir(dump_dir) if os.path.isfile(os.path.join(dump_dir, f)) and f.endswith('.bz2') ]
+
+        files_sorted = sorted(all_files, key=lambda f: f.stat().st_mtime)
         
         # Only keep those that haven't been processed
-        files_to_parse = [os.path.join(dump_dir, f) for f in all_files if f not in processed_files]
+        files_to_parse = [os.path.join(dump_dir, f) for f in files_sorted if f not in processed_files]
 
         # Limit number of files if -n was provided
         if args.number_files:
@@ -119,4 +120,4 @@ if "__main__":
             for process_time, num_entities, file_base_name, size in executor.map(process_file, files_to_parse):
                 print(f"Finished processing {file_base_name} ({size} MB, {num_entities} entities) in {process_time} seconds")
                 with open(processed_log, "a") as f:
-                    f.write(f"{file_base_name}\n")
+                    f.write(f"{file_base_name}\n") 
