@@ -54,7 +54,6 @@ class PageParser(ContentHandler):
             return current_revision
         except json.JSONDecodeError as e:
             print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped.')
-            print('JSON text: ', json_text)
             raise e
     
     @staticmethod
