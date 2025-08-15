@@ -93,13 +93,16 @@ class PageParser(ContentHandler):
         elif new_value is not None and old_value is not None and metadata:
             # Calculate magnitude of change for datatype metadata
             # the values will be:
+            # - monolingual text: language
             # - globecoordinate: precision
             # - quantity: lowerBound and upperBound
             # - time: timezone and precision
-            
-            new_num = float(new_value)
-            old_num = float(old_value)
-            return float(new_num - old_num)
+            if datatype != 'monolingualtext':
+                new_num = float(new_value)
+                old_num = float(old_value)
+                return new_num - old_num
+            else:
+                return float(Levenshtein.distance(old_value, new_value))
 
         else:
             return None
@@ -177,10 +180,10 @@ class PageParser(ContentHandler):
                     for k, v in value_json.items():
                         # time, amount, text, latitude, longitude hold the actual value of time, quantity, 
                         # monolingualtext and globecoordinate datatypes, the rest is metadata
-                        if k not in ("time", "amount", "text", "latitude", "longitude", "altitude", "before", "after"): # altitude (DEPRECATED), before and after (UNUSED)
+                        if k not in ("time", "amount", "text", "latitude", "longitude", "altitude", "before", "after", "timezone"): # altitude (DEPRECATED), before, after and timezone (UNUSED)
                             datatype_metadata[k] = v
                         else:
-                            if datatype != 'globecoordinate' and k not in ("altitude", "before", "after"):
+                            if datatype != 'globecoordinate' and k not in ("altitude", "before", "after", "timezone"):
                                 value = v
                 else:
                     if 'id' in value_json:
