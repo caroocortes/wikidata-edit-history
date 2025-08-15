@@ -5,7 +5,8 @@ import time
 import sys
 from datetime import datetime
 import Levenshtein
-from math import radians, cos, sin, asin, sqrt
+
+from utils import haversine_metric, get_time_dict, gregorian_to_julian
 
 from scripts.const import *
 
@@ -55,29 +56,13 @@ class PageParser(ContentHandler):
             return current_revision
         except json.JSONDecodeError as e:
             print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped.')
+            print('JSON text: ', json_text)
             raise e
     
     @staticmethod
-    def haversine_metric(lon1, lat1, lon2, lat2):
-        """
-        Calculate the great circle distance in kilometers between two points 
-        on the earth (specified in decimal degrees)
-        """
-        # convert decimal degrees to radians 
-        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-
-        # haversine formula 
-        dlon = lon2 - lon1 
-        dlat = lat2 - lat1 
-        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-        c = 2 * asin(sqrt(a)) 
-        r = 6371 # Radius of earth in kilometers.
-        return c * r
-
-    @staticmethod
     def remove_leading_zeros(val):
         parts = val.split('-', 1)  # split only at the first '-'
-        parts[0] = str(int(parts[0]))  # convert to int and back to string
+        parts[0] = str(int(parts[0]))  # convert to int and back to string, this removes leading 0s
         cleaned = '-'.join(parts)
         return cleaned
 
@@ -91,19 +76,19 @@ class PageParser(ContentHandler):
                 return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
             
             if datatype == 'time':
-                old_str = PageParser.remove_leading_zeros(str(old_value).lstrip('+').rstrip('Z')).replace('-00', '-01', 2)
-                new_str = PageParser.remove_leading_zeros(str(new_value).lstrip('+').rstrip('Z')).replace('-00', '-01', 2)
+                old_dict = get_time_dict(old_value)
+                new_dict = get_time_dict(new_value)
 
-                old_dt = datetime.strptime(old_str, "%Y-%m-%dT%H:%M:%S")
-                new_dt = datetime.strptime(new_str, "%Y-%m-%dT%H:%M:%S")
+                new_julian = gregorian_to_julian(new_dict['year'], new_dict['month'], new_dict['day'])
+                old_julian = gregorian_to_julian(old_dict['year'], old_dict['month'], old_dict['day'])
 
-                return float((new_dt - old_dt).days)
+                return float(new_julian - old_julian)
             
             # Calculate distande in km between 2 points
             if datatype == 'globecoordinate' and isinstance(old_value, dict) and isinstance(new_value, dict):
                 lat1, lon1 = float(old_value['latitude']), float(old_value['longitude'])
                 lat2, lon2 = float(new_value['latitude']), float(new_value['longitude'])
-                return float(PageParser.haversine_metric(lon1, lat1, lon2, lat2))
+                return float(haversine_metric(lon1, lat1, lon2, lat2))
             
             if datatype == 'string' or datatype == 'monolingualtext': # for entities doesn't make sense to compare ids
                 return float(Levenshtein.distance(old_value, new_value))
@@ -127,7 +112,6 @@ class PageParser(ContentHandler):
             Returns the value for a property in the mainsnak
         """
         try:
-            prop_value = stmt["mainsnak"].get(property_, None)
             return stmt["mainsnak"].get(property_, None)
         except (KeyError, TypeError) as e:
             print(f'Error when retrieving property {property_} in statement {stmt}')
@@ -213,20 +197,11 @@ class PageParser(ContentHandler):
         else:
             value = NO_VALUE if snaktype == 'novalue' else SOME_VALUE
             return value, None, None
-    
-    @staticmethod
-    def _jsonify_value(val):
-        """
-            Converts val to a valid JSON string.
-            Used to cast new_value and old_value
-        """
-        # None, bool, int, float are already valid JSON types
-        return json.dumps(str(val))
 
     def change_json(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type, change_magnitude=None):
         
-        old_value = PageParser._jsonify_value(old_value) if old_value else None
-        new_value = PageParser._jsonify_value(new_value) if new_value else None
+        old_value = json.dumps(str(old_value)) if old_value else None
+        new_value = json.dumps(str(new_value)) if new_value else None
         return (
             self.revision_meta['revision_id'] if self.revision_meta['revision_id'] else '',
             self.entity_id if self.entity_id else '',

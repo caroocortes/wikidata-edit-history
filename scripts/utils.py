@@ -9,6 +9,84 @@ from psycopg2.extras import execute_batch
 import psycopg2
 from psycopg2.extras import execute_values
 from dotenv import load_dotenv
+from math import radians, cos, sin, asin, sqrt
+
+
+"""
+    Helper methods for magnitude of change calculation
+"""
+def haversine_metric(lon1, lat1, lon2, lat2):
+    """
+    Calculate the great circle distance in kilometers between two points 
+    on the earth (specified in decimal degrees)
+    """
+    # convert decimal degrees to radians 
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a)) 
+    r = 6371 # Radius of earth in kilometers.
+    return c * r
+
+def to_astronomical(year):
+    """
+        From Wikidata documentation:
+        Years BCE are represented as negative numbers, using the historical numbering, 
+        in which year 0 is undefined, and the year 1 BCE is represented as -0001, the year 44 BCE is represented as -0044, etc., 
+        like XSD 1.0 (ISO 8601:1988) does.
+
+        From BCE to astronomical:
+        - Subtract one from the BCE year and prepend a negative sign (e.g. 1 BCE -> 0, 2 BCE -> -1, 10 BCE -> -9, and 100 BCE -> -99)
+        Since Wikidata stores BCE as negative numbers, we need to add 1 if the year is negative:
+    """
+
+    if year < 0:
+        return year + 1  # convert historical BCE to astronomical
+    return year
+
+def gregorian_to_julian(y, month, day):
+    """
+        See https://en.wikipedia.org/wiki/Julian_day for formula
+    """
+    year = to_astronomical(y)
+
+    m_14_12 = (month - 14) // 12
+    
+    A = (1461 * (year + 4800 + m_14_12) ) // 4
+    B = (367 * (month - 2 - 12 * m_14_12) ) // 12
+    C = (3 * ( (year + 4900 + m_14_12) // 100)) // 4
+
+    return A + B - C + day - 32075
+
+def get_time_dict(timestring):
+
+    STANDARD_DATE_REGEX = re.compile(
+        r"""
+        (?P<year>[+-]?\d+?)-
+        (?P<month>\d\d)-
+        (?P<day>\d\d)T
+        (?P<hour>\d\d):
+        (?P<minute>\d\d):
+        (?P<second>\d\d)Z?""",
+        re.VERBOSE,
+    )
+
+    datetime_dict = {}
+    match = STANDARD_DATE_REGEX.fullmatch(timestring)
+    if match:
+        datetime_dict = {
+            "year": int(match.group("year")), # year already has the sign
+            "month": int(match.group("month")),
+            "day": int(match.group("day")),
+            "hour": int(match.group("hour")),
+            "minute": int(match.group("minute")),
+            "second": int(match.group("second")),
+        }
+
+    return datetime_dict
 
 def human_readable_size(size, decimal_places=2):
     for unit in ['B','KB','MB','GB','TB']:
@@ -16,53 +94,10 @@ def human_readable_size(size, decimal_places=2):
             return f"{size:.{decimal_places}f} {unit}"
         size /= 1024
 
-def initialize_csv_files(suffix=None):
-    output_dir = Path("data/output_csvs")
-    output_dir.mkdir(parents=True, exist_ok=True)
 
-    if suffix:
-        files_info = {
-            f"entity_{suffix}.csv": ["Entity_ID", "Label"],
-            f"{suffix}.jsonl": ["Entity_ID", "Revision_ID", "Property_ID", "Value_ID", "Old_Value", "New_Value", "Datatype", "Datatype_Metadata", "Change_Type"],
-            f"revision_{suffix}.csv": ["Entity_ID", "Revision_ID", "Timestamp", "User", "Comment"]
-        }
-    else:
-        files_info = {
-            "entity.csv": ["Entity_ID", "Label"],
-            "change.csv": ["Entity_ID", "Revision_ID", "Property_ID", "Value_ID", "Old_Value", "New_Value", "Datatype", "Datatype_Metadata", "Change_Type"],
-            "revision.csv": ["Entity_ID", "Revision_ID", "Timestamp", "User", "Comment"]
-        }
-
-    writers = {}
-    paths = {}
-
-    for filename, headers in files_info.items():
-        file_path = output_dir / filename
-        file_exists = file_path.exists()
-
-        f = open(file_path, mode="a", newline='', encoding="utf-8")
-        writer = csv.writer(f)
-
-        if not file_exists:
-            writer.writerow(headers)
-
-        writers[filename] = writer
-        paths[filename] = str(file_path)
-
-    if suffix:
-        return (
-            paths[f'entity_{suffix}.csv'],
-            paths[f'{suffix}.jsonl'],
-            paths[f'revision_{suffix}.csv']
-        )
-
-    else:
-        return (
-            paths['entity.csv'],
-            paths['change.csv'],
-            paths['revision.csv']
-        )
-
+"""
+    Methods for obtaining data for tables entity_type, class, property, from the wikidata query service
+"""
 def fetch_wikidata_properties():
     """
         Querys Wikidata to obtain properties and their english labels.
@@ -253,6 +288,57 @@ def fetch_entity_types():
     print(f"Saved {len(entities)} entity-class pairs to '{entity_file_path}'")
 
     load_csv_to_db(entity_file_path, 'entity_type')
+
+"""
+    Methods for inserting in DB / CSV files
+"""
+
+def initialize_csv_files(suffix=None):
+    output_dir = Path("data/output_csvs")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if suffix:
+        files_info = {
+            f"entity_{suffix}.csv": ["entity_id", "label"],
+            f"{suffix}.jsonl": ["entity_id", "revision_id", "property_id", "value_id", "old_value", "new_value", "datatype", "datatype_metadata", "change_type", "change_magnitude"],
+            f"revision_{suffix}.csv": ["entity_id", "revision_id", "timestamp", "user_id", "username", "comment"]
+        }
+    else:
+        files_info = {
+            "entity.csv": ["entity_id", "label"],
+            "change.csv": ["entity_id", "revision_id", "property_id", "value_id", "old_value", "new_value", "datatype", "datatype_metadata", "change_type", "change_magnitude"],
+            "revision.csv": ["entity_id", "revision_id", "timestamp", "user_id", "username", "comment"]
+        }
+
+    writers = {}
+    paths = {}
+
+    for filename, headers in files_info.items():
+        file_path = output_dir / filename
+        file_exists = file_path.exists()
+
+        f = open(file_path, mode="a", newline='', encoding="utf-8")
+        writer = csv.writer(f)
+
+        if not file_exists:
+            writer.writerow(headers)
+
+        writers[filename] = writer
+        paths[filename] = str(file_path)
+
+    if suffix:
+        return (
+            paths[f'entity_{suffix}.csv'],
+            paths[f'{suffix}.jsonl'],
+            paths[f'revision_{suffix}.csv']
+        )
+
+    else:
+        return (
+            paths['entity.csv'],
+            paths['change.csv'],
+            paths['revision.csv']
+        )
 
 def insert_rows(conn, table_name, rows, columns):
     if not rows:
