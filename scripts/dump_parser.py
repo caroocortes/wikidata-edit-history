@@ -208,7 +208,7 @@ class DumpParser(xml.sax.ContentHandler):
         
         if name == 'title' and self.entity_id.startswith("Q"): # at </title> 
             # If the page title starts with Q, we process the revision
-            print(f"Keeping page with title: {self.entity_id}")
+            # print(f"Keeping page with title: {self.entity_id}")
             self.keep = True
             self.in_title = False
             self.page_buffer.append(self.entity_id) # save entity_id

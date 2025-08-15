@@ -730,8 +730,8 @@ class PageParser(ContentHandler):
         if name == 'page': # at </page>
         
             self.end_time_entity = time.time()
-            print(f'Time it took to process entity {self.entity_id} with {self.num_revisions} revisions: {self.end_time_entity - self.start_time_entity} seconds')
-            print(f'Number of revisions without changes: {self.revisions_without_changes}')
+            # print(f'Time it took to process entity {self.entity_id} with {self.num_revisions} revisions: {self.end_time_entity - self.start_time_entity} seconds')
+            # print(f'Number of revisions without changes: {self.revisions_without_changes}')
 
             # # TODO: change to save in DB
             # df_changes = pd.DataFrame(self.changes)
