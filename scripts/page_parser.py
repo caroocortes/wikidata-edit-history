@@ -2,11 +2,9 @@ from xml.sax.handler import ContentHandler
 import html
 import json
 import time
-import sys
-from datetime import datetime
 import Levenshtein
 
-from utils import haversine_metric, get_time_dict, gregorian_to_julian
+from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian
 
 from scripts.const import *
 

@@ -10,12 +10,17 @@ xml_download_links.txt contains the download links for the xml.bz2 files of the 
 
 ### Run parser on wikidata dumps
 ```python
-python your_script.py [options]
+python3 -m  main [options]
 ```
 
 -f: Process a single .xml.bz2 file.
 -n: Limit the number of files to process when running on a directory.
 -dir: Directory containing .xml.bz2 files to process. Required.
+
+
+**Run in detach**
+nohup python3 -m main -n NUMBER_FILES -d DIR_DUMPS > parser_output.log 2>&1 &
+echo $! > parser.pid 
 
 ### Test files
 In test/ there are 2 test files (*test.xml* and *example.xml*) to run the parser.
