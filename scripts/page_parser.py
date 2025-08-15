@@ -32,8 +32,8 @@ class PageParser(ContentHandler):
         self.current_revision = None
 
         # TODO: remove, just for debugging/printing
-        self.start_time_entity = 0
-        self.end_time_entity = 0
+        # self.start_time_entity = 0
+        # self.end_time_entity = 0
 
         self.revision_meta = {
             'comment': '',
@@ -726,9 +726,10 @@ class PageParser(ContentHandler):
             elif name == 'username': # at </username> inside of <contributor></contributor>
                 self.in_contributor_username = False
 
-        if name == 'page': # at </page>
+        # if name == 'page': # at </page>
         
-            self.end_time_entity = time.time()
+        #     self.end_time_entity = time.time()
+    
             # print(f'Time it took to process entity {self.entity_id} with {self.num_revisions} revisions: {self.end_time_entity - self.start_time_entity} seconds')
             # print(f'Number of revisions without changes: {self.revisions_without_changes}')
 
