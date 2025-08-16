@@ -54,7 +54,7 @@ def gregorian_to_julian(y, month, day):
     year = to_astronomical(y)
 
     m_14_12 = (month - 14) // 12
-    
+
     A = (1461 * (year + 4800 + m_14_12) ) // 4
     B = (367 * (month - 2 - 12 * m_14_12) ) // 12
     C = (3 * ( (year + 4900 + m_14_12) // 100)) // 4
@@ -386,7 +386,8 @@ def insert_rows(conn, table_name, rows, columns):
                             cur.execute(select_query, key_vals)
                             existing = cur.fetchone()
                             if existing:
-                                print(f"Existing conflicting row for {dict(zip(key_cols, key_vals))}: {existing}")
+                                print(f"Existing conflicting row for {dict(zip(key_cols, key_vals))} in table {table_name}: {existing}")
+                                print(f'Row that retunrs error: {e_row}')
                     except Exception as select_err:
                         print(f"Error checking for existing row: {select_err}")
 
