@@ -341,34 +341,6 @@ def initialize_csv_files(suffix=None):
             paths['revision.csv']
         )
 
-def copy_rows(conn, table_name, rows, columns):
-    if not rows:
-        return
-
-    # Convert rows to CSV-like format in memory
-    output = io.StringIO()
-    escaped = []
-    for row in rows:
-        # Escape tabs and newlines inside values
-        if isinstance(x, (dict, list)):  # JSON column
-            escaped.append(json.dumps(x))
-        elif x is None:
-            escaped.append('\\N')
-        else:
-            escaped.append(str(x).replace('\t', '\\t').replace('\n', '\\n'))
-            line = '\t'.join(escaped)
-        output.write(line + '\n')
-    output.seek(0)
-
-    try:
-        with conn.cursor() as cur:
-            cur.copy_from(output, table_name, columns=columns, sep='\t', null='\\N')
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        print("Error when doing copy batch:")
-        print(e)
-        raise e
 
 def update_entity_label(conn, entity_id, entity_label):
     """
