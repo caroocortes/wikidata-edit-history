@@ -348,7 +348,9 @@ def copy_rows(conn, table_name, columns, rows):
     # Convert rows to CSV-like format in memory
     output = io.StringIO()
     for row in rows:
-        line = '\t'.join(str(x) if x is not None else '\\N' for x in row)
+        # Escape tabs and newlines inside values
+        escaped = [(str(x).replace('\t', '\\t').replace('\n', '\\n') if x is not None else '\\N') for x in row]
+        line = '\t'.join(escaped)
         output.write(line + '\n')
     output.seek(0)
 
@@ -357,9 +359,8 @@ def copy_rows(conn, table_name, columns, rows):
             cur.copy_from(output, table_name, columns=columns, sep='\t', null='\\N')
         conn.commit()
     except Exception as e:
-        conn.rollback()  # reset the transaction
-
-        print("Error when doing copy batch error:")
+        conn.rollback()
+        print("Error when doing copy batch:")
         print(e)
 
 def update_entity_label(conn, entity_id, entity_label):
