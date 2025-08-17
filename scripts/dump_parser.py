@@ -40,6 +40,29 @@ def process_page_xml(page_xml_str):
 
         parser.parse(io.StringIO(page_xml_str))
 
+        DB_USER = os.environ.get("DB_USER")
+        DB_PASS = os.environ.get("DB_PASS")
+        DB_NAME = os.environ.get("DB_NAME")
+        DB_HOST = os.environ.get("DB_HOST")
+        DB_PORT = os.environ.get("DB_PORT")
+
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS, 
+            host=DB_HOST,
+            port=DB_PORT
+        )
+        
+        self.db_executor.submit(insert_page_data, conn, handler, self.file_path)
+        # insert_rows(self.conn, 'entity', [(handler.entity_id, handler.entity_label, self.file_path)], columns=['entity_id', 'entity_label', 'file_path'])
+
+        # insert_rows(self.conn, 'revision', handler.revision, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
+
+        # insert_rows(self.conn, 'change', handler.changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+
+        print(f'Finished processing {handler.entity_id, handler.entity_label}')
+
         return handler.entity_id, handler.entity_label, handler.changes, handler.revision
     except xml.sax.SAXParseException as e:
         print('ERROR IN PAGE PARSER')
@@ -94,61 +117,6 @@ class DumpParser(xml.sax.ContentHandler):
 
         self.in_contributor = False          # True if inside a <contributor> block
         self.in_contributor_username = False # True if inside the contributor's <username>
-        
-    def process_page_xml_class(self, page_xml_str):
-        parser = xml.sax.make_parser()
-    
-        handler = PageParser()
-        parser.setContentHandler(handler)
-        
-        try:
-            # Parse page content (revisions)
-
-            parser.parse(io.StringIO(page_xml_str))
-
-            DB_USER = os.environ.get("DB_USER")
-            DB_PASS = os.environ.get("DB_PASS")
-            DB_NAME = os.environ.get("DB_NAME")
-            DB_HOST = os.environ.get("DB_HOST")
-            DB_PORT = os.environ.get("DB_PORT")
-
-            conn = psycopg2.connect(
-                dbname=DB_NAME,
-                user=DB_USER,
-                password=DB_PASS, 
-                host=DB_HOST,
-                port=DB_PORT
-            )
-            
-            self.db_executor.submit(insert_page_data, conn, handler, self.file_path)
-            # insert_rows(self.conn, 'entity', [(handler.entity_id, handler.entity_label, self.file_path)], columns=['entity_id', 'entity_label', 'file_path'])
-
-            # insert_rows(self.conn, 'revision', handler.revision, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
-
-            # insert_rows(self.conn, 'change', handler.changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
-
-            print(f'Finished processing {handler.entity_id, handler.entity_label}')
-            
-            return handler.entity_id, handler.entity_label
-        
-        except xml.sax.SAXParseException as e:
-            print('ERROR IN PAGE PARSER')
-            err_line = e.getLineNumber()
-            err_col = e.getColumnNumber()
-
-            print(f"Error at line {err_line}, column {err_col}")
-
-            all_lines = page_xml_str.splitlines()
-            start = max(err_line - 4, 0)  # 2 lines before
-            end = min(err_line + 1, len(all_lines))  # 1 line after
-
-            print("\n--- XML snippet around error ---")
-            for i in range(start, end):
-                prefix = ">>" if i + 1 == err_line else "  "
-                print(f"{prefix} Line {i+1}: {all_lines[i]}")
-            print("-------------------------------")
-            raise e
-
 
     @staticmethod
     def _serialize_start_tag(name, attrs):
@@ -262,57 +230,6 @@ class DumpParser(xml.sax.ContentHandler):
                         future.result()
                     self.futures = []
                     
-                # batch_changes = []
-                # batch_revisions = []
-                # batch_entities = []
-                # done_futures = [f for f in self.futures if f.done()]
-                # for f in done_futures:
-                #     entity_id, entity_label, changes, revisions = f.result()
-                #     batch_revisions.extend(revisions)
-                #     batch_changes.extend(changes)
-                #     batch_entities.append((entity_id, entity_label, self.file_path))
-
-                #     self.num_entities += 1
-
-                #     if len(batch_entities) >= BATCH_SIZE_ENTITIES:
-                        
-                #         insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
-                #         batch_entities = []
-                #         # df_entities = pd.DataFrame([[entity_id, entity_label, self.file_path]], columns=['entity_id', 'entity_label', 'file_path'])
-                #         # df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
-
-                #     if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
-
-                #         # df_changes = pd.DataFrame(batch_changes)
-                #         # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
-
-                #         # df_revisions = pd.DataFrame(batch_revisions)
-                #         # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
-
-                #         insert_rows(self.conn, 'revision', batch_revisions, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
-
-                #         insert_rows(self.conn, 'change', batch_changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
-                        
-                #         # set to empty so there are no double inserts
-                #         batch_changes = []
-                #         batch_revisions = []
-                
-                # self.futures = [f for f in self.futures if not f.done()]
-
-                # if batch_entities:
-                #     insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
-
-                # if batch_revisions:
-                #     # df_revisions = pd.DataFrame(batch_revisions)
-                #     # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
-                #     insert_rows(self.conn, 'revision', batch_revisions, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
-
-                # if batch_changes:
-                #     # df_changes = pd.DataFrame(batch_changes)
-                #     # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
-                #     insert_rows(self.conn, 'change', batch_changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
-
-
             # Reset state because I reached a </page>
             self.set_initial_state()
 
