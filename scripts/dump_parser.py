@@ -186,15 +186,12 @@ class DumpParser(xml.sax.ContentHandler):
         """ 
             Called when a tag ends (e.g. </page>)
         """
-        if not self.in_page:
-            if name == 'mediawiki':
-                # End of XML file
-                print(f"Finished processing file with {len(self.num_entities)} entities")
+        if name == 'mediawiki':
+            # End of XML file
+            print(f"Finished processing file with {len(self.num_entities)} entities")
 
-                self.conn.close() # close connection to DB
-                self.executor.shutdown(wait=True)
-            else:
-                return
+            self.conn.close() # close connection to DB
+            self.executor.shutdown(wait=True, cancel_futures=True)
             
         if self.in_revision:
             if name == 'comment': # at </comment>

@@ -121,8 +121,13 @@ if "__main__":
             files_to_parse = files_to_parse[:args.number_files]
 
         # Pass full paths to process_file
+        if args.number_files <= max_workers:
+            max_workers = args.number_files
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             for process_time, num_entities, file_path, size in executor.map(process_file, files_to_parse):
                 print(f"Finished processing {file_path} ({size} MB, {num_entities} entities) in {process_time} seconds")
                 with open(processed_log, "a") as f:
                     f.write(f"{file_path}\n")
+
+        executor.shutdown(wait=True, cancel_futures=True)
+                
