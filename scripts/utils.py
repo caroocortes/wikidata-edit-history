@@ -359,7 +359,7 @@ def copy_rows(conn, table_name, columns, rows):
     except Exception as e:
         conn.rollback()  # reset the transaction
 
-        print("\Error when doing copy batch error:")
+        print("Error when doing copy batch error:")
         print(e)
 
 def update_entity_label(conn, entity_id, entity_label):
