@@ -89,13 +89,6 @@ class PageParser(ContentHandler):
             raise e
     
     @staticmethod
-    def remove_leading_zeros(val):
-        parts = val.split('-', 1)  # split only at the first '-'
-        parts[0] = str(int(parts[0]))  # convert to int and back to string, this removes leading 0s
-        cleaned = '-'.join(parts)
-        return cleaned
-
-    @staticmethod
     def magnitude_of_change(old_value, new_value, datatype, metadata=False):
         
         if new_value is not None and old_value is not None and not metadata:

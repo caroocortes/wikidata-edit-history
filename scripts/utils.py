@@ -347,10 +347,16 @@ def copy_rows(conn, table_name, rows, columns):
 
     # Convert rows to CSV-like format in memory
     output = io.StringIO()
+    escaped = []
     for row in rows:
         # Escape tabs and newlines inside values
-        escaped = [(str(x).replace('\t', '\\t').replace('\n', '\\n') if x is not None else '\\N') for x in row]
-        line = '\t'.join(escaped)
+        if isinstance(x, (dict, list)):  # JSON column
+            escaped.append(json.dumps(x))
+        elif x is None:
+            escaped.append('\\N')
+        else:
+            escaped.append(str(x).replace('\t', '\\t').replace('\n', '\\n'))
+            line = '\t'.join(escaped)
         output.write(line + '\n')
     output.seek(0)
 
