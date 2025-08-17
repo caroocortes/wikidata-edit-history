@@ -227,24 +227,27 @@ class DumpParser(xml.sax.ContentHandler):
                 future = self.executor.submit(process_page_xml, raw_page_xml)
                 self.futures.append(future)
 
-                if len(self.futures) >= 15: # limits number of running tasks at a time
-                    print('waiting for futures to complete')
-                    wait(self.futures)
+                # if len(self.futures) >= 15: # limits number of running tasks at a time
+                #     print('waiting for futures to complete')
+                #     # wait(self.futures)
                 
                 batch_changes = []
                 batch_revisions = []
-                for f in as_completed(self.futures):
+                batch_entities = []
+                done_futures = [f for f in self.futures if f.done()]
+                for f in done_futures:
                     entity_id, entity_label, changes, revisions = f.result()
                     batch_revisions.extend(revisions)
                     batch_changes.extend(changes)
+                    batch_entities.append((entity_id, entity_label, self.file_path))
 
                     self.num_entities += 1
 
-                    print(f'About to save {entity_id} from {self.file_path} in entity table')
-                    insert_rows(self.conn, 'entity', [(entity_id, entity_label, self.file_path)], columns=['entity_id', 'entity_label', 'file_path'])
-
-                    df_entities = pd.DataFrame([[entity_id, entity_label, self.file_path]], columns=['entity_id', 'entity_label', 'file_path'])
-                    df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
+                    if len(batch_entities) >= BATCH_SIZE_ENTITIES:
+                    
+                        insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
+                        # df_entities = pd.DataFrame([[entity_id, entity_label, self.file_path]], columns=['entity_id', 'entity_label', 'file_path'])
+                        # df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
 
                     if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
 
@@ -261,8 +264,12 @@ class DumpParser(xml.sax.ContentHandler):
                         # set to empty so there are no double inserts
                         batch_changes = []
                         batch_revisions = []
+                        batch_entities = []
                 
-                self.futures.clear()
+                self.futures = [f for f in self.futures if not f.done()]
+
+                if batch_entities:
+                    insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
 
                 if batch_revisions:
                     # df_revisions = pd.DataFrame(batch_revisions)
