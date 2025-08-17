@@ -6,7 +6,7 @@ import Levenshtein
 from concurrent.futures import ThreadPoolExecutor
 import psycopg2
 import os
-
+import sys
 
 from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, copy_rows, update_entity_label
 from scripts.const import *
@@ -14,12 +14,15 @@ from scripts.const import *
 def batch_insert(conn, revision, changes):
     """Function to inser/copy into DB asynchronously."""
     
-    copy_rows(conn, 'revision', revision,
-                columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
-    copy_rows(conn, 'change', changes,
-                columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value',
-                         'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
-
+    try:
+        copy_rows(conn, 'revision', revision,
+                    columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
+        copy_rows(conn, 'change', changes,
+                    columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value',
+                            'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+    except Exception as e:
+        print('There was an error when batch inserting revisions and changes')
+        sys.stdout.flush()
 
 class PageParser(ContentHandler):
     def __init__(self, file_path):
