@@ -15,10 +15,8 @@ def batch_insert(conn, revision, changes):
     """Function to inser/copy into DB asynchronously."""
     
     try:
-        copy_rows(conn, 'revision', revision,
-                    columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
-        copy_rows(conn, 'change', changes,
-                    columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value',
+        copy_rows(conn, 'revision', revision, ['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
+        copy_rows(conn, 'change', changes, ['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value',
                             'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
     except Exception as e:
         print(f'There was an error when batch inserting revisions and changes: {e}')

@@ -341,7 +341,7 @@ def initialize_csv_files(suffix=None):
             paths['revision.csv']
         )
 
-def copy_rows(conn, table_name, columns, rows):
+def copy_rows(conn, table_name, rows, columns):
     if not rows:
         return
 
