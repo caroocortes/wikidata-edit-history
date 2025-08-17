@@ -1,12 +1,12 @@
 import xml.sax
-import pandas as pd
 import io
 import concurrent.futures
 from pathlib import Path
 from xml.sax.saxutils import escape
 from dotenv import load_dotenv
 import sys
-
+import queue
+import threading
 
 from scripts.page_parser import PageParser
 from scripts.const import *
@@ -60,7 +60,14 @@ class DumpParser(xml.sax.ContentHandler):
             max_workers = 8
             print('Number of workers to use: ', max_workers)
 
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+        # self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+
+        self.page_queue = queue.Queue(maxsize=100)  # adjust maxsize depending on memory
+        self.stop_event = threading.Event()
+
+        # Launch worker threads
+        for _ in range(max_workers):
+            self.executor.submit(self._worker)
 
     def set_initial_state(self):
         self.page_buffer = []
@@ -77,6 +84,20 @@ class DumpParser(xml.sax.ContentHandler):
 
         self.in_contributor = False          # True if inside a <contributor> block
         self.in_contributor_username = False # True if inside the contributor's <username>
+
+    def _worker(self):
+        """
+            Runs in a thread
+            Gets pages from queue and calls process_page_xml which processes the page
+        """
+        while not self.stop_event.is_set() or not self.page_queue.empty():
+            try:
+                page_xml_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
+                process_page_xml(page_xml_str, self.file_path)
+                self.page_queue.task_done()
+                self.num_entities += 1
+            except queue.Empty:
+                continue
 
     @staticmethod
     def _serialize_start_tag(name, attrs):
@@ -145,7 +166,8 @@ class DumpParser(xml.sax.ContentHandler):
         if name == 'mediawiki':
             # End of XML file
             print(f"Finished processing file with {self.num_entities} entities")
-
+            self.stop_event.set()
+            self.page_queue.join()  # Wait for all pages to be processed
             self.executor.shutdown(wait=True, cancel_futures=True)
             
         if self.in_revision:
@@ -176,18 +198,19 @@ class DumpParser(xml.sax.ContentHandler):
             if self.keep:
                 # NOTE: </page> is save in previous if
                 raw_page_xml = ''.join(self.page_buffer)
-                self.page_buffer.clear()
+                self.page_queue.put(raw_page_xml) # send page to queue
+                self.page_buffer = []
                 # Submit the page processing to worker
 
-                future = self.executor.submit(process_page_xml, raw_page_xml, self.file_path)
-                self.futures.append(future)
+                # future = self.executor.submit(process_page_xml, raw_page_xml, self.file_path)
+                # self.futures.append(future)
 
-                if len(self.futures) >= 15: # limits number of running tasks at a time
-                    print('waiting for futures to complete')
-                    concurrent.futures.wait(self.futures)
-                    for future in concurrent.futures.as_completed(self.futures):
-                        future.result()
-                    self.futures = []
+                # if len(self.futures) >= 15: # limits number of running tasks at a time
+                #     print('waiting for futures to complete')
+                #     concurrent.futures.wait(self.futures)
+                #     for future in concurrent.futures.as_completed(self.futures):
+                #         future.result()
+                #     self.futures = []
                     
             # Reset state because I reached a </page>
             self.set_initial_state()
