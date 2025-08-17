@@ -362,6 +362,7 @@ def copy_rows(conn, table_name, columns, rows):
         conn.rollback()
         print("Error when doing copy batch:")
         print(e)
+        raise e
 
 def update_entity_label(conn, entity_id, entity_label):
     """

@@ -21,7 +21,7 @@ def batch_insert(conn, revision, changes):
                     columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value',
                             'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
     except Exception as e:
-        print('There was an error when batch inserting revisions and changes')
+        print(f'There was an error when batch inserting revisions and changes: {e}')
         sys.stdout.flush()
 
 class PageParser(ContentHandler):
