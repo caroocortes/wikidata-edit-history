@@ -70,7 +70,7 @@ def process_file(file_path):
         f"Number of entities: {handler.num_entities}\t"
     )
 
-    return process_time, num_entities, file_path, size_hr
+    return process_time, handler.num_entities, file_path, size_hr
 
 
 if  __name__ == "__main__":
