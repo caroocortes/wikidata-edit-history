@@ -73,7 +73,7 @@ def process_file(file_path):
     return process_time, num_entities, file_path, size_hr
 
 
-if "__main__":
+if  __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("-f", "--file", help="xml.bz2 file to process", metavar="FILE")
     arg_parser.add_argument("-n", "--number_files", type=int, help="Number of xml.bz2 files to process", metavar="NUMBER_OF_FILES")
