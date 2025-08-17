@@ -3,16 +3,49 @@ import html
 import json
 import time
 import Levenshtein
+from concurrent.futures import ThreadPoolExecutor
+import psycopg2
+import os
 
-from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian
 
+from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, copy_rows
 from scripts.const import *
 
+def batch_insert(conn, entity_id, entity_label, revision, changes, file_path):
+    """Function to inser/copy into DB asynchronously."""
+    
+    insert_rows(conn, 'entity', [(entity_id, entity_label, file_path)],
+                columns=['entity_id', 'entity_label', 'file_path'])
+    copy_rows(conn, 'revision', revision,
+                columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
+    copy_rows(conn, 'change', changes,
+                columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value',
+                         'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+
+
 class PageParser(ContentHandler):
-    def __init__(self):
+    def __init__(self, file_path):
         self.changes = []
         self.revision = []
         self.set_initial_state()    
+
+        self.file_path = file_path
+
+        self.db_executor = ThreadPoolExecutor(max_workers=2)  # for DB inserts
+
+        DB_USER = os.environ.get("DB_USER")
+        DB_PASS = os.environ.get("DB_PASS")
+        DB_NAME = os.environ.get("DB_NAME")
+        DB_HOST = os.environ.get("DB_HOST")
+        DB_PORT = os.environ.get("DB_PORT")
+
+        self.conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS, 
+            host=DB_HOST,
+            port=DB_PORT
+        )
 
     def set_initial_state(self):
         self.entity_id = ''
@@ -708,6 +741,15 @@ class PageParser(ContentHandler):
             self.revision_meta = {}
             self.revision_text = ''
 
+        if len(self.changes) >= BATCH_SIZE_CHANGES: # changes will be > revisions in worst case (more than 1 change per revision)
+            # Batch insert in separate thread
+
+            self.db_executor.submit(batch_insert, self.conn, self.entity_id, self.entity_label, self.revision, self.changes, self.file_path)
+
+            # clear to prevent duplicates
+            self.changes = []
+            self.revision = []
+
         if self.in_revision:
             if name == 'id': # at </id>
                 self.in_revision_id = False
@@ -728,15 +770,8 @@ class PageParser(ContentHandler):
 
         if name == 'page': # at </page>
         
-        #     self.end_time_entity = time.time()
-    
+            # save remaining things
+            batch_insert(self.conn, self.entity_id, self.entity_label, self.revision, self.changes, self.file_path)
+            self.conn.close()
+            self.db_executor.shutdown(wait=True)
             print(f'Finished processing revisions for  entity {self.entity_id} - {self.num_revisions} revisions - {self.end_time_entity - self.start_time_entity} seconds')
-            return
-            # print(f'Number of revisions without changes: {self.revisions_without_changes}')
-
-            # # TODO: change to save in DB
-            # df_changes = pd.DataFrame(self.changes)
-            # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
-
-            # df_revisions = pd.DataFrame(self.revision)
-            # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
