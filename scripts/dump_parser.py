@@ -233,9 +233,9 @@ class DumpParser(xml.sax.ContentHandler):
                 if len(self.futures) >= 15: # limits number of running tasks at a time
                     print('waiting for futures to complete')
                     wait(self.futures)
-                
+                    batch_changes = []
+                    batch_revisions = []
                     for f in as_completed(self.futures):
-
                         entity_id, entity_label, changes, revisions = f.result()
                         batch_revisions.extend(revisions)
                         batch_changes.extend(changes)
