@@ -695,6 +695,9 @@ class PageParser(ContentHandler):
             # insert entity to entity table
             insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
                 columns=['entity_id', 'entity_label', 'file_path'])
+            
+            print(f'Inserted entity {self.entity_id} {self.entity_label}')
+            sys.stdout.flush()
 
         if name == 'revision': # at </revision> of revision and we keep the entity
 
@@ -779,4 +782,6 @@ class PageParser(ContentHandler):
             update_entity_label(self.conn, self.entity_id, self.entity_label) # update label with last value
             self.conn.close()
             self.db_executor.shutdown(wait=True)
+            self.end_time_entity = time.time()
             print(f'Finished processing revisions for  entity {self.entity_id} - {self.num_revisions} revisions - {self.end_time_entity - self.start_time_entity} seconds')
+            sys.stdout.flush()

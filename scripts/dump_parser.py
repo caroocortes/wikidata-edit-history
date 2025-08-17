@@ -3,12 +3,9 @@ import pandas as pd
 import io
 import concurrent.futures
 from pathlib import Path
-from concurrent.futures import wait, as_completed
-from concurrent.futures import ThreadPoolExecutor
 from xml.sax.saxutils import escape
-import psycopg2
 from dotenv import load_dotenv
-import os
+import sys
 
 
 from scripts.page_parser import PageParser
@@ -26,6 +23,7 @@ def process_page_xml(page_xml_str, file_path):
         parser.parse(io.StringIO(page_xml_str))
     
         print(f'Finished processing {handler.entity_id, handler.entity_label}')
+        sys.stdout.flush()
 
         return handler.entity_id, handler.entity_label, handler.changes, handler.revision
     except xml.sax.SAXParseException as e:
@@ -186,8 +184,8 @@ class DumpParser(xml.sax.ContentHandler):
 
                 if len(self.futures) >= 15: # limits number of running tasks at a time
                     print('waiting for futures to complete')
-                    wait(self.futures)
-                    for future in as_completed(self.futures):
+                    concurrent.futures.wait(self.futures)
+                    for future in concurrent.futures.as_completed(self.futures):
                         future.result()
                     self.futures = []
                     
