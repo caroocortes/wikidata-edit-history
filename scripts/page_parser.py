@@ -8,7 +8,7 @@ import psycopg2
 import os
 import sys
 
-from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, copy_rows, update_entity_label
+from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label
 from scripts.const import *
 
 def batch_insert(conn, revision, changes):
