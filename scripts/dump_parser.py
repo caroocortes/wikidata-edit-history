@@ -246,6 +246,7 @@ class DumpParser(xml.sax.ContentHandler):
                     if len(batch_entities) >= BATCH_SIZE_ENTITIES:
                     
                         insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
+                        batch_entities = []
                         # df_entities = pd.DataFrame([[entity_id, entity_label, self.file_path]], columns=['entity_id', 'entity_label', 'file_path'])
                         # df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
 
@@ -264,7 +265,6 @@ class DumpParser(xml.sax.ContentHandler):
                         # set to empty so there are no double inserts
                         batch_changes = []
                         batch_revisions = []
-                        batch_entities = []
                 
                 self.futures = [f for f in self.futures if not f.done()]
 
