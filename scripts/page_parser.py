@@ -8,14 +8,12 @@ import psycopg2
 import os
 
 
-from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, copy_rows
+from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, copy_rows, update_entity_label
 from scripts.const import *
 
-def batch_insert(conn, entity_id, entity_label, revision, changes, file_path):
+def batch_insert(conn, revision, changes):
     """Function to inser/copy into DB asynchronously."""
     
-    insert_rows(conn, 'entity', [(entity_id, entity_label, file_path)],
-                columns=['entity_id', 'entity_label', 'file_path'])
     copy_rows(conn, 'revision', revision,
                 columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
     copy_rows(conn, 'change', changes,
@@ -690,6 +688,10 @@ class PageParser(ContentHandler):
         """
         if self.in_title: # at </title> 
             self.in_title = False
+            
+            # insert entity to entity table
+            insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
+                columns=['entity_id', 'entity_label', 'file_path'])
 
         if name == 'revision': # at </revision> of revision and we keep the entity
 
@@ -743,8 +745,7 @@ class PageParser(ContentHandler):
 
         if len(self.changes) >= BATCH_SIZE_CHANGES: # changes will be > revisions in worst case (more than 1 change per revision)
             # Batch insert in separate thread
-
-            self.db_executor.submit(batch_insert, self.conn, self.entity_id, self.entity_label, self.revision, self.changes, self.file_path)
+            self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes)
 
             # clear to prevent duplicates
             self.changes = []
@@ -771,7 +772,8 @@ class PageParser(ContentHandler):
         if name == 'page': # at </page>
         
             # save remaining things
-            batch_insert(self.conn, self.entity_id, self.entity_label, self.revision, self.changes, self.file_path)
+            batch_insert(self.conn, self.revision, self.changes)
+            update_entity_label(self.conn, self.entity_id, self.entity_label) # update label with last value
             self.conn.close()
             self.db_executor.shutdown(wait=True)
             print(f'Finished processing revisions for  entity {self.entity_id} - {self.num_revisions} revisions - {self.end_time_entity - self.start_time_entity} seconds')

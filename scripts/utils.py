@@ -397,6 +397,26 @@ def copy_rows(conn, table_name, columns, rows):
         print("\nOriginal batch insert error:")
         print(e)
 
+def update_entity_label(conn, entity_id, entity_label):
+    """
+    Update entity_label in the entity table.
+    
+    :param conn: psycopg2 connection
+    """
+
+    query = """
+        UPDATE entity
+        SET entity_label = %s
+        WHERE entity_id = %s
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, (entity_label, entity_id))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"Update of label ({entity_label}) for entity {entity_id} failed: {e}")
+
 def insert_rows(conn, table_name, rows, columns):
     if not rows:
         return

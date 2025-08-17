@@ -16,9 +16,9 @@ from scripts.const import *
 from scripts.utils import initialize_csv_files
 
 
-def process_page_xml(page_xml_str):
+def process_page_xml(page_xml_str, file_path):
     parser = xml.sax.make_parser()
-    handler = PageParser()
+    handler = PageParser(file_path=file_path)
     parser.setContentHandler(handler)
     
     try:
@@ -181,7 +181,7 @@ class DumpParser(xml.sax.ContentHandler):
                 self.page_buffer.clear()
                 # Submit the page processing to worker
 
-                future = self.executor.submit(process_page_xml, raw_page_xml)
+                future = self.executor.submit(process_page_xml, raw_page_xml, self.file_path)
                 self.futures.append(future)
 
                 if len(self.futures) >= 15: # limits number of running tasks at a time
