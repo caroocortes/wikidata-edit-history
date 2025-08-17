@@ -245,6 +245,7 @@ class DumpParser(xml.sax.ContentHandler):
                         self.num_entities += 1
 
                         insert_rows(self.conn, 'entity', [(entity_id, entity_label, self.file_path)], columns=['entity_id', 'entity_label', 'file_path'])
+                        print(f'Saved {entity_id} from {self.file_path}')
 
                         if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
 
