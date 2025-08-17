@@ -15,7 +15,20 @@ from scripts.page_parser import PageParser
 from scripts.const import *
 from scripts.utils import insert_rows, initialize_csv_files
 
-def insert_page_data(conn, handler, file_path):
+def insert_page_data(handler, file_path):
+    DB_USER = os.environ.get("DB_USER")
+    DB_PASS = os.environ.get("DB_PASS")
+    DB_NAME = os.environ.get("DB_NAME")
+    DB_HOST = os.environ.get("DB_HOST")
+    DB_PORT = os.environ.get("DB_PORT")
+
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS, 
+        host=DB_HOST,
+        port=DB_PORT
+    )
     """Function to insert all page data into DB asynchronously."""
     insert_rows(conn, 'entity', [(handler.entity_id, handler.entity_label, file_path)],
                 columns=['entity_id', 'entity_label', 'file_path'])
@@ -29,7 +42,7 @@ def insert_page_data(conn, handler, file_path):
     conn.close() # close connection to DB
 
 
-def process_page_xml(page_xml_str):
+def process_page_xml(page_xml_str, db_executor, file_path):
     parser = xml.sax.make_parser()
     
     handler = PageParser()
@@ -39,22 +52,8 @@ def process_page_xml(page_xml_str):
         # Parse page content (revisions)
 
         parser.parse(io.StringIO(page_xml_str))
-
-        DB_USER = os.environ.get("DB_USER")
-        DB_PASS = os.environ.get("DB_PASS")
-        DB_NAME = os.environ.get("DB_NAME")
-        DB_HOST = os.environ.get("DB_HOST")
-        DB_PORT = os.environ.get("DB_PORT")
-
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS, 
-            host=DB_HOST,
-            port=DB_PORT
-        )
         
-        self.db_executor.submit(insert_page_data, conn, handler, self.file_path)
+        db_executor.submit(insert_page_data, handler, file_path)
         # insert_rows(self.conn, 'entity', [(handler.entity_id, handler.entity_label, self.file_path)], columns=['entity_id', 'entity_label', 'file_path'])
 
         # insert_rows(self.conn, 'revision', handler.revision, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
@@ -220,7 +219,7 @@ class DumpParser(xml.sax.ContentHandler):
                 self.page_buffer.clear()
                 # Submit the page processing to worker
 
-                future = self.executor.submit(process_page_xml, raw_page_xml)
+                future = self.executor.submit(process_page_xml, raw_page_xml, self.db_executor, self.file_path)
                 self.futures.append(future)
 
                 if len(self.futures) >= 15: # limits number of running tasks at a time
