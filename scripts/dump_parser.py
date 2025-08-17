@@ -26,6 +26,9 @@ def insert_page_data(conn, handler, file_path):
                          'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
     print(f'Finished DB insert for {handler.entity_id, handler.entity_label}')
 
+    conn.close() # close connection to DB
+
+
 def process_page_xml(page_xml_str):
     parser = xml.sax.make_parser()
     
@@ -63,19 +66,6 @@ class DumpParser(xml.sax.ContentHandler):
         dotenv_path = Path(__file__).resolve().parent.parent / ".env"
         load_dotenv(dotenv_path)
 
-        DB_USER = os.environ.get("DB_USER")
-        DB_PASS = os.environ.get("DB_PASS")
-        DB_NAME = os.environ.get("DB_NAME")
-        DB_HOST = os.environ.get("DB_HOST")
-        DB_PORT = os.environ.get("DB_PORT")
-
-        self.conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS, 
-            host=DB_HOST,
-            port=DB_PORT
-        )
         self.file_path = file_path # save file path
         self.set_initial_state()  
         self.num_entities = 0  
@@ -115,8 +105,22 @@ class DumpParser(xml.sax.ContentHandler):
             # Parse page content (revisions)
 
             parser.parse(io.StringIO(page_xml_str))
+
+            DB_USER = os.environ.get("DB_USER")
+            DB_PASS = os.environ.get("DB_PASS")
+            DB_NAME = os.environ.get("DB_NAME")
+            DB_HOST = os.environ.get("DB_HOST")
+            DB_PORT = os.environ.get("DB_PORT")
+
+            conn = psycopg2.connect(
+                dbname=DB_NAME,
+                user=DB_USER,
+                password=DB_PASS, 
+                host=DB_HOST,
+                port=DB_PORT
+            )
             
-            self.db_executor.submit(insert_page_data, self.conn, handler, self.file_path)
+            self.db_executor.submit(insert_page_data, conn, handler, self.file_path)
             # insert_rows(self.conn, 'entity', [(handler.entity_id, handler.entity_label, self.file_path)], columns=['entity_id', 'entity_label', 'file_path'])
 
             # insert_rows(self.conn, 'revision', handler.revision, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
@@ -214,7 +218,6 @@ class DumpParser(xml.sax.ContentHandler):
             # End of XML file
             print(f"Finished processing file with {self.num_entities} entities")
 
-            self.conn.close() # close connection to DB
             self.executor.shutdown(wait=True, cancel_futures=True)
             self.db_executor.shutdown(wait=True)
             
