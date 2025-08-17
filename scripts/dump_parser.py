@@ -4,6 +4,7 @@ import io
 import concurrent.futures
 from pathlib import Path
 from concurrent.futures import wait, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from xml.sax.saxutils import escape
 import psycopg2
 from dotenv import load_dotenv
@@ -13,6 +14,17 @@ import os
 from scripts.page_parser import PageParser
 from scripts.const import *
 from scripts.utils import insert_rows, initialize_csv_files
+
+def insert_page_data(conn, handler, file_path):
+    """Function to insert all page data into DB asynchronously."""
+    insert_rows(conn, 'entity', [(handler.entity_id, handler.entity_label, file_path)],
+                columns=['entity_id', 'entity_label', 'file_path'])
+    insert_rows(conn, 'revision', handler.revision,
+                columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
+    insert_rows(conn, 'change', handler.changes,
+                columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value',
+                         'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+    print(f'Finished DB insert for {handler.entity_id, handler.entity_label}')
 
 def process_page_xml(page_xml_str):
     parser = xml.sax.make_parser()
@@ -73,6 +85,8 @@ class DumpParser(xml.sax.ContentHandler):
             max_workers = 8
             print('Number of workers to use: ', max_workers)
 
+        self.db_executor = ThreadPoolExecutor(max_workers=2)  # for DB inserts
+
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
 
     def set_initial_state(self):
@@ -101,8 +115,18 @@ class DumpParser(xml.sax.ContentHandler):
             # Parse page content (revisions)
 
             parser.parse(io.StringIO(page_xml_str))
+            
+            self.db_executor.submit(insert_page_data, self.conn, handler, self.file_path)
+            # insert_rows(self.conn, 'entity', [(handler.entity_id, handler.entity_label, self.file_path)], columns=['entity_id', 'entity_label', 'file_path'])
 
-            return handler.entity_id, handler.entity_label, handler.changes, handler.revision
+            # insert_rows(self.conn, 'revision', handler.revision, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
+
+            # insert_rows(self.conn, 'change', handler.changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+
+            print(f'Finished processing {handler.entity_id, handler.entity_label}')
+            
+            return handler.entity_id, handler.entity_label
+        
         except xml.sax.SAXParseException as e:
             print('ERROR IN PAGE PARSER')
             err_line = e.getLineNumber()
@@ -188,10 +212,11 @@ class DumpParser(xml.sax.ContentHandler):
         """
         if name == 'mediawiki':
             # End of XML file
-            print(f"Finished processing file with {len(self.num_entities)} entities")
+            print(f"Finished processing file with {self.num_entities} entities")
 
             self.conn.close() # close connection to DB
             self.executor.shutdown(wait=True, cancel_futures=True)
+            self.db_executor.shutdown(wait=True)
             
         if self.in_revision:
             if name == 'comment': # at </comment>
@@ -227,59 +252,62 @@ class DumpParser(xml.sax.ContentHandler):
                 future = self.executor.submit(process_page_xml, raw_page_xml)
                 self.futures.append(future)
 
-                # if len(self.futures) >= 15: # limits number of running tasks at a time
-                #     print('waiting for futures to complete')
-                #     # wait(self.futures)
-                
-                batch_changes = []
-                batch_revisions = []
-                batch_entities = []
-                done_futures = [f for f in self.futures if f.done()]
-                for f in done_futures:
-                    entity_id, entity_label, changes, revisions = f.result()
-                    batch_revisions.extend(revisions)
-                    batch_changes.extend(changes)
-                    batch_entities.append((entity_id, entity_label, self.file_path))
-
-                    self.num_entities += 1
-
-                    if len(batch_entities) >= BATCH_SIZE_ENTITIES:
+                if len(self.futures) >= 15: # limits number of running tasks at a time
+                    print('waiting for futures to complete')
+                    wait(self.futures)
+                    for future in as_completed(self.futures):
+                        future.result()
+                    self.futures = []
                     
-                        insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
-                        batch_entities = []
-                        # df_entities = pd.DataFrame([[entity_id, entity_label, self.file_path]], columns=['entity_id', 'entity_label', 'file_path'])
-                        # df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
+                # batch_changes = []
+                # batch_revisions = []
+                # batch_entities = []
+                # done_futures = [f for f in self.futures if f.done()]
+                # for f in done_futures:
+                #     entity_id, entity_label, changes, revisions = f.result()
+                #     batch_revisions.extend(revisions)
+                #     batch_changes.extend(changes)
+                #     batch_entities.append((entity_id, entity_label, self.file_path))
 
-                    if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
+                #     self.num_entities += 1
 
-                        # df_changes = pd.DataFrame(batch_changes)
-                        # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
-
-                        # df_revisions = pd.DataFrame(batch_revisions)
-                        # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
-
-                        insert_rows(self.conn, 'revision', batch_revisions, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
-
-                        insert_rows(self.conn, 'change', batch_changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+                #     if len(batch_entities) >= BATCH_SIZE_ENTITIES:
                         
-                        # set to empty so there are no double inserts
-                        batch_changes = []
-                        batch_revisions = []
+                #         insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
+                #         batch_entities = []
+                #         # df_entities = pd.DataFrame([[entity_id, entity_label, self.file_path]], columns=['entity_id', 'entity_label', 'file_path'])
+                #         # df_entities.to_csv(self.entity_file_path, mode='a', index=False, header=False)
+
+                #     if len(batch_changes) >= BATCH_SIZE_CHANGES: # check changes since # changes >= #revisions (worst case: 1 revision has multiple changes)
+
+                #         # df_changes = pd.DataFrame(batch_changes)
+                #         # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+
+                #         # df_revisions = pd.DataFrame(batch_revisions)
+                #         # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+
+                #         insert_rows(self.conn, 'revision', batch_revisions, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
+
+                #         insert_rows(self.conn, 'change', batch_changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+                        
+                #         # set to empty so there are no double inserts
+                #         batch_changes = []
+                #         batch_revisions = []
                 
-                self.futures = [f for f in self.futures if not f.done()]
+                # self.futures = [f for f in self.futures if not f.done()]
 
-                if batch_entities:
-                    insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
+                # if batch_entities:
+                #     insert_rows(self.conn, 'entity', batch_entities, columns=['entity_id', 'entity_label', 'file_path'])
 
-                if batch_revisions:
-                    # df_revisions = pd.DataFrame(batch_revisions)
-                    # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
-                    insert_rows(self.conn, 'revision', batch_revisions, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
+                # if batch_revisions:
+                #     # df_revisions = pd.DataFrame(batch_revisions)
+                #     # df_revisions.to_csv(self.revision_file_path, mode='a', index=False, header=False)
+                #     insert_rows(self.conn, 'revision', batch_revisions, columns=['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
 
-                if batch_changes:
-                    # df_changes = pd.DataFrame(batch_changes)
-                    # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
-                    insert_rows(self.conn, 'change', batch_changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+                # if batch_changes:
+                #     # df_changes = pd.DataFrame(batch_changes)
+                #     # df_changes.to_csv(self.change_file_path, mode='a', index=False, header=False)
+                #     insert_rows(self.conn, 'change', batch_changes, columns=['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
 
 
             # Reset state because I reached a </page>
