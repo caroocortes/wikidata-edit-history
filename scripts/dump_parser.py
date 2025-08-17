@@ -62,7 +62,7 @@ class DumpParser(xml.sax.ContentHandler):
             max_workers = 8
             print('Number of workers to use: ', max_workers)
 
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
 
     def set_initial_state(self):
         self.page_buffer = []
