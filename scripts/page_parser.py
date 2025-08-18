@@ -31,7 +31,7 @@ class PageParser():
         self.set_initial_state()    
 
         self.file_path = file_path
-        self.page_elem
+        self.page_elem = page_elem
 
         self.db_executor = ThreadPoolExecutor(max_workers=2)  # for DB inserts
 
@@ -788,7 +788,7 @@ class PageParser():
 
         print(f'Inside process page!!!')
         sys.stdout.flush()
-        
+
         entity_id = ''
         entity_label = ''
         num_revisions = 0
