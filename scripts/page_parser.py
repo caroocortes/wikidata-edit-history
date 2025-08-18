@@ -28,7 +28,6 @@ class PageParser():
     def __init__(self, file_path, page_elem_str):
         self.changes = []
         self.revision = []
-        self.set_initial_state()    
 
         self.file_path = file_path
         self.page_elem = etree.fromstring(page_elem_str)
@@ -788,8 +787,6 @@ class PageParser():
         print(f'Inside process page!!!')
         sys.stdout.flush()
 
-        entity_id = ''
-        entity_label = ''
         num_revisions = 0
         revisions_without_changes = 0
         previous_revision = None
@@ -804,12 +801,12 @@ class PageParser():
         # Extract title / entity_id
         title_elem = self.page_elem.find(title_tag)
         if title_elem is not None:
-            entity_id = (title_elem.text or '').strip()
+            self.entity_id = (title_elem.text or '').strip()
             start_time_entity = time.time()
             # Insert entity row
-            insert_rows(self.conn, 'entity', [(entity_id, entity_label, self.file_path)],
+            insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
                         columns=['entity_id', 'entity_label', 'file_path'])
-            print(f'Inserted entity {entity_id}')
+            print(f'Inserted entity {self.entity_id}')
         
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
@@ -840,8 +837,8 @@ class PageParser():
                 change = self._changes_deleted_created_entity(previous_revision, DELETE_ENTITY)
             else:
                 curr_label = self._get_english_label(current_revision)
-                if curr_label and entity_label != curr_label and curr_label != '':
-                    entity_label = curr_label
+                if curr_label and self.entity_label != curr_label and curr_label != '':
+                    self.entity_label = curr_label
                 change = self.get_changes_from_revisions(current_revision, previous_revision)
 
             if change:
@@ -874,9 +871,9 @@ class PageParser():
         rev_elem.clear()
 
         # Update entity label with last label
-        update_entity_label(self.conn, entity_id, entity_label)
+        update_entity_label(self.conn, self.entity_id, self.entity_label)
         end_time_entity = time.time()
-        print(f'Finished entity {entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
+        print(f'Finished entity {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
 
         # Clear element to free memory
         self.page_elem.clear()
