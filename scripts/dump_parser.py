@@ -99,6 +99,7 @@ class DumpParser(xml.sax.ContentHandler):
                 process_page_xml(page_xml_str, self.file_path)
                 self.page_queue.task_done()
                 print(f'Finished processing page: {time.time() - start}')
+                sys.stdout.flush()
                 self.num_entities += 1
             except queue.Empty:
                 continue
@@ -207,6 +208,7 @@ class DumpParser(xml.sax.ContentHandler):
                 self.page_buffer = []
 
                 print(f'Time it took to read page for {self.entity_id}: {time.time() - self.start_time} ')
+                sys.stdout.flush()
                 # Submit the page processing to worker
 
                 # future = self.executor.submit(process_page_xml, raw_page_xml, self.file_path)
