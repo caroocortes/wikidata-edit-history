@@ -31,6 +31,9 @@ class PageParser():
         self.entity_id = ''
         self.entity_label = ''
 
+        self.revision_meta = {}
+        self.revision_text = ""
+
         self.file_path = file_path
         self.page_elem = etree.fromstring(page_elem_str)
 
@@ -786,13 +789,8 @@ class PageParser():
 
     def process_page(self):
 
-        print(f'Inside process page!!!')
-        sys.stdout.flush()
-
         num_revisions = 0
         revisions_without_changes = 0
-        changes = []
-        revision = []
         ns = "http://www.mediawiki.org/xml/export-0.11/"
 
         title_tag = f"{{{ns}}}title"
@@ -812,7 +810,7 @@ class PageParser():
         
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
-            # Extract text, id, timestamp, comment, username
+            # Extract text, id, timestamp, comment, username, user_id
 
             contrib_elem = rev_elem.find(f'{{{ns}}}contributor')
         
@@ -822,7 +820,7 @@ class PageParser():
             else:
                 username = ''
                 user_id = ''
-            print(f'Before revision_meta, entity_id = "{self.entity_id}" and revision_id="{self.revision_meta['revision_id']}"')
+            print(f'Before revision_meta, entity_id = "{self.entity_id}"')
             self.revision_meta = {
                 'entity_id': self.entity_id,
                 'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
@@ -832,21 +830,22 @@ class PageParser():
                 'user_id': user_id
             }
             
+            # Get revision text
             revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
             current_revision = self._parse_json_revision(revision_text)
             
             if not current_revision:
-                change = self._changes_deleted_created_entity(previous_revision, DELETE_ENTITY)
+                change = self._changes_deleted_created_entity(self.previous_revision, DELETE_ENTITY)
             else:
                 curr_label = self._get_english_label(current_revision)
                 if curr_label and self.entity_label != curr_label and curr_label != '':
                     self.entity_label = curr_label
-                change = self.get_changes_from_revisions(current_revision, previous_revision)
+                change = self.get_changes_from_revisions(current_revision, self.previous_revision)
 
             if change:
-                changes.extend(change)
+                self.changes.extend(change)
 
-                revision.append((
+                self.revision.append((
                     self.revision_meta['revision_id'],
                     self.revision_meta['entity_id'],
                     self.revision_meta['timestamp'],
@@ -861,16 +860,17 @@ class PageParser():
             num_revisions += 1
 
             # Batch insert
-            if len(changes) >= BATCH_SIZE_CHANGES:
-                self.db_executor.submit(batch_insert, self.conn, revision, changes)
-                changes = []
-                revision = []
+            if len(self.changes) >= BATCH_SIZE_CHANGES:
+                self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes)
+                self.changes = []
+                self.revision = []
+
+            # free memory
+            rev_elem.clear()
 
         # Insert remaining changes if the BATCH_SIZE was not reached
-        if changes:
-            batch_insert(self.conn, revision, changes)
-
-        rev_elem.clear()
+        if self.changes:
+            batch_insert(self.conn, self.revision, self.changes)
 
         # Update entity label with last label
         update_entity_label(self.conn, self.entity_id, self.entity_label)
