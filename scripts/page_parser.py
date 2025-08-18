@@ -816,9 +816,13 @@ class PageParser():
             # Extract text, id, timestamp, comment, username
 
             contrib_elem = rev_elem.find('contributor')
+        
             if contrib_elem is not None:
                 username = (contrib_elem.findtext('username') or '').strip()
                 user_id = (contrib_elem.findtext('id') or '').strip()
+            else:
+                username = ''
+                user_id = ''
 
             self.revision_meta = {
                 'entity_id': self.entity_id,
