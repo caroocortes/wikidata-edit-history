@@ -784,6 +784,9 @@ class PageParser(ContentHandler):
             sys.stdout.flush()
 
     def process_page(self):
+
+        print(f'Inside process page!!!')
+        sys.stdout.flush()
         entity_id = ''
         entity_label = ''
         num_revisions = 0

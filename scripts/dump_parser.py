@@ -222,6 +222,8 @@ class DumpParser():
     
     def parse_dump(self, file_obj):
         context = etree.iterparse(file_obj, events=("end",), tag="page")
+        print(f'Inside dump parser!!')
+        sys.stdout.flush()
         for event, page_elem in context:
             start_time = time.time()
             keep = False
