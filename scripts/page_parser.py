@@ -67,7 +67,6 @@ class PageParser():
             return current_revision
         except json.JSONDecodeError as e:
             print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped.')
-            raise e
     
     @staticmethod
     def magnitude_of_change(old_value, new_value, datatype, metadata=False):

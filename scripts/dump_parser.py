@@ -75,7 +75,6 @@ class DumpParser():
         title_tag = f"{{{ns}}}title"
 
         context = etree.iterparse(file_obj, events=("end",), tag=page_tag)
-        print(f'Inside dump parser!!')
         
         sys.stdout.flush()
         for event, page_elem in context:
