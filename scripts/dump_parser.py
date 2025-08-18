@@ -192,6 +192,7 @@ class DumpParser(xml.sax.ContentHandler):
             self.keep = True
             self.in_title = False
             self.page_buffer.append(self.entity_id) # save entity_id
+            print(f'Keeping {self.entity_id}')
 
         elif name =='title' and not self.entity_id.startswith("Q"):
             print(f'Not keeping page {self.entity_id}')
