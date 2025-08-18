@@ -221,8 +221,13 @@ class DumpParser():
     
     
     def parse_dump(self, file_obj):
-        context = etree.iterparse(file_obj, events=("end",), tag="page")
+        ns = "http://www.mediawiki.org/xml/export-0.11/"
+        page_tag = f"{{{ns}}}page"
+        title_tag = f"{{{ns}}}title"
+
+        context = etree.iterparse(file_obj, events=("end",), tag=page_tag)
         print(f'Inside dump parser!!')
+        
         sys.stdout.flush()
         for event, page_elem in context:
             start_time = time.time()
@@ -230,7 +235,7 @@ class DumpParser():
             entity_id = ""
 
             # Get title
-            title_elem = page_elem.find("title")
+            title_elem = page_elem.find(title_tag)
             if title_elem is not None:
                 entity_id = title_elem.text or ""
                 if entity_id.startswith("Q"):

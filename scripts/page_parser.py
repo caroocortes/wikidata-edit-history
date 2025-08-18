@@ -24,7 +24,7 @@ def batch_insert(conn, revision, changes):
         print(f'There was an error when batch inserting revisions and changes: {e}')
         sys.stdout.flush()
 
-class PageParser(ContentHandler):
+class PageParser():
     def __init__(self, file_path, page_elem):
         self.changes = []
         self.revision = []
@@ -783,6 +783,7 @@ class PageParser(ContentHandler):
             print(f'Finished processing revisions for  entity {self.entity_id} - {self.num_revisions} revisions - {self.end_time_entity - self.start_time_entity} seconds')
             sys.stdout.flush()
 
+
     def process_page(self):
 
         print(f'Inside process page!!!')
@@ -794,9 +795,14 @@ class PageParser(ContentHandler):
         previous_revision = None
         changes = []
         revision = []
+        ns = "http://www.mediawiki.org/xml/export-0.11/"
+
+        title_tag = f"{{{ns}}}title"
+        revision_tag = f'{{{ns}}}revision'
+        revision_text_tag = f'{{{ns}}}text'
 
         # Extract title / entity_id
-        title_elem = self.page_elem.find('title')
+        title_elem = self.page_elem.find(title_tag)
         if title_elem is not None:
             entity_id = (title_elem.text or '').strip()
             start_time_entity = time.time()
@@ -806,9 +812,9 @@ class PageParser(ContentHandler):
             print(f'Inserted entity {entity_id}')
         
         # Iterate over revisions
-        for rev_elem in self.page_elem.findall('revision'):
+        for rev_elem in self.page_elem.findall(revision_tag):
             # Extract text, id, timestamp, comment, username
-            revision_text = (rev_elem.findtext('text') or '').strip()
+            revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
             revision_meta = {
                 'revision_id': rev_elem.findtext('id', '').strip(),
                 'timestamp': rev_elem.findtext('timestamp', '').strip(),
