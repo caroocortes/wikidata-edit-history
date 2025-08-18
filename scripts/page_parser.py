@@ -840,7 +840,7 @@ class PageParser():
                 change = self._changes_deleted_created_entity(previous_revision, DELETE_ENTITY)
             else:
                 curr_label = self._get_english_label(current_revision)
-                if curr_label and entity_label != curr_label:
+                if curr_label and entity_label != curr_label and curr_label != '':
                     entity_label = curr_label
                 change = self.get_changes_from_revisions(current_revision, previous_revision)
 
@@ -873,7 +873,7 @@ class PageParser():
 
         rev_elem.clear()
 
-        # Update entity label
+        # Update entity label with last label
         update_entity_label(self.conn, entity_id, entity_label)
         end_time_entity = time.time()
         print(f'Finished entity {entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
