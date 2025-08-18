@@ -28,6 +28,8 @@ class PageParser():
     def __init__(self, file_path, page_elem_str):
         self.changes = []
         self.revision = []
+        self.entity_id = ''
+        self.entity_label = ''
 
         self.file_path = file_path
         self.page_elem = etree.fromstring(page_elem_str)
