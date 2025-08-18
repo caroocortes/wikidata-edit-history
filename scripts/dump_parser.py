@@ -59,14 +59,14 @@ class DumpParser():
             max_workers = 8
             print('Number of workers to use: ', max_workers)
 
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
-
         self.page_queue = mp.Queue(maxsize=100) 
         self.stop_event = mp.Event()
 
         # Launch worker processes
         for _ in range(max_workers):
-            self.executor.submit(self._worker)
+            p = mp.Process(target=self._worker)
+            p.start()
+            self.workers.append(p)
 
     def set_initial_state(self):
         self.page_buffer = []
@@ -171,8 +171,8 @@ class DumpParser():
             # End of XML file
             print(f"Finished processing file with {self.num_entities} entities")
             self.stop_event.set()
-            self.page_queue.join()  # Wait for all pages to be processed
-            self.executor.shutdown(wait=True, cancel_futures=True)
+            for p in self.workers:
+                p.join()
             
         if self.in_revision:
             if name == 'comment': # at </comment>
