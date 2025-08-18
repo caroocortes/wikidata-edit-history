@@ -64,7 +64,7 @@ def parse_with_xmltodict(file_path):
 def check_files_in_dir():
     import os
 
-    folder_path = "../../../san2/data/wikidata-history-dumps"
+    folder_path = "../../../../san2/data/wikidata-history-dumps"
     xml_files = [f for f in os.listdir(folder_path) if f.endswith(".xml")]
     print("Number of XML files:", len(xml_files))
 
