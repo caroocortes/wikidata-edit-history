@@ -618,7 +618,7 @@ class PageParser():
             else:
                 username = ''
                 user_id = ''
-                
+
             self.revision_meta = {
                 'entity_id': self.entity_id,
                 'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
@@ -673,7 +673,7 @@ class PageParser():
         # Update entity label with last label
         update_entity_label(self.conn, self.entity_id, self.entity_label)
         end_time_entity = time.time()
-        print(f'Finished processing entity {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
+        print(f'Finished processing entity (in PageParser.page_parser) {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
 
         # Clear element to free memory
         self.page_elem.clear()

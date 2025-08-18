@@ -91,9 +91,8 @@ class DumpParser():
             try:
                 page_elem_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
                 start = time.time()
-                print(f'To process page for entity')
                 process_page_xml(page_elem_str, self.file_path)
-                print(f'Finished processing page: {time.time() - start}')
+                print(f'Finished processing page in _worker: {time.time() - start}')
                 sys.stdout.flush()
                 self.num_entities += 1
             except queue.Empty:
