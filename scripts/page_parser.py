@@ -1,4 +1,3 @@
-from xml.sax.handler import ContentHandler
 import html
 import json
 import time
@@ -9,6 +8,7 @@ import os
 import sys
 from dotenv import load_dotenv
 from pathlib import Path
+from lxml import etree
 
 from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label
 from scripts.const import *
@@ -25,13 +25,13 @@ def batch_insert(conn, revision, changes):
         sys.stdout.flush()
 
 class PageParser():
-    def __init__(self, file_path, page_elem):
+    def __init__(self, file_path, page_elem_str):
         self.changes = []
         self.revision = []
         self.set_initial_state()    
 
         self.file_path = file_path
-        self.page_elem = page_elem
+        self.page_elem = etree.fromstring(page_elem_str)
 
         self.db_executor = ThreadPoolExecutor(max_workers=2)  # for DB inserts
 
