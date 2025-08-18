@@ -815,20 +815,20 @@ class PageParser():
         for rev_elem in self.page_elem.findall(revision_tag):
             # Extract text, id, timestamp, comment, username
 
-            contrib_elem = rev_elem.find('contributor')
+            contrib_elem = rev_elem.find(f'{{{ns}}}contributor')
         
             if contrib_elem is not None:
-                username = (contrib_elem.findtext('username') or '').strip()
-                user_id = (contrib_elem.findtext('id') or '').strip()
+                username = (contrib_elem.findtext(f'{{{ns}}}username') or '').strip()
+                user_id = (contrib_elem.findtext(f'{{{ns}}}id') or '').strip()
             else:
                 username = ''
                 user_id = ''
 
             self.revision_meta = {
                 'entity_id': self.entity_id,
-                'revision_id': rev_elem.findtext('id', '').strip(),
-                'timestamp': rev_elem.findtext('timestamp', '').strip(),
-                'comment': rev_elem.findtext('comment', '').strip(),
+                'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
+                'timestamp': rev_elem.findtext(f'{{{ns}}}timestamp', '').strip(),
+                'comment': rev_elem.findtext(f'{{{ns}}}comment', '').strip(),
                 'username': username,
                 'user_id': user_id
             }
