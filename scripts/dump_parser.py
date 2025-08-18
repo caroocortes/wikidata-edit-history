@@ -63,6 +63,7 @@ class DumpParser():
         self.stop_event = mp.Event()
 
         # Launch worker processes
+        self.workers = []
         for _ in range(max_workers):
             p = mp.Process(target=self._worker)
             p.start()
