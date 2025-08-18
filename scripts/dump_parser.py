@@ -1,56 +1,49 @@
 import xml.sax
 import io
 import concurrent.futures
-from pathlib import Path
 from xml.sax.saxutils import escape
-from dotenv import load_dotenv
 import sys
 import multiprocessing as mp
 import time
 import queue
+from lxml import etree
 
 from scripts.page_parser import PageParser
 from scripts.const import *
 from scripts.utils import initialize_csv_files
 
 
-def process_page_xml(page_xml_str, file_path):
-    parser = xml.sax.make_parser()
-    handler = PageParser(file_path=file_path)
-    parser.setContentHandler(handler)
+def process_page_xml(page_elem_str, file_path):
+    parser = PageParser(file_path=file_path, page_elem=page_elem_str)
     
     try:
-        # Parse page content (revisions)
-        parser.parse(io.StringIO(page_xml_str))
+        parser.process_page()
     
-        print(f'Finished processing {handler.entity_id, handler.entity_label}')
+        print(f'Finished processing {parser.entity_id, parser.entity_label}')
         sys.stdout.flush()
 
-        return handler.entity_id, handler.entity_label, handler.changes, handler.revision
+        return 1
     except xml.sax.SAXParseException as e:
         print('ERROR IN PAGE PARSER')
-        err_line = e.getLineNumber()
-        err_col = e.getColumnNumber()
+        # err_line = e.getLineNumber()
+        # err_col = e.getColumnNumber()
 
-        print(f"Error at line {err_line}, column {err_col}")
+        # print(f"Error at line {err_line}, column {err_col}")
 
-        all_lines = page_xml_str.splitlines()
-        start = max(err_line - 4, 0)  # 2 lines before
-        end = min(err_line + 1, len(all_lines))  # 1 line after
+        # all_lines = page_elem_str.splitlines()
+        # start = max(err_line - 4, 0)  # 2 lines before
+        # end = min(err_line + 1, len(all_lines))  # 1 line after
 
-        print("\n--- XML snippet around error ---")
-        for i in range(start, end):
-            prefix = ">>" if i + 1 == err_line else "  "
-            print(f"{prefix} Line {i+1}: {all_lines[i]}")
-        print("-------------------------------")
+        # print("\n--- XML snippet around error ---")
+        # for i in range(start, end):
+        #     prefix = ">>" if i + 1 == err_line else "  "
+        #     print(f"{prefix} Line {i+1}: {all_lines[i]}")
+        # print("-------------------------------")
         raise e
 
-class DumpParser(xml.sax.ContentHandler):
+class DumpParser():
     def __init__(self, file_path=None, max_workers=None):
         self.entity_file_path, self.change_file_path, self.revision_file_path = initialize_csv_files()
-
-        dotenv_path = Path(__file__).resolve().parent.parent / ".env"
-        load_dotenv(dotenv_path)
 
         self.file_path = file_path # save file path
         self.set_initial_state()  
@@ -66,7 +59,7 @@ class DumpParser(xml.sax.ContentHandler):
         self.page_queue = mp.Queue(maxsize=100) 
         self.stop_event = mp.Event()
 
-        # Launch worker threads
+        # Launch worker processes
         for _ in range(max_workers):
             self.executor.submit(self._worker)
 
@@ -93,10 +86,10 @@ class DumpParser(xml.sax.ContentHandler):
         """
         while not self.stop_event.is_set() or not self.page_queue.empty():
             try:
-                page_xml_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
+                page_elem_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
                 start = time.time()
                 print(f'To process page for entity')
-                process_page_xml(page_xml_str, self.file_path)
+                process_page_xml(page_elem_str, self.file_path)
                 self.page_queue.task_done()
                 print(f'Finished processing page: {time.time() - start}')
                 sys.stdout.flush()
@@ -224,4 +217,42 @@ class DumpParser(xml.sax.ContentHandler):
                     
             # Reset state because I reached a </page>
             self.set_initial_state()
+    
+    
+    
+    def parse_dump(self):
+        context = etree.iterparse(self.file_path, events=("end",), tag="page")
+        for event, page_elem in context:
+            start_time = time.time()
+            keep = False
+            entity_id = ""
 
+            # Get title
+            title_elem = page_elem.find("title")
+            if title_elem is not None:
+                entity_id = title_elem.text or ""
+                if entity_id.startswith("Q"):
+                    keep = True
+                    self.entity_id = entity_id
+                    print(f'Keeping {entity_id}')
+                else:
+                    print(f'Not keeping page {entity_id}')
+
+            if keep:
+                # Serialize the page element
+                page_elem_str = etree.tostring(page_elem, encoding="unicode")
+                self.page_queue.put(page_elem_str)
+
+            print(f"Time it took to read page {entity_id}: {time.time() - start_time}")
+            sys.stdout.flush()
+
+            # Clear page element to free memory
+            page_elem.clear()
+            while page_elem.getprevious() is not None:
+                del page_elem.getparent()[0]
+
+            if self.stop_event.is_set():
+                break
+
+        self.stop_event.set()
+        print("Finished processing file")

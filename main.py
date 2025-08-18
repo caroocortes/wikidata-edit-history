@@ -23,15 +23,13 @@ def process_file(file_path):
     input_bz2 = os.path.basename(file_path)
     base = input_bz2.replace(".xml", "").replace(".bz2", "")
 
-    handler = DumpParser(file_path=input_bz2)
-    parser = xml.sax.make_parser()
-    parser.setContentHandler(handler)
-
+    parser = DumpParser(file_path=input_bz2)
+    
     print(f"Processing: {file_path}")
     start_process = time.time()
-    with bz2.open(file_path, 'rt', encoding='utf-8') as in_f:
+    with bz2.open(file_path, 'rb') as in_f:
         try:
-            parser.parse(in_f)
+            parser.parse_dump(in_f)
         except xml.sax.SAXParseException as e:
             print(f"Parsing error in DumpParser: {e}")
 
@@ -67,10 +65,10 @@ def process_file(file_path):
         f"Processed {input_bz2} in {process_time:.2f} seconds.\t"
         f"Process information: \t"
         f"{base} size: {human_readable_size(size)} MB\t"
-        f"Number of entities: {handler.num_entities}\t"
+        f"Number of entities: {parser.num_entities}\t"
     )
 
-    return process_time, handler.num_entities, file_path, size_hr
+    return process_time, parser.num_entities, file_path, size_hr
 
 
 if  __name__ == "__main__":

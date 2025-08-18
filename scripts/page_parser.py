@@ -7,6 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 import psycopg2
 import os
 import sys
+from dotenv import load_dotenv
+from pathlib import Path
 
 from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label
 from scripts.const import *
@@ -23,14 +25,18 @@ def batch_insert(conn, revision, changes):
         sys.stdout.flush()
 
 class PageParser(ContentHandler):
-    def __init__(self, file_path):
+    def __init__(self, file_path, page_elem):
         self.changes = []
         self.revision = []
         self.set_initial_state()    
 
         self.file_path = file_path
+        self.page_elem
 
         self.db_executor = ThreadPoolExecutor(max_workers=2)  # for DB inserts
+
+        dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+        load_dotenv(dotenv_path)
 
         DB_USER = os.environ.get("DB_USER")
         DB_PASS = os.environ.get("DB_PASS")
@@ -776,3 +782,80 @@ class PageParser(ContentHandler):
             self.end_time_entity = time.time()
             print(f'Finished processing revisions for  entity {self.entity_id} - {self.num_revisions} revisions - {self.end_time_entity - self.start_time_entity} seconds')
             sys.stdout.flush()
+
+    def process_page(self):
+        entity_id = ''
+        entity_label = ''
+        num_revisions = 0
+        revisions_without_changes = 0
+        previous_revision = None
+        changes = []
+        revision = []
+
+        # Extract title / entity_id
+        title_elem = self.page_elem.find('title')
+        if title_elem is not None:
+            entity_id = (title_elem.text or '').strip()
+            start_time_entity = time.time()
+            # Insert entity row
+            insert_rows(self.conn, 'entity', [(entity_id, entity_label)],
+                        columns=['entity_id', 'entity_label'])
+            print(f'Inserted entity {entity_id}')
+        
+        # Iterate over revisions
+        for rev_elem in self.page_elem.findall('revision'):
+            # Extract text, id, timestamp, comment, username
+            revision_text = (rev_elem.findtext('text') or '').strip()
+            revision_meta = {
+                'revision_id': rev_elem.findtext('id', '').strip(),
+                'timestamp': rev_elem.findtext('timestamp', '').strip(),
+                'comment': rev_elem.findtext('comment', '').strip(),
+                'username': rev_elem.findtext('username', '').strip(),
+            }
+
+            current_revision = self._parse_json_revision(revision_text)
+            
+            if not current_revision:
+                change = self._changes_deleted_created_entity(previous_revision, DELETE_ENTITY)
+            else:
+                curr_label = self._get_english_label(current_revision)
+                if curr_label and entity_label != curr_label:
+                    entity_label = curr_label
+                change = self.get_changes_from_revisions(current_revision, previous_revision)
+
+            if change:
+                changes.extend(change)
+                revision.append((
+                    revision_meta['revision_id'],
+                    entity_id,
+                    revision_meta['timestamp'],
+                    revision_meta['username'],
+                    revision_meta['comment'],
+                ))
+            else:
+                revisions_without_changes += 1
+
+            previous_revision = current_revision
+            num_revisions += 1
+
+            # Batch insert
+            if len(changes) >= BATCH_SIZE_CHANGES:
+                self.db_executor.submit(batch_insert, self.conn, revision, changes)
+                changes = []
+                revision = []
+
+        # Insert remaining changes
+        if changes:
+            batch_insert(self.conn, revision, changes)
+
+        rev_elem.clear()
+
+        # Update entity label
+        update_entity_label(self.conn, entity_id, entity_label)
+        end_time_entity = time.time()
+        print(f'Finished entity {entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
+
+        # Clear element to free memory
+        self.page_elem.clear()
+        while self.page_elem.getprevious() is not None:
+            del self.page_elem.getparent()[0]
