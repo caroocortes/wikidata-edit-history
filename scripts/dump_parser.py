@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import sys
 import queue
 import threading
+import multiprocessing as mp
 
 from scripts.page_parser import PageParser
 from scripts.const import *
@@ -62,8 +63,8 @@ class DumpParser(xml.sax.ContentHandler):
 
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
 
-        self.page_queue = queue.Queue(maxsize=100)  # adjust maxsize depending on memory
-        self.stop_event = threading.Event()
+        self.page_queue = mp.Queue(maxsize=100) 
+        self.stop_event = mp.Event()
 
         # Launch worker threads
         for _ in range(max_workers):
