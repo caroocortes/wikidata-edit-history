@@ -94,7 +94,6 @@ class DumpParser():
                 start = time.time()
                 print(f'To process page for entity')
                 process_page_xml(page_elem_str, self.file_path)
-                self.page_queue.task_done()
                 print(f'Finished processing page: {time.time() - start}')
                 sys.stdout.flush()
                 self.num_entities += 1
