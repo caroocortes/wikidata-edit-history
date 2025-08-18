@@ -788,6 +788,7 @@ class PageParser():
 
         print(f'Inside process page!!!')
         sys.stdout.flush()
+        
         entity_id = ''
         entity_label = ''
         num_revisions = 0
