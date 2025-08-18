@@ -791,7 +791,6 @@ class PageParser():
 
         num_revisions = 0
         revisions_without_changes = 0
-        previous_revision = None
         changes = []
         revision = []
         ns = "http://www.mediawiki.org/xml/export-0.11/"
@@ -804,6 +803,7 @@ class PageParser():
         title_elem = self.page_elem.find(title_tag)
         if title_elem is not None:
             self.entity_id = (title_elem.text or '').strip()
+            print(self.entity_id)
             start_time_entity = time.time()
             # Insert entity row
             insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
@@ -822,7 +822,7 @@ class PageParser():
             else:
                 username = ''
                 user_id = ''
-
+            print(f'Before revision_meta, entity_id = "{self.entity_id}" and revision_id="{self.revision_meta['revision_id']}"')
             self.revision_meta = {
                 'entity_id': self.entity_id,
                 'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
@@ -857,7 +857,7 @@ class PageParser():
             else:
                 revisions_without_changes += 1
 
-            previous_revision = current_revision
+            self.previous_revision = current_revision
             num_revisions += 1
 
             # Batch insert
@@ -875,7 +875,7 @@ class PageParser():
         # Update entity label with last label
         update_entity_label(self.conn, self.entity_id, self.entity_label)
         end_time_entity = time.time()
-        print(f'Finished entity {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
+        print(f'Finished processing entity {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
 
         # Clear element to free memory
         self.page_elem.clear()

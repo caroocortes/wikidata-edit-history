@@ -22,7 +22,6 @@ def process_page_xml(page_elem_str, file_path):
 
         parser.process_page()
     
-        print(f'Finished processing {parser.entity_id, parser.entity_label}')
         sys.stdout.flush()
 
         return 1
