@@ -618,7 +618,7 @@ class PageParser():
             else:
                 username = ''
                 user_id = ''
-            print(f'Before revision_meta, entity_id = "{self.entity_id}"')
+                
             self.revision_meta = {
                 'entity_id': self.entity_id,
                 'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
