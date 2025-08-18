@@ -67,7 +67,6 @@ class PageParser():
         self.in_contributor_username = False # True if inside the contributor's <username>
 
         self.previous_revision = None
-        self.current_revision = None
 
         # TODO: remove, just for debugging/printing
         self.start_time_entity = 0
@@ -808,21 +807,29 @@ class PageParser():
             entity_id = (title_elem.text or '').strip()
             start_time_entity = time.time()
             # Insert entity row
-            insert_rows(self.conn, 'entity', [(entity_id, entity_label)],
-                        columns=['entity_id', 'entity_label'])
+            insert_rows(self.conn, 'entity', [(entity_id, entity_label, self.file_path)],
+                        columns=['entity_id', 'entity_label', 'file_path'])
             print(f'Inserted entity {entity_id}')
         
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
             # Extract text, id, timestamp, comment, username
-            revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
-            revision_meta = {
+
+            contrib_elem = rev_elem.find('contributor')
+            if contrib_elem is not None:
+                username = (contrib_elem.findtext('username') or '').strip()
+                user_id = (contrib_elem.findtext('id') or '').strip()
+
+            self.revision_meta = {
+                'entity_id': self.entity_id,
                 'revision_id': rev_elem.findtext('id', '').strip(),
                 'timestamp': rev_elem.findtext('timestamp', '').strip(),
                 'comment': rev_elem.findtext('comment', '').strip(),
-                'username': rev_elem.findtext('username', '').strip(),
+                'username': username,
+                'user_id': user_id
             }
-
+            
+            revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
             current_revision = self._parse_json_revision(revision_text)
             
             if not current_revision:
@@ -835,12 +842,14 @@ class PageParser():
 
             if change:
                 changes.extend(change)
+
                 revision.append((
-                    revision_meta['revision_id'],
-                    entity_id,
-                    revision_meta['timestamp'],
-                    revision_meta['username'],
-                    revision_meta['comment'],
+                    self.revision_meta['revision_id'],
+                    self.revision_meta['entity_id'],
+                    self.revision_meta['timestamp'],
+                    self.revision_meta['user_id'],
+                    self.revision_meta['username'],
+                    self.revision_meta['comment'],
                 ))
             else:
                 revisions_without_changes += 1
@@ -854,7 +863,7 @@ class PageParser():
                 changes = []
                 revision = []
 
-        # Insert remaining changes
+        # Insert remaining changes if the BATCH_SIZE was not reached
         if changes:
             batch_insert(self.conn, revision, changes)
 

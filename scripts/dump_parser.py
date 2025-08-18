@@ -14,12 +14,10 @@ from scripts.utils import initialize_csv_files
 
 
 def process_page_xml(page_elem_str, file_path):
-    print(f'Going to create PageParser')
     sys.stdout.flush()
     parser = PageParser(file_path=file_path, page_elem_str=page_elem_str)
     
     try:
-        print(f'Calling process_page()')
         sys.stdout.flush()
 
         parser.process_page()
