@@ -5,9 +5,9 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from dotenv import load_dotenv
 import sys
-import queue
-import threading
 import multiprocessing as mp
+import time
+import queue
 
 from scripts.page_parser import PageParser
 from scripts.const import *
@@ -94,8 +94,11 @@ class DumpParser(xml.sax.ContentHandler):
         while not self.stop_event.is_set() or not self.page_queue.empty():
             try:
                 page_xml_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
+                start = time.time()
+                print(f'To process page for entity')
                 process_page_xml(page_xml_str, self.file_path)
                 self.page_queue.task_done()
+                print(f'Finished processing page: {time.time() - start}')
                 self.num_entities += 1
             except queue.Empty:
                 continue
@@ -120,6 +123,7 @@ class DumpParser(xml.sax.ContentHandler):
         """
         if name == 'page':
             # Reset state and start buffering a new page
+            self.start_time = time.time()
             self.in_page = True
             self.keep = False
             self.page_buffer.append(DumpParser._serialize_start_tag(name, attrs))
@@ -201,6 +205,8 @@ class DumpParser(xml.sax.ContentHandler):
                 raw_page_xml = ''.join(self.page_buffer)
                 self.page_queue.put(raw_page_xml) # send page to queue
                 self.page_buffer = []
+
+                print(f'Time it took to read page for {self.entity_id}: {time.time() - self.start_time} ')
                 # Submit the page processing to worker
 
                 # future = self.executor.submit(process_page_xml, raw_page_xml, self.file_path)
