@@ -39,7 +39,8 @@ class DumpParser():
         if max_workers is None:
             max_workers = 8
             print('Number of workers to use: ', max_workers)
-
+        
+        self.num_workers = max_workers
         self.page_queue = mp.Queue(maxsize=100) 
         self.stop_event = mp.Event()
 
@@ -65,7 +66,6 @@ class DumpParser():
                 process_page_xml(page_elem_str, self.file_path)
                 print(f'Finished processing page in _worker: {time.time() - start}')
                 sys.stdout.flush()
-                self.num_entities += 1
             except queue.Empty:
                 continue
 
@@ -97,6 +97,7 @@ class DumpParser():
                 # Serialize the page element
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
                 self.page_queue.put(page_elem_str)
+                self.num_entities += 1
 
             print(f"Time it took to read page {entity_id}: {time.time() - start_time}")
             sys.stdout.flush()
