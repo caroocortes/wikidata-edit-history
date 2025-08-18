@@ -67,3 +67,5 @@ def check_files_in_dir():
     folder_path = "../../../san2/data/wikidata-history-dumps"
     xml_files = [f for f in os.listdir(folder_path) if f.endswith(".xml")]
     print("Number of XML files:", len(xml_files))
+
+check_files_in_dir()
