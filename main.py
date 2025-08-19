@@ -105,25 +105,22 @@ if  __name__ == "__main__":
         max_workers = 3
         dump_dir = Path(dump_dir)  # make sure it's a Path object
 
-        with open("processed_files.txt") as pf:
-            processed_files = {Path(line.strip()).resolve() for line in pf if line.strip()}
+        processed_log = Path("processed_files.txt")
 
-        print('Already processed files: ')
-        for f in processed_files:
-            print(f)
+        if processed_log.exists():
+            with processed_log.open() as pf:
+                processed_files = {Path(line.strip()).resolve() for line in pf if line.strip()}
+        else:
+            processed_files = set()
+
         # List all .bz2 files in dump_dir
         all_files = [f.resolve() for f in dump_dir.iterdir() if f.is_file() and f.suffix == '.bz2']
 
-        # Sort by modification time (oldest first)
+        # Sort by modification time (oldest first) -> Initial entities = more revisions
         files_sorted = sorted(all_files, key=lambda f: f.stat().st_mtime)
 
         # Only keep files that haven't been processed
-        files_to_parse = []
-        print('Files to parser:')
-        for f in files_sorted:
-            print(f)
-            if f not in processed_files:
-                files_to_parse.append(f)
+        files_to_parse = [f for f in files_sorted if f not in processed_files]
 
         # Limit number of files if -n was provided
         if args.number_files:
