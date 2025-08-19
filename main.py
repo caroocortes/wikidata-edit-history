@@ -119,7 +119,9 @@ if  __name__ == "__main__":
 
         # Only keep files that haven't been processed
         files_to_parse = []
+        print('Files to parser:')
         for f in files_sorted:
+            print(f)
             if f not in processed_files:
                 files_to_parse.append(f)
 
