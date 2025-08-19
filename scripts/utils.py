@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from math import radians, cos, sin, asin, sqrt
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
+from scripts.const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
  
 
 """
