@@ -112,7 +112,7 @@ if  __name__ == "__main__":
         files_sorted = sorted(all_files, key=lambda f: f.stat().st_mtime)
 
         # Only keep files that haven't been processed
-        files_to_parse = [f for f in files_sorted if f.name not in processed_files]
+        files_to_parse = [f for f in files_sorted if f not in processed_files]
 
         # Limit number of files if -n was provided
         if args.number_files:
