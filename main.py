@@ -108,6 +108,9 @@ if  __name__ == "__main__":
         with open("processed_files.txt") as pf:
             processed_files = {Path(line.strip()).resolve() for line in pf if line.strip()}
 
+        print('Already processed files: ')
+        for f in processed_files:
+            print(f)
         # List all .bz2 files in dump_dir
         all_files = [f for f in dump_dir.iterdir() if f.is_file() and f.suffix == '.bz2']
 
