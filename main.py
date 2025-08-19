@@ -105,6 +105,9 @@ if  __name__ == "__main__":
         max_workers = 3
         dump_dir = Path(dump_dir)  # make sure it's a Path object
 
+        with open("processed_files.txt") as pf:
+            processed_files = {Path(line.strip()).resolve() for line in pf if line.strip()}
+
         # List all .bz2 files in dump_dir
         all_files = [f for f in dump_dir.iterdir() if f.is_file() and f.suffix == '.bz2']
 
