@@ -10,7 +10,9 @@ import psycopg2
 from psycopg2.extras import execute_values
 from dotenv import load_dotenv
 from math import radians, cos, sin, asin, sqrt
-import io
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+from const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
  
 
 """
@@ -365,6 +367,17 @@ def update_entity_label(conn, entity_id, entity_label):
 def insert_rows(conn, table_name, rows, columns):
     if not rows:
         return
+    
+    if table_name == 'entity':
+        # check if entity exists
+        query_select = "SELECT entity_id FROM entity WHERE entity_id = %s"
+
+        with conn.cursor() as cur:
+            cur.execute(query_select, (rows[0][0],))
+            exists = cur.fetchone() is not None
+            if exists:
+                # will skip this entity
+                return 0
 
     col_names = ', '.join(columns)
     placeholders = ', '.join(['%s'] * len(columns))
@@ -378,7 +391,7 @@ def insert_rows(conn, table_name, rows, columns):
         with conn.cursor() as cur:
             execute_batch(cur, query, rows)
         conn.commit()
-
+        return 1
     except Exception as e:
         conn.rollback()  # reset the transaction
         bad_rows = []
@@ -528,3 +541,23 @@ def create_db_schema(conn):
     except Exception as e:
         print(f'Error when saving or connecting to DB: {e}')
 
+
+def get_dump_links(self):
+    #  Get list of .bz2 files from the wikidata dump service (Scrapper)
+    response = requests.get(WIKIDATA_SERVICE_URL)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    bz2_links = []
+    for link in soup.find_all("a"):
+        href = link.get("href", "")
+        if "pages-meta-history" in href and href.endswith(".bz2"):
+            full_url = urljoin(WIKIDATA_SERVICE_URL, href)
+            bz2_links.append(full_url)
+
+    print(f"Found {len(bz2_links)} .bz2 dump files.")
+    print(f"Saving download links to {DOWNLOAD_LINKS_FILE_PATH}")
+    with open(DOWNLOAD_LINKS_FILE_PATH, 'w', encoding='utf-8') as f:
+        for file in bz2_links:
+            f.write(f"{file}\n")
+    
+    return bz2_links

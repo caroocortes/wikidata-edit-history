@@ -585,6 +585,9 @@ class PageParser():
             return changes
 
     def process_page(self):
+        
+        duplicated_entity = False
+        timestamps = []
 
         num_revisions = 0
         revisions_without_changes = 0
@@ -601,78 +604,96 @@ class PageParser():
             print(self.entity_id)
             start_time_entity = time.time()
             # Insert entity row
-            insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
+            result = insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
                         columns=['entity_id', 'entity_label', 'file_path'])
-            print(f'Inserted entity {self.entity_id}')
-        
+            if result == 0:
+                duplicated_entity = True
+            else:
+                print(f'Inserted entity {self.entity_id}')
+    
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
-            # Extract text, id, timestamp, comment, username, user_id
 
-            contrib_elem = rev_elem.find(f'{{{ns}}}contributor')
-        
-            if contrib_elem is not None:
-                username = (contrib_elem.findtext(f'{{{ns}}}username') or '').strip()
-                user_id = (contrib_elem.findtext(f'{{{ns}}}id') or '').strip()
+            if duplicated_entity:
+                # Only get timestamps and store them -> allow to check if there are more revisions or if the entity is duplicated
+                ts_elem = rev_elem.findtext(f'{{{ns}}}timestamp', '')
+                if ts_elem is not None:
+                    timestamps.append(ts_elem.text)
             else:
-                username = ''
-                user_id = ''
+                # Extract text, id, timestamp, comment, username, user_id
 
-            self.revision_meta = {
-                'entity_id': self.entity_id,
-                'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
-                'timestamp': rev_elem.findtext(f'{{{ns}}}timestamp', '').strip(),
-                'comment': rev_elem.findtext(f'{{{ns}}}comment', '').strip(),
-                'username': username,
-                'user_id': user_id
-            }
+                contrib_elem = rev_elem.find(f'{{{ns}}}contributor')
             
-            # Get revision text
-            revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
-            current_revision = self._parse_json_revision(revision_text)
-            
-            if not current_revision:
-                change = self._changes_deleted_created_entity(self.previous_revision, DELETE_ENTITY)
-            else:
-                curr_label = self._get_english_label(current_revision)
-                if curr_label and self.entity_label != curr_label and curr_label != '':
-                    self.entity_label = curr_label
-                change = self.get_changes_from_revisions(current_revision, self.previous_revision)
+                if contrib_elem is not None:
+                    username = (contrib_elem.findtext(f'{{{ns}}}username') or '').strip()
+                    user_id = (contrib_elem.findtext(f'{{{ns}}}id') or '').strip()
+                else:
+                    username = ''
+                    user_id = ''
 
-            if change:
-                self.changes.extend(change)
+                self.revision_meta = {
+                    'entity_id': self.entity_id,
+                    'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
+                    'timestamp': rev_elem.findtext(f'{{{ns}}}timestamp', '').strip(),
+                    'comment': rev_elem.findtext(f'{{{ns}}}comment', '').strip(),
+                    'username': username,
+                    'user_id': user_id
+                }
+                
+                # Get revision text
+                revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
+                current_revision = self._parse_json_revision(revision_text)
+                
+                if not current_revision:
+                    change = self._changes_deleted_created_entity(self.previous_revision, DELETE_ENTITY)
+                else:
+                    curr_label = self._get_english_label(current_revision)
+                    if curr_label and self.entity_label != curr_label and curr_label != '':
+                        self.entity_label = curr_label
+                    change = self.get_changes_from_revisions(current_revision, self.previous_revision)
 
-                self.revision.append((
-                    self.revision_meta['revision_id'],
-                    self.revision_meta['entity_id'],
-                    self.revision_meta['timestamp'],
-                    self.revision_meta['user_id'],
-                    self.revision_meta['username'],
-                    self.revision_meta['comment'],
-                ))
-            else:
-                revisions_without_changes += 1
+                if change:
+                    self.changes.extend(change)
 
-            self.previous_revision = current_revision
-            num_revisions += 1
+                    self.revision.append((
+                        self.revision_meta['revision_id'],
+                        self.revision_meta['entity_id'],
+                        self.revision_meta['timestamp'],
+                        self.revision_meta['user_id'],
+                        self.revision_meta['username'],
+                        self.revision_meta['comment'],
+                    ))
+                else:
+                    revisions_without_changes += 1
 
-            # Batch insert
-            if len(self.changes) >= BATCH_SIZE_CHANGES:
-                self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes)
-                self.changes = []
-                self.revision = []
+                self.previous_revision = current_revision
+                num_revisions += 1
+
+                # Batch insert
+                if len(self.changes) >= BATCH_SIZE_CHANGES:
+                    self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes)
+                    self.changes = []
+                    self.revision = []
 
             # free memory
             rev_elem.clear()
 
-        # Insert remaining changes if the BATCH_SIZE was not reached
-        if self.changes:
-            batch_insert(self.conn, self.revision, self.changes)
+        if duplicated_entity:
+            if timestamps:
+                first_ts = timestamps[0]   # first revision
+                last_ts = timestamps[-1]   # last revision
+                print(f'Entity {self.entity_id} was already inserted in DB. Skipped')
+                with open("duplicate_entities.txt", "a") as f:
+                    f.write(f"{self.entity_id}\t{self.entity_label}\t{self.file_path} - First revision: {first_ts}, Last revision: {last_ts} \n")
+        else:
+            # Insert remaining changes if the BATCH_SIZE was not reached
+            if self.changes:
+                batch_insert(self.conn, self.revision, self.changes)
 
-        # Update entity label with last label
-        update_entity_label(self.conn, self.entity_id, self.entity_label)
-        end_time_entity = time.time()
-        print(f'Finished processing entity (in PageParser.page_parser) {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
+            # Update entity label with last label
+            update_entity_label(self.conn, self.entity_id, self.entity_label)
+            end_time_entity = time.time()
+            print(f'Finished processing entity (in PageParser.page_parser) {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
 
         # Clear element to free memory
         self.page_elem.clear()
