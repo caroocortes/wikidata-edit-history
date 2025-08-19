@@ -112,7 +112,7 @@ if  __name__ == "__main__":
         for f in processed_files:
             print(f)
         # List all .bz2 files in dump_dir
-        all_files = [f for f in dump_dir.iterdir() if f.is_file() and f.suffix == '.bz2']
+        all_files = [f.resolve() for f in dump_dir.iterdir() if f.is_file() and f.suffix == '.bz2']
 
         # Sort by modification time (oldest first)
         files_sorted = sorted(all_files, key=lambda f: f.stat().st_mtime)
@@ -142,7 +142,7 @@ if  __name__ == "__main__":
                 for process_time, num_entities, file_path, size in executor.map(process_file, files_to_parse):
                     print(f"Finished processing {file_path} ({size} MB, {num_entities} entities) in {process_time} seconds")
                     with open(processed_log, "a") as f:
-                        f.write(f"{file_path}\n")
+                        f.write(f"{file_path.resolve()}\n")
 
             executor.shutdown(wait=True, cancel_futures=True)
                 
