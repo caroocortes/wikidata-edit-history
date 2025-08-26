@@ -84,7 +84,7 @@ class PageParser():
                 new_julian = gregorian_to_julian(new_dict['year'], new_dict['month'], new_dict['day'])
                 old_julian = gregorian_to_julian(old_dict['year'], old_dict['month'], old_dict['day'])
 
-                return float(new_julian - old_julian)
+                return float(new_julian - old_julian) # distance in days
             
             # Calculate distande in km between 2 points
             if datatype == 'globecoordinate' and isinstance(old_value, dict) and isinstance(new_value, dict):
@@ -421,15 +421,19 @@ class PageParser():
         curr_label = PageParser._safe_get_nested(current_revision, 'labels', 'en', 'value')
         
         if curr_label != prev_label:
+
+            old_value = prev_label if not isinstance(prev_label, dict) else None
+            new_value = curr_label if not isinstance(curr_label, dict) else None
             changes.append(
                 self.change_json(
                     property_id="label",
                     value_id='label',
-                    old_value=prev_label if not isinstance(prev_label, dict) else None,
-                    new_value=curr_label if not isinstance(curr_label, dict) else None,
+                    old_value=old_value,
+                    new_value=new_value,
                     datatype='string',
                     datatype_metadata=None,
-                    change_type=PageParser._description_label_change_type(prev_label, curr_label)
+                    change_type=PageParser._description_label_change_type(prev_label, curr_label),
+                    change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string')
                 )
             )
 
@@ -440,15 +444,18 @@ class PageParser():
         curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
 
         if curr_desc != prev_desc:
+            old_value = prev_desc if not isinstance(prev_desc, dict) else None
+            new_value = curr_desc if not isinstance(curr_desc, dict) else None
             changes.append(
                 self.change_json(
                     property_id="description",
                     value_id='description',
-                    old_value=prev_desc if not isinstance(prev_desc, dict) else None,
-                    new_value=curr_desc if not isinstance(curr_desc, dict) else None,
+                    old_value=old_value,
+                    new_value=new_value,
                     datatype='string',
                     datatype_metadata=None,
-                    change_type=PageParser._description_label_change_type(prev_desc, curr_desc)
+                    change_type=PageParser._description_label_change_type(prev_desc, curr_desc),
+                    change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string')
                 )
             )
 
