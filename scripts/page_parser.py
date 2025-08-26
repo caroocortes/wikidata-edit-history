@@ -518,12 +518,12 @@ class PageParser():
                 new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
 
                 if prev_stmt and not curr_stmt:
-                    # Property value was removed -> We set datatype = None
-                    changes.append(self._handle_value_changes(None, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE))
+                    # Property value was removed -> the datatype is the datatype of the old_value
+                    changes.append(self._handle_value_changes(old_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE))
 
                     if old_datatype_metadata:
                         # Add change record for the datatype_metadata fields
-                        changes = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, None, pid, DELETE_PROPERTY_VALUE)
+                        changes = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, old_datatype, pid, DELETE_PROPERTY_VALUE)
 
                 elif curr_stmt and not prev_stmt:
                     # Property value was created
