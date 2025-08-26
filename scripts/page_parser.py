@@ -550,13 +550,14 @@ class PageParser():
         else:
             changes = []
             
-            curr_label = PageParser._safe_get_nested(current_revision, 'labels', 'en', 'value')
-            curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
+            curr_label = PageParser._safe_get_nested(current_revision, 'labels')
+            curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions')
             curr_claims = PageParser._safe_get_nested(current_revision, 'claims')
 
             if not curr_claims and not curr_label and not curr_desc:
-                # Entity was deleted
-                return self._changes_deleted_created_entity(current_revision, DELETE_ENTITY)
+                # Skipped revision -> could be a deleted revision, not necessarily a deleted entity
+                print(f'Revision does not contain labels, descriptions, nor claims. Skipped revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}')
+                return []
 
             # --- Labels and Description changes ---
             changes.extend(self._handle_description_label_change(previous_revision, current_revision))
@@ -602,7 +603,7 @@ class PageParser():
         if title_elem is not None:
             self.entity_id = (title_elem.text or '').strip()
             print(self.entity_id)
-            start_time_entity = time.time()
+            # start_time_entity = time.time()
             # Insert entity row
             result = insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
                         columns=['entity_id', 'entity_label', 'file_path'])
@@ -645,7 +646,7 @@ class PageParser():
                 current_revision = self._parse_json_revision(revision_text)
                 
                 if not current_revision:
-                    change = self._changes_deleted_created_entity(self.previous_revision, DELETE_ENTITY)
+                    print(f'Revision text is empty. Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']} skipped')
                 else:
                     curr_label = self._get_english_label(current_revision)
                     if curr_label and self.entity_label != curr_label and curr_label != '':
@@ -692,8 +693,8 @@ class PageParser():
 
             # Update entity label with last label
             update_entity_label(self.conn, self.entity_id, self.entity_label)
-            end_time_entity = time.time()
-            print(f'Finished processing entity (in PageParser.page_parser) {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
+            # end_time_entity = time.time()
+            # print(f'Finished processing entity (in PageParser.page_parser) {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
 
         # Clear element to free memory
         self.page_elem.clear()

@@ -62,9 +62,9 @@ class DumpParser():
                 if page_elem_str is None:  # no more pages to process
                     break
                 
-                start = time.time()
+                # start = time.time()
                 process_page_xml(page_elem_str, self.file_path)
-                print(f'Finished processing page in _worker: {time.time() - start}')
+                # print(f'Finished processing page in _worker: {time.time() - start}')
                 sys.stdout.flush()
             except queue.Empty:
                 continue
