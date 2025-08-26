@@ -667,7 +667,15 @@ class PageParser():
                 else:
                     revisions_without_changes += 1
 
-                self.previous_revision = current_revision
+                curr_label = PageParser._safe_get_nested(current_revision, 'labels')
+                curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions')
+                curr_claims = PageParser._safe_get_nested(current_revision, 'claims')
+
+                # check there is something in the revision (label, description or claims)
+                # if not, skip the current revision
+                if curr_claims or curr_label or curr_desc:
+                    self.previous_revision = current_revision
+                
                 num_revisions += 1
 
                 # Batch insert
