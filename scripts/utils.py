@@ -149,16 +149,30 @@ def fetch_class_label():
 
         NOTE: fetch_entity_types needs to be ran before running this method, since it depends on the list of entity_id, class_id pairs
     """
-    output_dir = 'data/output_csvs'
-    os.makedirs(output_dir, exist_ok=True)
 
-    input_csv_path = 'data/output_csvs/entity_types.csv'
-    df = pd.read_csv(input_csv_path, dtype=str)
-    class_ids = set(df['class_id'].dropna().unique())
-    print(f"Loaded {len(class_ids)} unique class IDs from {input_csv_path}")
+    dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+    load_dotenv(dotenv_path)
 
-    class_file_path = f'{output_dir}/class.csv'
-    classes = []
+    DB_USER = os.environ.get("DB_USER")
+    DB_PASS = os.environ.get("DB_PASS")
+    DB_NAME = os.environ.get("DB_NAME")
+    DB_HOST = os.environ.get("DB_HOST")
+    DB_PORT = os.environ.get("DB_PORT")
+
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS, 
+        host=DB_HOST,
+        port=DB_PORT
+    )
+
+
+    cur = conn.cursor()
+    cur.execute("SELECT DISTINCT class_id FROM entity_type")
+    class_ids = cur.fetchall()
+
+    print(f"Loaded {len(class_ids)} unique class IDs from entity_type table")
     
     url = "https://query.wikidata.org/sparql"
     headers = {"Accept": "application/sparql-results+json"}
@@ -167,6 +181,7 @@ def fetch_class_label():
     class_list = list(class_ids)
     
     for i in range(0, len(class_list), batch_size):
+        classes = []
         batch = class_list[i:i + batch_size]
         values_str = " ".join(f"wd:{cid}" for cid in batch)
         print(f"Fetching classes (Batch: {i} - {i + batch_size})...")
@@ -196,28 +211,20 @@ def fetch_class_label():
             class_id = result["class"]["value"].split("/")[-1]
             class_label = result["classLabel"]["value"]
 
-            classes.append({"class_id": class_id, "class_label": class_label})
+            classes.append((class_id, class_label))
 
+        insert_rows(conn, 'class', rows=classes, columns=['class_id', 'class_label'])
         time.sleep(10)
-
-    # TODO: change to save to DB
-    pd.DataFrame(classes).to_csv(class_file_path, index=False)
-    print(f"Saved {len(classes)} class-label pairs to '{class_file_path}'")
-
-    load_csv_to_db(class_file_path, 'class')
+    
+    conn.close()
 
 def fetch_entity_types():
     """ 
         Obtains entity_id, class_id, class_label from wikidata's SPARQL query service
     """
-    output_dir = 'data/output_csvs'
-    os.makedirs(output_dir, exist_ok=True)
 
-    # input_csv_path = 'data/output_csvs/entity.csv'
-    # df = pd.read_csv(input_csv_path, dtype=str)
-    # entity_ids = set(df['Entity_ID'].dropna().unique())
-    # print(f"Loaded {len(entity_ids)} unique entity IDs from {input_csv_path}")
-
+    dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+    load_dotenv(dotenv_path)
 
     DB_USER = os.environ.get("DB_USER")
     DB_PASS = os.environ.get("DB_PASS")
@@ -233,16 +240,10 @@ def fetch_entity_types():
         port=DB_PORT
     )
 
-    df = pd.read_sql(f"SELECT * FROM entity", conn)
+    cur = conn.cursor()
+    cur.execute("SELECT entity_id FROM entity")
+    entity_ids = cur.fetchall()
 
-    entity_ids = set(df['entity_iD'].dropna().unique())
-    print(f"Loaded {len(entity_ids)} unique entity IDs from table entity")
-
-    conn.close()
-
-    entity_file_path = f'{output_dir}/entity_types.csv'
-    entities = []
-    
     url = "https://query.wikidata.org/sparql"
     headers = {"Accept": "application/sparql-results+json"}
 
@@ -250,6 +251,7 @@ def fetch_entity_types():
     entity_list = list(entity_ids)
 
     for i in range(0, len(entity_list), batch_size):
+        entities = []
         batch = entity_list[i:i + batch_size]
         values_str = " ".join(f"wd:{eid}" for eid in batch)
         print(f"Fetching page (Batch size: {i} - {i + batch_size})...")
@@ -282,16 +284,16 @@ def fetch_entity_types():
             entity_id = result["entity"]["value"].split("/")[-1]
             class_id = result["class"]["value"].split("/")[-1]
 
-            entities.append({"entity_id": entity_id, "class_id": class_id})
+            entities.append((entity_id, class_id))
 
         time.sleep(10) 
+        
+        #insert in batches
+        insert_rows(conn, table_name='entity_type', rows=entities, columns=['entity_id', 'class_id'])
 
-    # Save to CSV
-    pd.DataFrame(entities).to_csv(entity_file_path, index=False)
-    print(f"Saved {len(entities)} entity-class pairs to '{entity_file_path}'")
-
-    load_csv_to_db(entity_file_path, 'entity_type')
-
+    # close db connection
+    conn.close()
+    
 """
     Methods for inserting in DB / CSV files
 """
