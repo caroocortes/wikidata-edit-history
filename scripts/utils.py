@@ -492,52 +492,53 @@ def load_csv_to_db(csv_path, table_name):
 def create_db_schema(conn):
 
     query = """
-
-        CREATE TABLE Entity (
-            Id TEXT PRIMARY KEY,
-            Label TEXT
+        CREATE TABLE entity (
+            entity_id TEXT PRIMARY KEY,
+            entity_label TEXT,
+            file_path TEXT
         );
 
-        CREATE TABLE Class (
-            Id TEXT PRIMARY KEY,
-            Label TEXT
+        CREATE TABLE class (
+            class_id TEXT PRIMARY KEY,
+            class_label TEXT
         );
 
-        CREATE TABLE Entity_Types (
-            Entity_Id TEXT,
-            Class_Id TEXT,
-            PRIMARY KEY (Entity_Id, Class_Id),
-            FOREIGN KEY (Class_Id) REFERENCES Class(Id),
-            FOREIGN KEY (Entity_Id) REFERENCES Entity(Id)
+        CREATE TABLE entity_type (
+            entity_id TEXT,
+            class_id TEXT,
+            PRIMARY KEY (entity_id, class_id),
+            -- FOREIGN KEY (class_id) REFERENCES class(class_id),
+            FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
         );
 
-        CREATE TABLE Property (
-            Id TEXT PRIMARY KEY,
-            Label TEXT
+        CREATE TABLE property (
+            property_id TEXT PRIMARY KEY,
+            property_label TEXT
         );
 
-        CREATE TABLE Revision (
-            Revision_Id TEXT,
-            Entity_Id TEXT,
-            Timestamp TIMESTAMP WITH TIME ZONE,
-            User_Id TEXT,
-            Comment TEXT,
-            PRIMARY KEY (Revision_Id, Entity_Id)
-            FOREIGN KEY (Entity_Id) REFERENCES Entity(Id)
+        CREATE TABLE revision (
+            revision_id TEXT,
+            entity_id TEXT,
+            timestamp TIMESTAMP WITH TIME ZONE,
+            user_id TEXT,
+            comment TEXT,
+            PRIMARY KEY (revision_id, entity_id),
+            FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
         );
 
-        CREATE TABLE Change (
-            Revision_Id TEXT,
-            Property_Id TEXT,
-            SubValue_Key TEXT,
-            Value_Id TEXT,
-            Old_Value JSONB,
-            New_Value JSONB,
-            Datatype TEXT,
-            Datatype_Metadata TEXT,
-            Change_Type TEXT,
-            PRIMARY KEY (Revision_Id, Property_Id, SubValue_Key, Value_Id, Datatype_Metadata)
-            FOREIGN KEY (Revision_Id) REFERENCES Revision(Revision_Id),
+        CREATE TABLE change (
+            revision_id TEXT,
+            entity_id TEXT,
+            property_id TEXT,
+            value_id TEXT,
+            old_value JSONB,
+            new_value JSONB,
+            datatype TEXT,
+            datatype_metadata TEXT,
+            change_type TEXT,
+            change_magnitude DOUBLE PRECISION,
+            PRIMARY KEY (revision_id, entity_id, property_id, value_id, datatype_metadata),
+            FOREIGN KEY (revision_id, entity_id) REFERENCES revision(revision_id, entity_id)
         );
     """
     try:
