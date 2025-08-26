@@ -175,7 +175,10 @@ def fetch_class_label():
     print(f"Loaded {len(class_ids)} unique class IDs from entity_type table")
     
     url = "https://query.wikidata.org/sparql"
-    headers = {"Accept": "application/sparql-results+json"}
+    headers = {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "WikidataFetcher/1.0 (carolina.cortes@hpi.de)"
+    }
 
     batch_size = 50
     class_list = list(class_ids)
@@ -245,7 +248,10 @@ def fetch_entity_types():
     entity_ids = cur.fetchall()
 
     url = "https://query.wikidata.org/sparql"
-    headers = {"Accept": "application/sparql-results+json"}
+    headers = {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "WikidataFetcher/1.0 (carolina.cortes@hpi.de)"
+    }
 
     batch_size = 50
     entity_list = list(entity_ids)
@@ -267,7 +273,9 @@ def fetch_entity_types():
             }}
         }}
         """
+        print('Query to use:')
 
+        print(query)
         try:
             response = requests.get(url, params={'query': query, 'format': 'json'}, headers=headers)
             response.raise_for_status()
