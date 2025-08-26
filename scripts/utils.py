@@ -521,6 +521,7 @@ def create_db_schema(conn):
             entity_id TEXT,
             timestamp TIMESTAMP WITH TIME ZONE,
             user_id TEXT,
+            username TEXT,
             comment TEXT,
             PRIMARY KEY (revision_id, entity_id),
             FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
