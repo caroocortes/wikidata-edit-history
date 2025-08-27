@@ -13,21 +13,26 @@ from lxml import etree
 from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label
 from scripts.const import *
 
-def batch_insert(conn, revision, changes):
+def batch_insert(conn, revision, changes, change_metadata):
     # NOTE: copy may be faster
     """Function to insert into DB asynchronously."""
     
     try:
         insert_rows(conn, 'revision', revision, ['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
         insert_rows(conn, 'change', changes, ['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+        insert_rows(conn, 'change_metadata', change_metadata, ['revision_id', 'entity_id', 'property_id', 'value_id', 'datatype_metadata', 'change_magnitude'])
     except Exception as e:
         print(f'There was an error when batch inserting revisions and changes: {e}')
         sys.stdout.flush()
 
 class PageParser():
     def __init__(self, file_path, page_elem_str):
+
+        # TODO: review this variables, 
+        # probably a lot of them don't have to be here and can be local variables of the method page_parser (they where here for the previous sax parser)
         self.changes = []
         self.revision = []
+        self.change_metadata = []
         self.entity_id = ''
         self.entity_label = ''
 
@@ -38,7 +43,7 @@ class PageParser():
         self.file_path = file_path
         self.page_elem = etree.fromstring(page_elem_str)
 
-        self.db_executor = ThreadPoolExecutor(max_workers=2)  # for DB inserts
+        self.db_executor = ThreadPoolExecutor(max_workers=1)  # for DB inserts
 
         dotenv_path = Path(__file__).resolve().parent.parent / ".env"
         load_dotenv(dotenv_path)
@@ -69,6 +74,19 @@ class PageParser():
             print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped. Revision text: {json_text}')
             return None
     
+    @staticmethod
+    def get_target_action_from_change_type(change_type):
+        """
+            Splits a change_type into action and target (e.g. 'CREATE_PROPERTY_VALUE' into 'CREATE' and 'PROPERTY_VALUE').
+        """
+        if not change_type or "_" not in change_type:
+            return change_type, None 
+
+        parts = change_type.split("_", 1)
+        action = parts[0]
+        target = parts[1]
+        return action, target
+
     @staticmethod
     def magnitude_of_change(old_value, new_value, datatype, metadata=False):
         
@@ -204,11 +222,14 @@ class PageParser():
             value = NO_VALUE if snaktype == 'novalue' else SOME_VALUE
             return value, None, None
 
-    def change_json(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type, change_magnitude=None):
+    def change_tuple(self, property_id, value_id, old_value, new_value, datatype, datatype_metadata, change_type, change_magnitude=None):
         
         old_value = json.dumps(str(old_value)) if old_value else None
         new_value = json.dumps(str(new_value)) if new_value else None
-        return (
+
+        action, target = PageParser.get_target_action_from_change_type(change_type)
+
+        change = (
             self.revision_meta['revision_id'] if self.revision_meta['revision_id'] else '',
             self.entity_id if self.entity_id else '',
             property_id if property_id else '',
@@ -217,13 +238,27 @@ class PageParser():
             new_value,
             datatype,
             datatype_metadata if datatype_metadata else '', # can't be None since datatype_metadata is part of the key of the table
-            change_type,
-            change_magnitude
+            action,
+            target
         )
+
+        change_metadata = ()
+        if change_magnitude is not None:
+            change_metadata = (
+                self.revision_meta['revision_id'] if self.revision_meta['revision_id'] else '',
+                self.entity_id if self.entity_id else '',
+                property_id if property_id else '',
+                value_id if value_id else '',
+                datatype_metadata if datatype_metadata else '', # can't be None since datatype_metadata is part of the key of the table
+                change_magnitude
+            )
+
+        return change, change_metadata
 
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, datavalue_id, old_datatype, new_datatype, property_id, change_type):
         
         changes = []
+        changes_metadata = []
         
         if old_datatype == new_datatype:
         
@@ -237,7 +272,8 @@ class PageParser():
                     change_magnitude = None
 
                 if old_meta != new_meta: # save only what changed
-                    changes.append(self.change_json(
+
+                    change, change_metadata = self.change_tuple(
                         property_id,
                         value_id=datavalue_id,
                         old_value=old_meta,
@@ -246,7 +282,10 @@ class PageParser():
                         datatype_metadata=key,
                         change_type=change_type, 
                         change_magnitude=change_magnitude
-                    ))
+                    )
+
+                    changes.append(change)
+                    changes_metadata.append(change_metadata)
 
         else: # different datatypes
 
@@ -283,7 +322,8 @@ class PageParser():
                     if new_meta_key is not None:
                         keys_to_skip.add(new_meta_key)
                 
-                changes.append(self.change_json(
+                
+                change, change_metadata = self.change_tuple(
                     property_id,
                     value_id=datavalue_id,
                     old_value=old_meta,
@@ -291,7 +331,9 @@ class PageParser():
                     datatype=new_datatype,
                     datatype_metadata=key,
                     change_type=change_type
-                ))
+                )
+                changes.append(change)
+                changes_metadata.append(change_metadata)
             
             remaining_keys = big_set - keys_to_skip
             for key in remaining_keys:
@@ -303,7 +345,7 @@ class PageParser():
                     new_meta = (new_datatype_metadata or {}).get(key, None)
                     old_meta = None
                 
-                changes.append(self.change_json(
+                change, change_metadata = self.change_tuple(
                     property_id,
                     value_id=datavalue_id,
                     old_value=old_meta,
@@ -311,13 +353,14 @@ class PageParser():
                     datatype=new_datatype,
                     datatype_metadata=key,
                     change_type=change_type
-                ))
+                )
+                changes.append(change)
+                changes_metadata.append(changes_metadata)
 
-        return changes
+        return changes, changes_metadata
     
     def _handle_value_changes(self, new_datatype, new_value, old_value, datavalue_id, property_id, change_type, change_magnitude=None):
-
-        return self.change_json(
+        return self.change_tuple(
                 property_id, 
                 value_id=datavalue_id,
                 old_value=old_value,
@@ -331,6 +374,7 @@ class PageParser():
     
     def _changes_deleted_created_entity(self, revision, change_type):
         changes = []
+        changes_metadata = []
 
         # Process claims
         claims = PageParser._safe_get_nested(revision, 'claims')
@@ -338,41 +382,41 @@ class PageParser():
         for property_id, property_stmts in claims.items():
             for stmt in property_stmts:
                 
-                
                 value, datatype, datatype_metadata = PageParser._parse_datavalue(stmt)
                 datavalue_id = stmt.get('id', None)
                 
                 old_value = None if change_type == CREATE_ENTITY else value
                 new_value = value if change_type == CREATE_ENTITY else None
                 
-                changes.append(
-                    self.change_json(
-                        property_id, 
-                        value_id=datavalue_id,
-                        old_value=old_value,
-                        new_value=new_value,
-                        datatype=datatype,
-                        datatype_metadata=None,
-                        change_type=change_type
-                    )
+                change, change_metadata = self.change_tuple(
+                    property_id, 
+                    value_id=datavalue_id,
+                    old_value=old_value,
+                    new_value=new_value,
+                    datatype=datatype,
+                    datatype_metadata=None,
+                    change_type=change_type
                 )
+                changes.append(change)
+                changes_metadata.append(change_metadata)
 
                 if datatype_metadata:
                     for k, v in datatype_metadata.items():
                         old_value = None if change_type == CREATE_ENTITY else v
                         new_value = v if change_type == CREATE_ENTITY else None
                         
-                        changes.append(
-                            self.change_json(
-                                property_id,
-                                value_id=datavalue_id,
-                                old_value=old_value,
-                                new_value=new_value,
-                                datatype=datatype,
-                                datatype_metadata=k,
-                                change_type=change_type
-                            )
+                        change, change_metadata = self.change_tuple(
+                            property_id,
+                            value_id=datavalue_id,
+                            old_value=old_value,
+                            new_value=new_value,
+                            datatype=datatype,
+                            datatype_metadata=k,
+                            change_type=change_type
                         )
+
+                        changes.append(change)
+                        changes_metadata.append(change_metadata)
 
         # If there's no description or label, the revisions shows them as []
         labels = PageParser._safe_get_nested(revision, 'labels', 'en', 'value')
@@ -384,8 +428,7 @@ class PageParser():
                 old_value = None if change_type == CREATE_ENTITY else val
                 new_value = val if change_type == CREATE_ENTITY else None
 
-                changes.append(
-                    self.change_json(
+                change, change_metadata = self.change_tuple(
                         pid, 
                         value_id=pid,
                         old_value=old_value if not isinstance(old_value, dict) else None,
@@ -394,9 +437,11 @@ class PageParser():
                         datatype_metadata=None,
                         change_type=change_type
                     )
-                )
+
+                changes.append(change)
+                changes_metadata.append(change_metadata)
         
-        return changes
+        return changes, changes_metadata
     
     @staticmethod
     def _description_label_change_type(old_value, new_value):
@@ -415,6 +460,7 @@ class PageParser():
     def _handle_description_label_change(self, previous_revision, current_revision):
         
         changes = []
+        changes_metadata = []
         # --- Label change ---
         prev_label = None
         if previous_revision:
@@ -425,8 +471,7 @@ class PageParser():
 
             old_value = prev_label if not isinstance(prev_label, dict) else None
             new_value = curr_label if not isinstance(curr_label, dict) else None
-            changes.append(
-                self.change_json(
+            change, change_metadata = self.change_tuple(
                     property_id="label",
                     value_id='label',
                     old_value=old_value,
@@ -436,8 +481,10 @@ class PageParser():
                     change_type=PageParser._description_label_change_type(prev_label, curr_label),
                     change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string')
                 )
-            )
-
+            
+            changes.append(change)
+            changes_metadata.append(change_metadata)
+            
         # --- Description change ---
         prev_desc = None
         if previous_revision:
@@ -447,8 +494,7 @@ class PageParser():
         if curr_desc != prev_desc:
             old_value = prev_desc if not isinstance(prev_desc, dict) else None
             new_value = curr_desc if not isinstance(curr_desc, dict) else None
-            changes.append(
-                self.change_json(
+            change, change_metadata = self.change_tuple(
                     property_id="description",
                     value_id='description',
                     old_value=old_value,
@@ -458,27 +504,35 @@ class PageParser():
                     change_type=PageParser._description_label_change_type(prev_desc, curr_desc),
                     change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string')
                 )
-            )
 
-        return changes
+            changes.append(change)
+            changes_metadata.append(change_metadata)
+
+        return changes, changes_metadata
     
     def _handle_new_pids(self, new_pids, curr_claims):
         changes = []
+        changes_metadata = []
         for new_pid in new_pids:
             curr_statements = curr_claims.get(new_pid, [])
             for s in curr_statements:
                 new_value, new_datatype, new_datatype_metadata = PageParser._parse_datavalue(s)
                 datavalue_id = s.get('id', None)
 
-                changes.append(self._handle_value_changes(new_datatype, new_value, None, datavalue_id, new_pid, CREATE_PROPERTY))
+                change, change_metadata = self._handle_value_changes(new_datatype, new_value, None, datavalue_id, new_pid, CREATE_PROPERTY)
+                changes.append(change)
+                changes_metadata.append(change_metadata)
 
                 if new_datatype_metadata:
-                    changes.extend(self._handle_datatype_metadata_changes(None, new_datatype_metadata, datavalue_id, None, new_datatype, new_pid, CREATE_PROPERTY))
+                    change, change_metadata = self._handle_datatype_metadata_changes(None, new_datatype_metadata, datavalue_id, None, new_datatype, new_pid, CREATE_PROPERTY)
+                    changes.extend(change)
+                    changes_metadata.extend(change_metadata)
 
-        return changes
+        return changes, changes_metadata
     
     def _handle_removed_pids(self, removed_pids, prev_claims):
         changes = []
+        changes_metadata = []
         for removed_pid in removed_pids:
             prev_statements = prev_claims.get(removed_pid, [])
 
@@ -487,16 +541,20 @@ class PageParser():
 
                 datavalue_id = s.get('id', None)
 
-                changes.append(self._handle_value_changes(None, None, old_value, datavalue_id, removed_pid, DELETE_PROPERTY))
+                change, change_metadata = self._handle_value_changes(None, None, old_value, datavalue_id, removed_pid, DELETE_PROPERTY)
+                changes.append(change)
+                changes_metadata.append(change_metadata)
 
                 if old_datatype_metadata:
+                    change, change_metadata = self._handle_datatype_metadata_changes(old_datatype_metadata, {}, datavalue_id, old_datatype, None, removed_pid, DELETE_PROPERTY)
+                    changes.extend(change)
+                    changes_metadata.extend(change_metadata)
 
-                    changes.extend(self._handle_datatype_metadata_changes(old_datatype_metadata, {}, datavalue_id, old_datatype, None, removed_pid, DELETE_PROPERTY))
-
-        return changes
+        return changes, changes_metadata
 
     def _handle_remaining_pids(self, remaining_pids, prev_claims, curr_claims):
         changes = []
+        changes_metadata = []
         for pid in remaining_pids:
             # Get statement for the same P-ID in previous and current revision
             prev_statements = prev_claims.get(pid, []) 
@@ -520,20 +578,31 @@ class PageParser():
 
                 if prev_stmt and not curr_stmt:
                     # Property value was removed -> the datatype is the datatype of the old_value
-                    changes.append(self._handle_value_changes(old_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE))
+                    change, change_metadata = self._handle_value_changes(old_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE)
+                    changes.append(change)
+                    changes_metadata.append(change_metadata)
 
                     if old_datatype_metadata:
                         # Add change record for the datatype_metadata fields
-                        changes = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, old_datatype, pid, DELETE_PROPERTY_VALUE)
+                        change, change_metadata = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, old_datatype, pid, DELETE_PROPERTY_VALUE)
+                        
+                        # NOTE: use extend because _handle_datatype_metadata_changes returns a list
+                        changes.extend(change)
+                        changes_metadata.extend(change_metadata)
 
                 elif curr_stmt and not prev_stmt:
                     # Property value was created
-                    changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, CREATE_PROPERTY_VALUE))
+                    change, change_metadata = self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, CREATE_PROPERTY_VALUE)
+                    changes.append(change)
+                    changes_metadata.append(change_metadata)
 
                     if new_datatype_metadata:
                         # Add change record for the datatype_metadata fields
-                        changes.extend(self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, None, new_datatype, pid, CREATE_PROPERTY_VALUE))
-                    
+                        change, change_metadata = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, None, new_datatype, pid, CREATE_PROPERTY_VALUE)
+                        # NOTE: use extend because _handle_datatype_metadata_changes returns a list
+                        changes.extend(change)
+                        changes_metadata.extend(change_metadata)
+
                 elif prev_stmt and curr_stmt and old_hash != new_hash:
                     # Property was updated
                     if (old_datatype != new_datatype) or (old_value != new_value):
@@ -541,15 +610,24 @@ class PageParser():
                         if old_datatype == new_datatype and old_datatype != 'wikibase-entityid':
                             # only value change
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
-                            changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, change_magnitude=change_magnitude))
+
+                            change, change_metadata = self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, change_magnitude=change_magnitude)
+                            changes.append(change)
+                            changes_metadata.append(change_metadata)
+
                         else:
-                            changes.append(self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE))
+                            change, change_metadata = self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE)
+                            changes.append(change)
+                            changes_metadata.append(change_metadata)
                     
                     if (old_datatype != new_datatype) or (old_datatype_metadata != new_datatype_metadata):
                         # Datatype change -> value and metadata change
-                        changes.extend(self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, new_datatype, pid, UPDATE_PROPERTY_DATATYPE_METADATA))
+                        change, change_metadata = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, new_datatype, pid, UPDATE_PROPERTY_DATATYPE_METADATA)
+                        # NOTE: use extend because _handle_datatype_metadata_changes returns a list
+                        changes.extend(change)
+                        changes_metadata.extend(change_metadata)
 
-        return changes
+        return changes, changes_metadata
     
     def get_changes_from_revisions(self, current_revision, previous_revision):
         if previous_revision is None:
@@ -557,6 +635,7 @@ class PageParser():
             return self._changes_deleted_created_entity(current_revision, CREATE_ENTITY)
         else:
             changes = []
+            changes_metadata = []
             
             curr_label = PageParser._safe_get_nested(current_revision, 'labels')
             curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions')
@@ -568,7 +647,9 @@ class PageParser():
                 return []
 
             # --- Labels and Description changes ---
-            changes.extend(self._handle_description_label_change(previous_revision, current_revision))
+            change, change_metadata = self._handle_description_label_change(previous_revision, current_revision)
+            changes.extend(change)
+            changes_metadata.extend(change_metadata)
 
             # --- Claims (P-IDs) ---
             prev_claims = PageParser._safe_get_nested(previous_revision, 'claims')
@@ -579,27 +660,34 @@ class PageParser():
             # --- New properties in current revision ---
             new_pids = curr_claims_pids - prev_claims_pids
             if new_pids:
-                changes.extend(self._handle_new_pids(new_pids, curr_claims))
+                change, change_metadata = self._handle_new_pids(new_pids, curr_claims)
+                changes.extend(change)
+                changes_metadata.extend(change_metadata)
 
             # --- Deleted properties in current revision ---
             removed_pids = prev_claims_pids - curr_claims_pids
             if removed_pids:
-                changes.extend(self._handle_removed_pids(removed_pids, prev_claims))
+                change, change_metadata = self._handle_removed_pids(removed_pids, prev_claims)
+                changes.extend(change)
+                changes_metadata.extend(change_metadata)
 
             # --- Check updates of statements between revisions ---
             remaining_pids = prev_claims_pids.intersection(curr_claims_pids)
             if remaining_pids:
-                changes.extend(self._handle_remaining_pids(remaining_pids, prev_claims, curr_claims))
+                change, change_metadata = self._handle_remaining_pids(remaining_pids, prev_claims, curr_claims)
+                changes.extend(change)
+                changes_metadata.extend(change_metadata)
             
-            return changes
+            return changes, changes_metadata
 
     def process_page(self):
         
+        # TODO: remove this
         duplicated_entity = False
         timestamps = []
-
         num_revisions = 0
         revisions_without_changes = 0
+
         ns = "http://www.mediawiki.org/xml/export-0.11/"
 
         title_tag = f"{{{ns}}}title"
@@ -668,8 +756,9 @@ class PageParser():
                     curr_label = self._get_english_label(current_revision)
                     if curr_label and self.entity_label != curr_label and curr_label != '':
                         self.entity_label = curr_label
-                    change = self.get_changes_from_revisions(current_revision, self.previous_revision)
+                    change, change_metadata = self.get_changes_from_revisions(current_revision, self.previous_revision)
 
+                # TODO: remove -> only for testing
                 if self.previous_revision and (not next_revision_empty_text) and curr_revision_empty_text:
                     # check previous_revision is not the first one (=None)
                     next_revision_empty_text = current_revision
@@ -695,6 +784,10 @@ class PageParser():
                         self.revision_meta['username'],
                         self.revision_meta['comment'],
                     ))
+
+                    if change_metadata: # some changes may have no change_metadata
+                        self.changes_metadata.extend(change_metadata)
+
                 else:
                     revisions_without_changes += 1
 
@@ -707,9 +800,10 @@ class PageParser():
 
                 # Batch insert
                 if len(self.changes) >= BATCH_SIZE_CHANGES:
-                    self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes)
+                    self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata)
                     self.changes = []
                     self.revision = []
+                    self.changes_metadata = []
 
             # free memory
             rev_elem.clear()
@@ -727,6 +821,7 @@ class PageParser():
                 batch_insert(self.conn, self.revision, self.changes)
                 self.changes = []
                 self.revision = []
+                self.changes_metadata = []
 
             # Update entity label with last label
             update_entity_label(self.conn, self.entity_id, self.entity_label)

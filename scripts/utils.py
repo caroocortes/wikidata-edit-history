@@ -536,10 +536,21 @@ def create_db_schema(conn):
             new_value JSONB,
             datatype TEXT,
             datatype_metadata TEXT,
-            change_type TEXT,
-            change_magnitude DOUBLE PRECISION,
+            action TEXT,
+            target TEXT,
             PRIMARY KEY (revision_id, entity_id, property_id, value_id, datatype_metadata),
             FOREIGN KEY (revision_id, entity_id) REFERENCES revision(revision_id, entity_id)
+        );
+
+        CREATE TABLE change_metadata (
+            revision_id TEXT,
+            entity_id TEXT,
+            property_id TEXT,
+            value_id TEXT,
+            datatype_metadata TEXT,
+            change_magnitude DOUBLE PRECISION,
+            PRIMARY KEY (revision_id, entity_id, property_id, value_id, datatype_metadata),
+            FOREIGN KEY (revision_id, entity_id) REFERENCES change(revision_id, entity_id)
         );
     """
     try:
