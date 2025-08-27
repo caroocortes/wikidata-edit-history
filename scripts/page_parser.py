@@ -606,6 +606,12 @@ class PageParser():
         revision_tag = f'{{{ns}}}revision'
         revision_text_tag = f'{{{ns}}}text'
 
+        # TODO: remove this, just for testing
+        prev_revision_empty_text = None
+        curr_revision_empty_text = None
+        next_revision_empty_text = None
+        saved = False
+
         # Extract title / entity_id
         title_elem = self.page_elem.find(title_tag)
         if title_elem is not None:
@@ -654,13 +660,28 @@ class PageParser():
                 current_revision = self._parse_json_revision(revision_text)
                 
                 if not current_revision:
-                    print(f'Revision text is empty. Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']} skipped')
+                    # The json parsing for the revision text failed. Probably a redirect
                     change = []
+                    prev_revision_empty_text = self.previous_revision
+                    curr_revision_empty_text = revision_text
                 else:
                     curr_label = self._get_english_label(current_revision)
                     if curr_label and self.entity_label != curr_label and curr_label != '':
                         self.entity_label = curr_label
                     change = self.get_changes_from_revisions(current_revision, self.previous_revision)
+
+                if not next_revision_empty_text and curr_revision_empty_text != current_revision:
+                    next_revision_empty_text = current_revision
+
+                    if not saved:
+                        with open("empty_revisions.txt", "a") as f:
+                            f.write(f"-------------------------------------------\n")
+                            f.write(f"Empty revision text for {self.entity_id} - {self.entity_label}:\n")
+                            f.write(f"Previous revision: {prev_revision_empty_text}\n")
+                            f.write(f"Current revision: {curr_revision_empty_text}\n")
+                            f.write(f"Next revision: {next_revision_empty_text}\n")
+                            f.write(f"-------------------------------------------\n")
+                            saved = True
 
                 if change:
                     self.changes.extend(change)
@@ -677,6 +698,7 @@ class PageParser():
                     revisions_without_changes += 1
 
                 # some revisions may be redirects so _parse_json_revision returns None
+                # so we only update previous_revision with an actual revision (that has a json in the revision <text></text>)
                 if current_revision is not None:
                     self.previous_revision = current_revision
                 
