@@ -1,6 +1,5 @@
 import html
 import json
-import time
 import Levenshtein
 from concurrent.futures import ThreadPoolExecutor
 import psycopg2
@@ -285,7 +284,8 @@ class PageParser():
                     )
 
                     changes.append(change)
-                    changes_metadata.append(change_metadata)
+                    if change_metadata:
+                        changes_metadata.append(change_metadata)
 
         else: # different datatypes
 
@@ -333,7 +333,8 @@ class PageParser():
                     change_type=change_type
                 )
                 changes.append(change)
-                changes_metadata.append(change_metadata)
+                if change_metadata:
+                    changes_metadata.append(change_metadata)
             
             remaining_keys = big_set - keys_to_skip
             for key in remaining_keys:
@@ -355,7 +356,8 @@ class PageParser():
                     change_type=change_type
                 )
                 changes.append(change)
-                changes_metadata.append(changes_metadata)
+                if change_metadata:
+                    changes_metadata.append(changes_metadata)
 
         return changes, changes_metadata
     
@@ -398,7 +400,8 @@ class PageParser():
                     change_type=change_type
                 )
                 changes.append(change)
-                changes_metadata.append(change_metadata)
+                if change_metadata:
+                    changes_metadata.append(change_metadata)
 
                 if datatype_metadata:
                     for k, v in datatype_metadata.items():
@@ -416,7 +419,8 @@ class PageParser():
                         )
 
                         changes.append(change)
-                        changes_metadata.append(change_metadata)
+                        if change_metadata:
+                            changes_metadata.append(change_metadata)
 
         # If there's no description or label, the revisions shows them as []
         labels = PageParser._safe_get_nested(revision, 'labels', 'en', 'value')
@@ -439,7 +443,8 @@ class PageParser():
                     )
 
                 changes.append(change)
-                changes_metadata.append(change_metadata)
+                if change_metadata:
+                    changes_metadata.append(change_metadata)
         
         return changes, changes_metadata
     
@@ -483,7 +488,8 @@ class PageParser():
                 )
             
             changes.append(change)
-            changes_metadata.append(change_metadata)
+            if change_metadata:
+                changes_metadata.append(change_metadata)
             
         # --- Description change ---
         prev_desc = None
@@ -506,7 +512,8 @@ class PageParser():
                 )
 
             changes.append(change)
-            changes_metadata.append(change_metadata)
+            if change_metadata:
+                changes_metadata.append(change_metadata)
 
         return changes, changes_metadata
     
@@ -521,12 +528,14 @@ class PageParser():
 
                 change, change_metadata = self._handle_value_changes(new_datatype, new_value, None, datavalue_id, new_pid, CREATE_PROPERTY)
                 changes.append(change)
-                changes_metadata.append(change_metadata)
+                if change_metadata:
+                    changes_metadata.append(change_metadata)
 
                 if new_datatype_metadata:
                     change, change_metadata = self._handle_datatype_metadata_changes(None, new_datatype_metadata, datavalue_id, None, new_datatype, new_pid, CREATE_PROPERTY)
                     changes.extend(change)
-                    changes_metadata.extend(change_metadata)
+                    if change_metadata:
+                        changes_metadata.extend(change_metadata)
 
         return changes, changes_metadata
     
@@ -543,12 +552,14 @@ class PageParser():
 
                 change, change_metadata = self._handle_value_changes(None, None, old_value, datavalue_id, removed_pid, DELETE_PROPERTY)
                 changes.append(change)
-                changes_metadata.append(change_metadata)
+                if change_metadata:
+                    changes_metadata.append(change_metadata)
 
                 if old_datatype_metadata:
                     change, change_metadata = self._handle_datatype_metadata_changes(old_datatype_metadata, {}, datavalue_id, old_datatype, None, removed_pid, DELETE_PROPERTY)
                     changes.extend(change)
-                    changes_metadata.extend(change_metadata)
+                    if change_metadata:
+                        changes_metadata.extend(change_metadata)
 
         return changes, changes_metadata
 
@@ -580,7 +591,8 @@ class PageParser():
                     # Property value was removed -> the datatype is the datatype of the old_value
                     change, change_metadata = self._handle_value_changes(old_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE)
                     changes.append(change)
-                    changes_metadata.append(change_metadata)
+                    if change_metadata:
+                        changes_metadata.append(change_metadata)
 
                     if old_datatype_metadata:
                         # Add change record for the datatype_metadata fields
@@ -588,20 +600,23 @@ class PageParser():
                         
                         # NOTE: use extend because _handle_datatype_metadata_changes returns a list
                         changes.extend(change)
-                        changes_metadata.extend(change_metadata)
+                        if change_metadata:
+                            changes_metadata.extend(change_metadata)
 
                 elif curr_stmt and not prev_stmt:
                     # Property value was created
                     change, change_metadata = self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, CREATE_PROPERTY_VALUE)
                     changes.append(change)
-                    changes_metadata.append(change_metadata)
+                    if change_metadata:
+                        changes_metadata.append(change_metadata)
 
                     if new_datatype_metadata:
                         # Add change record for the datatype_metadata fields
                         change, change_metadata = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, None, new_datatype, pid, CREATE_PROPERTY_VALUE)
                         # NOTE: use extend because _handle_datatype_metadata_changes returns a list
                         changes.extend(change)
-                        changes_metadata.extend(change_metadata)
+                        if change_metadata:
+                            changes_metadata.extend(change_metadata)
 
                 elif prev_stmt and curr_stmt and old_hash != new_hash:
                     # Property was updated
@@ -613,19 +628,22 @@ class PageParser():
 
                             change, change_metadata = self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, change_magnitude=change_magnitude)
                             changes.append(change)
-                            changes_metadata.append(change_metadata)
+                            if change_metadata:
+                                changes_metadata.append(change_metadata)
 
                         else:
                             change, change_metadata = self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE)
                             changes.append(change)
-                            changes_metadata.append(change_metadata)
+                            if change_metadata:
+                                changes_metadata.append(change_metadata)
                     
                     if (old_datatype != new_datatype) or (old_datatype_metadata != new_datatype_metadata):
                         # Datatype change -> value and metadata change
                         change, change_metadata = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, new_datatype, pid, UPDATE_PROPERTY_DATATYPE_METADATA)
                         # NOTE: use extend because _handle_datatype_metadata_changes returns a list
                         changes.extend(change)
-                        changes_metadata.extend(change_metadata)
+                        if change_metadata:
+                            changes_metadata.extend(change_metadata)
 
         return changes, changes_metadata
     
