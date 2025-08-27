@@ -66,7 +66,8 @@ class PageParser():
             current_revision = json.loads(json_text)
             return current_revision
         except json.JSONDecodeError as e:
-            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped.')
+            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped. Revision text: {json_text}')
+            return None
     
     @staticmethod
     def magnitude_of_change(old_value, new_value, datatype, metadata=False):
@@ -654,6 +655,7 @@ class PageParser():
                 
                 if not current_revision:
                     print(f'Revision text is empty. Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']} skipped')
+                    change = []
                 else:
                     curr_label = self._get_english_label(current_revision)
                     if curr_label and self.entity_label != curr_label and curr_label != '':
@@ -674,13 +676,8 @@ class PageParser():
                 else:
                     revisions_without_changes += 1
 
-                curr_label = PageParser._safe_get_nested(current_revision, 'labels')
-                curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions')
-                curr_claims = PageParser._safe_get_nested(current_revision, 'claims')
-
-                # check there is something in the revision (label, description or claims)
-                # if not, skip the current revision
-                if curr_claims or curr_label or curr_desc:
+                # some revisions may be redirects so _parse_json_revision returns None
+                if current_revision is not None:
                     self.previous_revision = current_revision
                 
                 num_revisions += 1
@@ -705,6 +702,8 @@ class PageParser():
             # Insert remaining changes if the BATCH_SIZE was not reached
             if self.changes:
                 batch_insert(self.conn, self.revision, self.changes)
+                self.changes = []
+                self.revision = []
 
             # Update entity label with last label
             update_entity_label(self.conn, self.entity_id, self.entity_label)
