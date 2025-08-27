@@ -37,7 +37,7 @@ class DumpParser():
         self.futures = []  
 
         if max_workers is None:
-            max_workers = 8
+            max_workers = THREADS_PAGE_PROCESS # change in const. TODO: maybe move to config file or something
             print('Number of workers to use: ', max_workers)
         
         self.num_workers = max_workers
