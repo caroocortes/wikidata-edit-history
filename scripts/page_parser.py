@@ -1,4 +1,3 @@
-from xml.sax.handler import ContentHandler
 import html
 import json
 import time
@@ -7,6 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 import psycopg2
 import os
 import sys
+from dotenv import load_dotenv
+from pathlib import Path
+from lxml import etree
 
 from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label
 from scripts.const import *
@@ -22,15 +24,24 @@ def batch_insert(conn, revision, changes):
         print(f'There was an error when batch inserting revisions and changes: {e}')
         sys.stdout.flush()
 
-class PageParser(ContentHandler):
-    def __init__(self, file_path):
+class PageParser():
+    def __init__(self, file_path, page_elem_str):
         self.changes = []
         self.revision = []
-        self.set_initial_state()    
+        self.entity_id = ''
+        self.entity_label = ''
+
+        self.revision_meta = {}
+        self.revision_text = ""
+        self.previous_revision = None
 
         self.file_path = file_path
+        self.page_elem = etree.fromstring(page_elem_str)
 
         self.db_executor = ThreadPoolExecutor(max_workers=2)  # for DB inserts
+
+        dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+        load_dotenv(dotenv_path)
 
         DB_USER = os.environ.get("DB_USER")
         DB_PASS = os.environ.get("DB_PASS")
@@ -46,36 +57,6 @@ class PageParser(ContentHandler):
             port=DB_PORT
         )
 
-    def set_initial_state(self):
-        self.entity_id = ''
-        self.entity_label = ''
-        
-        self.in_revision = False             # True if inside a <revision> block
-        self.in_revision_id = False          # True if inside the <id> of a revision
-        self.in_timestamp = False            # True if inside the <timestamp> tag of a revision
-        self.in_comment = False              # True if inside the <comment> tag of a revision
-        self.in_revision_text = False        # True if inside the <text> of a revision
-
-        self.in_contributor = False          # True if inside a <contributor> block
-        self.in_contributor_id = False       # True if inside the contributor's <id>
-        self.in_contributor_username = False # True if inside the contributor's <username>
-
-        self.previous_revision = None
-        self.current_revision = None
-
-        # TODO: remove, just for debugging/printing
-        self.start_time_entity = 0
-        self.end_time_entity = 0
-
-        self.revision_meta = {
-            'comment': '',
-            'user_info': ''
-        }
-        self.revision_text = ""
-
-        self.revisions_without_changes = 0
-        self.num_revisions = 0
-
     def _parse_json_revision(self, revision_text):
         """
             Returns the text of a revision as a json
@@ -85,8 +66,8 @@ class PageParser(ContentHandler):
             current_revision = json.loads(json_text)
             return current_revision
         except json.JSONDecodeError as e:
-            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped.')
-            raise e
+            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped. Revision text: {json_text}')
+            return None
     
     @staticmethod
     def magnitude_of_change(old_value, new_value, datatype, metadata=False):
@@ -104,7 +85,7 @@ class PageParser(ContentHandler):
                 new_julian = gregorian_to_julian(new_dict['year'], new_dict['month'], new_dict['day'])
                 old_julian = gregorian_to_julian(old_dict['year'], old_dict['month'], old_dict['day'])
 
-                return float(new_julian - old_julian)
+                return float(new_julian - old_julian) # distance in days
             
             # Calculate distande in km between 2 points
             if datatype == 'globecoordinate' and isinstance(old_value, dict) and isinstance(new_value, dict):
@@ -441,15 +422,19 @@ class PageParser(ContentHandler):
         curr_label = PageParser._safe_get_nested(current_revision, 'labels', 'en', 'value')
         
         if curr_label != prev_label:
+
+            old_value = prev_label if not isinstance(prev_label, dict) else None
+            new_value = curr_label if not isinstance(curr_label, dict) else None
             changes.append(
                 self.change_json(
                     property_id="label",
                     value_id='label',
-                    old_value=prev_label if not isinstance(prev_label, dict) else None,
-                    new_value=curr_label if not isinstance(curr_label, dict) else None,
+                    old_value=old_value,
+                    new_value=new_value,
                     datatype='string',
                     datatype_metadata=None,
-                    change_type=PageParser._description_label_change_type(prev_label, curr_label)
+                    change_type=PageParser._description_label_change_type(prev_label, curr_label),
+                    change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string')
                 )
             )
 
@@ -460,15 +445,18 @@ class PageParser(ContentHandler):
         curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
 
         if curr_desc != prev_desc:
+            old_value = prev_desc if not isinstance(prev_desc, dict) else None
+            new_value = curr_desc if not isinstance(curr_desc, dict) else None
             changes.append(
                 self.change_json(
                     property_id="description",
                     value_id='description',
-                    old_value=prev_desc if not isinstance(prev_desc, dict) else None,
-                    new_value=curr_desc if not isinstance(curr_desc, dict) else None,
+                    old_value=old_value,
+                    new_value=new_value,
                     datatype='string',
                     datatype_metadata=None,
-                    change_type=PageParser._description_label_change_type(prev_desc, curr_desc)
+                    change_type=PageParser._description_label_change_type(prev_desc, curr_desc),
+                    change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string')
                 )
             )
 
@@ -531,12 +519,12 @@ class PageParser(ContentHandler):
                 new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
 
                 if prev_stmt and not curr_stmt:
-                    # Property value was removed -> We set datatype = None
-                    changes.append(self._handle_value_changes(None, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE))
+                    # Property value was removed -> the datatype is the datatype of the old_value
+                    changes.append(self._handle_value_changes(old_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE))
 
                     if old_datatype_metadata:
                         # Add change record for the datatype_metadata fields
-                        changes = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, None, pid, DELETE_PROPERTY_VALUE)
+                        changes = self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, old_datatype, pid, DELETE_PROPERTY_VALUE)
 
                 elif curr_stmt and not prev_stmt:
                     # Property value was created
@@ -564,19 +552,20 @@ class PageParser(ContentHandler):
         return changes
     
     def get_changes_from_revisions(self, current_revision, previous_revision):
-        if not previous_revision:
+        if previous_revision is None:
             # Entity was created again or for the first time
             return self._changes_deleted_created_entity(current_revision, CREATE_ENTITY)
         else:
             changes = []
             
-            curr_label = PageParser._safe_get_nested(current_revision, 'labels', 'en', 'value')
-            curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
+            curr_label = PageParser._safe_get_nested(current_revision, 'labels')
+            curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions')
             curr_claims = PageParser._safe_get_nested(current_revision, 'claims')
 
             if not curr_claims and not curr_label and not curr_desc:
-                # Entity was deleted
-                return self._changes_deleted_created_entity(current_revision, DELETE_ENTITY)
+                # Skipped revision -> could be a deleted revision, not necessarily a deleted entity
+                print(f'Revision does not contain labels, descriptions, nor claims. Skipped revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}')
+                return []
 
             # --- Labels and Description changes ---
             changes.extend(self._handle_description_label_change(previous_revision, current_revision))
@@ -604,175 +593,147 @@ class PageParser(ContentHandler):
             
             return changes
 
-    def startElement(self, name, attrs):
-        """
-        Called when the parser finds a starting tag (e.g. <page>)
-        """
-        if name == 'title':
-            self.entity_id = ''
-            self.in_title = True
+    def process_page(self):
+        
+        duplicated_entity = False
+        timestamps = []
 
-        if name == 'revision':
-            self.in_revision = True
+        num_revisions = 0
+        revisions_without_changes = 0
+        ns = "http://www.mediawiki.org/xml/export-0.11/"
 
-        if self.in_revision:
-            if name == 'id' and not self.in_contributor:
-                self.in_revision_id = True
-            elif name == 'timestamp':
-                self.in_timestamp = True
-            elif name == 'comment':
-                self.in_comment = True
-            elif name == 'contributor':
-                self.in_contributor = True
-            elif name == 'text':
-                self.in_revision_text = True
+        title_tag = f"{{{ns}}}title"
+        revision_tag = f'{{{ns}}}revision'
+        revision_text_tag = f'{{{ns}}}text'
 
-        if self.in_contributor:
-            if name == 'id':
-                self.in_contributor_id = True
-            elif name == 'username':
-                self.in_contributor_username = True
+        # TODO: remove this, just for testing
+        prev_revision_empty_text = None
+        curr_revision_empty_text = None
+        next_revision_empty_text = None
+        saved = False
 
-    def characters(self, content):
-        """ 
-            Called when parser finds text inside tags (e.g. <title>Q12</title>)
-        """
-        if self.in_revision:
+        # Extract title / entity_id
+        title_elem = self.page_elem.find(title_tag)
+        if title_elem is not None:
+            self.entity_id = (title_elem.text or '').strip()
+            print(self.entity_id)
+            # start_time_entity = time.time()
+            # Insert entity row
+            result = insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
+                        columns=['entity_id', 'entity_label', 'file_path'])
+            if result == 0:
+                duplicated_entity = True
+            else:
+                print(f'Inserted entity {self.entity_id}')
+    
+        # Iterate over revisions
+        for rev_elem in self.page_elem.findall(revision_tag):
 
-            if 'entity_id' not in self.revision_meta:
-                self.revision_meta['entity_id'] = self.entity_id
+            if duplicated_entity:
+                # Only get timestamps and store them -> allow to check if there are more revisions or if the entity is duplicated
+                ts_elem = rev_elem.findtext(f'{{{ns}}}timestamp', '')
+                if ts_elem is not None:
+                    timestamps.append(ts_elem.text)
+            else:
+                # Extract text, id, timestamp, comment, username, user_id
 
-            # always accumulate because the parser can split strings (content doesn't have the whole text inside the tags)
-            if self.in_revision_id:
-                if not 'revision_id' in self.revision_meta:
-                    self.revision_meta['revision_id'] = ''
-                self.revision_meta['revision_id'] += content
+                contrib_elem = rev_elem.find(f'{{{ns}}}contributor')
             
-            if self.in_comment:
-                if not 'comment' in self.revision_meta:
-                    self.revision_meta['comment'] = ''
-                self.revision_meta['comment'] += content
-            
-            if self.in_timestamp:
-                if not 'timestamp' in self.revision_meta:
-                    self.revision_meta['timestamp'] = ''
-                self.revision_meta['timestamp'] += content
-            
-            if self.in_contributor_id or self.in_contributor_username:
-                if 'user_id' not in self.revision_meta:
-                    self.revision_meta['user_id'] = ''
+                if contrib_elem is not None:
+                    username = (contrib_elem.findtext(f'{{{ns}}}username') or '').strip()
+                    user_id = (contrib_elem.findtext(f'{{{ns}}}id') or '').strip()
                 else:
-                    self.revision_meta['user_id'] += content
+                    username = ''
+                    user_id = ''
+
+                self.revision_meta = {
+                    'entity_id': self.entity_id,
+                    'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
+                    'timestamp': rev_elem.findtext(f'{{{ns}}}timestamp', '').strip(),
+                    'comment': rev_elem.findtext(f'{{{ns}}}comment', '').strip(),
+                    'username': username,
+                    'user_id': user_id
+                }
                 
-                if 'username' not in self.revision_meta:
-                    self.revision_meta['username'] = ''
+                # Get revision text
+                revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
+                current_revision = self._parse_json_revision(revision_text)
+                
+                if current_revision is None:
+                    # The json parsing for the revision text failed. Probably a redirect
+                    change = []
+                    prev_revision_empty_text = self.previous_revision
+                    curr_revision_empty_text = revision_text
                 else:
-                    self.revision_meta['username'] += content
+                    curr_label = self._get_english_label(current_revision)
+                    if curr_label and self.entity_label != curr_label and curr_label != '':
+                        self.entity_label = curr_label
+                    change = self.get_changes_from_revisions(current_revision, self.previous_revision)
 
-            if self.in_revision_text:
-                self.revision_text += content
+                if self.previous_revision and (not next_revision_empty_text) and curr_revision_empty_text:
+                    # check previous_revision is not the first one (=None)
+                    next_revision_empty_text = current_revision
 
-        if self.in_title:
-            self.start_time_entity = time.time() # TODO: remove
-            self.entity_id += content
-        
-    def endElement(self, name):
-        """ 
-            Called when a tag ends (e.g. </page>)
-        """
-        if self.in_title: # at </title> 
-            self.in_title = False
-            
-            # insert entity to entity table
-            insert_rows(self.conn, 'entity', [(self.entity_id, self.entity_label, self.file_path)],
-                columns=['entity_id', 'entity_label', 'file_path'])
-            
-            print(f'Inserted entity {self.entity_id} {self.entity_label}')
-            sys.stdout.flush()
+                    if not saved:
+                        with open("empty_revisions.txt", "a") as f:
+                            f.write(f"-------------------------------------------\n")
+                            f.write(f"Empty revision text for {self.entity_id} - {self.entity_label}:\n")
+                            f.write(f"Previous revision: {prev_revision_empty_text}\n")
+                            f.write(f"Current revision: {curr_revision_empty_text}\n")
+                            f.write(f"Next revision: {next_revision_empty_text}\n")
+                            f.write(f"-------------------------------------------\n")
+                            saved = True
 
-        if name == 'revision': # at </revision> of revision and we keep the entity
-
-            # Transform revision text to json
-            current_revision = self._parse_json_revision(self.revision_text)
-
-            # Revision text exists but is empty -> entity was deleted in this revision
-            if not current_revision:
-                # NOTE: Not sure if this ever happens
-                print(f'Revision text exists but is empty -> Entity {self.entity_id} was deleted in revision: {self.revision_meta["revision_id"]}')
-
-                change = self._changes_deleted_created_entity(self.previous_revision, DELETE_ENTITY)
                 if change:
-                    current_revision = None
-            else:
-       
-                curr_label = PageParser._get_english_label(current_revision)
-                if curr_label and self.entity_label != curr_label: 
-                    # Keep most current label
-                    self.entity_label = curr_label
+                    self.changes.extend(change)
 
-                # Extract changes from revision
-                change = self.get_changes_from_revisions(
-                            current_revision, 
-                            self.previous_revision
-                        )
+                    self.revision.append((
+                        self.revision_meta['revision_id'],
+                        self.revision_meta['entity_id'],
+                        self.revision_meta['timestamp'],
+                        self.revision_meta['user_id'],
+                        self.revision_meta['username'],
+                        self.revision_meta['comment'],
+                    ))
+                else:
+                    revisions_without_changes += 1
 
-            if change:
-                # Save changes to Change
-                self.changes.extend(change)
+                # some revisions may be redirects so _parse_json_revision returns None
+                # so we only update previous_revision with an actual revision (that has a json in the revision <text></text>)
+                if current_revision is not None:
+                    self.previous_revision = current_revision
+                
+                num_revisions += 1
 
-                # Save revision metadata to Revision
-                revision_meta = (
-                    self.revision_meta.get('revision_id', ''),
-                    self.revision_meta.get('entity_id', ''),
-                    self.revision_meta.get('timestamp', ''),
-                    self.revision_meta.get('username', ''),
-                    self.revision_meta.get('user_id', ''),
-                    self.revision_meta.get('comment', '')
-                )
-                self.revision.append(revision_meta)
-            else:
-                self.revisions_without_changes += 1
+                # Batch insert
+                if len(self.changes) >= BATCH_SIZE_CHANGES:
+                    self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes)
+                    self.changes = []
+                    self.revision = []
 
-            self.previous_revision = current_revision
-            self.num_revisions += 1
-            
-            self.in_revision = False
-            self.revision_meta = {}
-            self.revision_text = ''
+            # free memory
+            rev_elem.clear()
 
-        if len(self.changes) >= BATCH_SIZE_CHANGES: # changes will be > revisions in worst case (more than 1 change per revision)
-            # Batch insert in separate thread
-            self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes)
+        if duplicated_entity:
+            if timestamps:
+                first_ts = timestamps[0]   # first revision
+                last_ts = timestamps[-1]   # last revision
+                print(f'Entity {self.entity_id} was already inserted in DB. Skipped')
+                with open("duplicate_entities.txt", "a") as f:
+                    f.write(f"{self.entity_id}\t{self.entity_label}\t{self.file_path} - First revision: {first_ts}, Last revision: {last_ts} \n")
+        else:
+            # Insert remaining changes if the BATCH_SIZE was not reached
+            if self.changes:
+                batch_insert(self.conn, self.revision, self.changes)
+                self.changes = []
+                self.revision = []
 
-            # clear to prevent duplicates
-            self.changes = []
-            self.revision = []
+            # Update entity label with last label
+            update_entity_label(self.conn, self.entity_id, self.entity_label)
+            # end_time_entity = time.time()
+            # print(f'Finished processing entity (in PageParser.page_parser) {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
 
-        if self.in_revision:
-            if name == 'id': # at </id>
-                self.in_revision_id = False
-            elif name == 'timestamp': # at </timestamp>
-                self.in_timestamp = False
-            elif name == 'comment': # at </comment>
-                self.in_comment = False
-            elif name == 'contributor': # at </contributor>
-                self.in_contributor = False
-            elif name == 'text': # at </text>
-                self.in_revision_text = False
-
-        if self.in_contributor:
-            if name == 'id': # at </id> inside of <contributor></contributor>
-                self.in_contributor_id = False
-            elif name == 'username': # at </username> inside of <contributor></contributor>
-                self.in_contributor_username = False
-
-        if name == 'page': # at </page>
-        
-            # save remaining things
-            batch_insert(self.conn, self.revision, self.changes)
-            update_entity_label(self.conn, self.entity_id, self.entity_label) # update label with last value
-            self.conn.close()
-            self.db_executor.shutdown(wait=True)
-            self.end_time_entity = time.time()
-            print(f'Finished processing revisions for  entity {self.entity_id} - {self.num_revisions} revisions - {self.end_time_entity - self.start_time_entity} seconds')
-            sys.stdout.flush()
+        # Clear element to free memory
+        self.page_elem.clear()
+        while self.page_elem.getprevious() is not None:
+            del self.page_elem.getparent()[0]

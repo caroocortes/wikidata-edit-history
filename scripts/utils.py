@@ -10,7 +10,9 @@ import psycopg2
 from psycopg2.extras import execute_values
 from dotenv import load_dotenv
 from math import radians, cos, sin, asin, sqrt
-import io
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+from scripts.const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
  
 
 """
@@ -147,26 +149,44 @@ def fetch_class_label():
 
         NOTE: fetch_entity_types needs to be ran before running this method, since it depends on the list of entity_id, class_id pairs
     """
-    output_dir = 'data/output_csvs'
-    os.makedirs(output_dir, exist_ok=True)
 
-    input_csv_path = 'data/output_csvs/entity_types.csv'
-    df = pd.read_csv(input_csv_path, dtype=str)
-    class_ids = set(df['class_id'].dropna().unique())
-    print(f"Loaded {len(class_ids)} unique class IDs from {input_csv_path}")
+    dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+    load_dotenv(dotenv_path)
 
-    class_file_path = f'{output_dir}/class.csv'
-    classes = []
+    DB_USER = os.environ.get("DB_USER")
+    DB_PASS = os.environ.get("DB_PASS")
+    DB_NAME = os.environ.get("DB_NAME")
+    DB_HOST = os.environ.get("DB_HOST")
+    DB_PORT = os.environ.get("DB_PORT")
+
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS, 
+        host=DB_HOST,
+        port=DB_PORT
+    )
+
+
+    cur = conn.cursor()
+    cur.execute("SELECT DISTINCT class_id FROM entity_type")
+    class_ids = cur.fetchall()
+
+    print(f"Loaded {len(class_ids)} unique class IDs from entity_type table")
     
     url = "https://query.wikidata.org/sparql"
-    headers = {"Accept": "application/sparql-results+json"}
+    headers = {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "WikidataFetcher/1.0 (carolina.cortes@hpi.de)"
+    }
 
     batch_size = 50
     class_list = list(class_ids)
     
     for i in range(0, len(class_list), batch_size):
+        classes = []
         batch = class_list[i:i + batch_size]
-        values_str = " ".join(f"wd:{cid}" for cid in batch)
+        values_str = " ".join(f"wd:{cid[0]}" for cid in batch)
         print(f"Fetching classes (Batch: {i} - {i + batch_size})...")
 
         query = f"""
@@ -194,28 +214,20 @@ def fetch_class_label():
             class_id = result["class"]["value"].split("/")[-1]
             class_label = result["classLabel"]["value"]
 
-            classes.append({"class_id": class_id, "class_label": class_label})
+            classes.append((class_id, class_label))
 
+        insert_rows(conn, 'class', rows=classes, columns=['class_id', 'class_label'])
         time.sleep(10)
-
-    # TODO: change to save to DB
-    pd.DataFrame(classes).to_csv(class_file_path, index=False)
-    print(f"Saved {len(classes)} class-label pairs to '{class_file_path}'")
-
-    load_csv_to_db(class_file_path, 'class')
+    
+    conn.close()
 
 def fetch_entity_types():
     """ 
         Obtains entity_id, class_id, class_label from wikidata's SPARQL query service
     """
-    output_dir = 'data/output_csvs'
-    os.makedirs(output_dir, exist_ok=True)
 
-    # input_csv_path = 'data/output_csvs/entity.csv'
-    # df = pd.read_csv(input_csv_path, dtype=str)
-    # entity_ids = set(df['Entity_ID'].dropna().unique())
-    # print(f"Loaded {len(entity_ids)} unique entity IDs from {input_csv_path}")
-
+    dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+    load_dotenv(dotenv_path)
 
     DB_USER = os.environ.get("DB_USER")
     DB_PASS = os.environ.get("DB_PASS")
@@ -231,25 +243,23 @@ def fetch_entity_types():
         port=DB_PORT
     )
 
-    df = pd.read_sql(f"SELECT * FROM entity", conn)
+    cur = conn.cursor()
+    cur.execute("SELECT entity_id FROM entity")
+    entity_ids = cur.fetchall()
 
-    entity_ids = set(df['entity_iD'].dropna().unique())
-    print(f"Loaded {len(entity_ids)} unique entity IDs from table entity")
-
-    conn.close()
-
-    entity_file_path = f'{output_dir}/entity_types.csv'
-    entities = []
-    
     url = "https://query.wikidata.org/sparql"
-    headers = {"Accept": "application/sparql-results+json"}
+    headers = {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "WikidataFetcher/1.0 (carolina.cortes@hpi.de)"
+    }
 
     batch_size = 50
     entity_list = list(entity_ids)
 
     for i in range(0, len(entity_list), batch_size):
+        entities = []
         batch = entity_list[i:i + batch_size]
-        values_str = " ".join(f"wd:{eid}" for eid in batch)
+        values_str = " ".join(f"wd:{eid[0]}" for eid in batch)
         print(f"Fetching page (Batch size: {i} - {i + batch_size})...")
         
         query = f"""
@@ -263,7 +273,9 @@ def fetch_entity_types():
             }}
         }}
         """
+        print('Query to use:')
 
+        print(query)
         try:
             response = requests.get(url, params={'query': query, 'format': 'json'}, headers=headers)
             response.raise_for_status()
@@ -280,16 +292,16 @@ def fetch_entity_types():
             entity_id = result["entity"]["value"].split("/")[-1]
             class_id = result["class"]["value"].split("/")[-1]
 
-            entities.append({"entity_id": entity_id, "class_id": class_id})
+            entities.append((entity_id, class_id))
 
         time.sleep(10) 
+        
+        #insert in batches
+        insert_rows(conn, table_name='entity_type', rows=entities, columns=['entity_id', 'class_id'])
 
-    # Save to CSV
-    pd.DataFrame(entities).to_csv(entity_file_path, index=False)
-    print(f"Saved {len(entities)} entity-class pairs to '{entity_file_path}'")
-
-    load_csv_to_db(entity_file_path, 'entity_type')
-
+    # close db connection
+    conn.close()
+    
 """
     Methods for inserting in DB / CSV files
 """
@@ -365,6 +377,17 @@ def update_entity_label(conn, entity_id, entity_label):
 def insert_rows(conn, table_name, rows, columns):
     if not rows:
         return
+    
+    if table_name == 'entity':
+        # check if entity exists
+        query_select = "SELECT entity_id FROM entity WHERE entity_id = %s"
+
+        with conn.cursor() as cur:
+            cur.execute(query_select, (rows[0][0],))
+            exists = cur.fetchone() is not None
+            if exists:
+                # will skip this entity
+                return 0
 
     col_names = ', '.join(columns)
     placeholders = ', '.join(['%s'] * len(columns))
@@ -378,7 +401,7 @@ def insert_rows(conn, table_name, rows, columns):
         with conn.cursor() as cur:
             execute_batch(cur, query, rows)
         conn.commit()
-
+        return 1
     except Exception as e:
         conn.rollback()  # reset the transaction
         bad_rows = []
@@ -469,52 +492,54 @@ def load_csv_to_db(csv_path, table_name):
 def create_db_schema(conn):
 
     query = """
-
-        CREATE TABLE Entity (
-            Id TEXT PRIMARY KEY,
-            Label TEXT
+        CREATE TABLE entity (
+            entity_id TEXT PRIMARY KEY,
+            entity_label TEXT,
+            file_path TEXT
         );
 
-        CREATE TABLE Class (
-            Id TEXT PRIMARY KEY,
-            Label TEXT
+        CREATE TABLE class (
+            class_id TEXT PRIMARY KEY,
+            class_label TEXT
         );
 
-        CREATE TABLE Entity_Types (
-            Entity_Id TEXT,
-            Class_Id TEXT,
-            PRIMARY KEY (Entity_Id, Class_Id),
-            FOREIGN KEY (Class_Id) REFERENCES Class(Id),
-            FOREIGN KEY (Entity_Id) REFERENCES Entity(Id)
+        CREATE TABLE entity_type (
+            entity_id TEXT,
+            class_id TEXT,
+            PRIMARY KEY (entity_id, class_id),
+            -- FOREIGN KEY (class_id) REFERENCES class(class_id),
+            FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
         );
 
-        CREATE TABLE Property (
-            Id TEXT PRIMARY KEY,
-            Label TEXT
+        CREATE TABLE property (
+            property_id TEXT PRIMARY KEY,
+            property_label TEXT
         );
 
-        CREATE TABLE Revision (
-            Revision_Id TEXT,
-            Entity_Id TEXT,
-            Timestamp TIMESTAMP WITH TIME ZONE,
-            User_Id TEXT,
-            Comment TEXT,
-            PRIMARY KEY (Revision_Id, Entity_Id)
-            FOREIGN KEY (Entity_Id) REFERENCES Entity(Id)
+        CREATE TABLE revision (
+            revision_id TEXT,
+            entity_id TEXT,
+            timestamp TIMESTAMP WITH TIME ZONE,
+            user_id TEXT,
+            username TEXT,
+            comment TEXT,
+            PRIMARY KEY (revision_id, entity_id),
+            FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
         );
 
-        CREATE TABLE Change (
-            Revision_Id TEXT,
-            Property_Id TEXT,
-            SubValue_Key TEXT,
-            Value_Id TEXT,
-            Old_Value JSONB,
-            New_Value JSONB,
-            Datatype TEXT,
-            Datatype_Metadata TEXT,
-            Change_Type TEXT,
-            PRIMARY KEY (Revision_Id, Property_Id, SubValue_Key, Value_Id, Datatype_Metadata)
-            FOREIGN KEY (Revision_Id) REFERENCES Revision(Revision_Id),
+        CREATE TABLE change (
+            revision_id TEXT,
+            entity_id TEXT,
+            property_id TEXT,
+            value_id TEXT,
+            old_value JSONB,
+            new_value JSONB,
+            datatype TEXT,
+            datatype_metadata TEXT,
+            change_type TEXT,
+            change_magnitude DOUBLE PRECISION,
+            PRIMARY KEY (revision_id, entity_id, property_id, value_id, datatype_metadata),
+            FOREIGN KEY (revision_id, entity_id) REFERENCES revision(revision_id, entity_id)
         );
     """
     try:
@@ -528,3 +553,23 @@ def create_db_schema(conn):
     except Exception as e:
         print(f'Error when saving or connecting to DB: {e}')
 
+
+def get_dump_links(self):
+    #  Get list of .bz2 files from the wikidata dump service (Scrapper)
+    response = requests.get(WIKIDATA_SERVICE_URL)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    bz2_links = []
+    for link in soup.find_all("a"):
+        href = link.get("href", "")
+        if "pages-meta-history" in href and href.endswith(".bz2"):
+            full_url = urljoin(WIKIDATA_SERVICE_URL, href)
+            bz2_links.append(full_url)
+
+    print(f"Found {len(bz2_links)} .bz2 dump files.")
+    print(f"Saving download links to {DOWNLOAD_LINKS_FILE_PATH}")
+    with open(DOWNLOAD_LINKS_FILE_PATH, 'w', encoding='utf-8') as f:
+        for file in bz2_links:
+            f.write(f"{file}\n")
+    
+    return bz2_links
