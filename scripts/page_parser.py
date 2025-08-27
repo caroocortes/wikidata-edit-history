@@ -552,7 +552,7 @@ class PageParser():
         return changes
     
     def get_changes_from_revisions(self, current_revision, previous_revision):
-        if not previous_revision:
+        if previous_revision is None:
             # Entity was created again or for the first time
             return self._changes_deleted_created_entity(current_revision, CREATE_ENTITY)
         else:
@@ -670,7 +670,8 @@ class PageParser():
                         self.entity_label = curr_label
                     change = self.get_changes_from_revisions(current_revision, self.previous_revision)
 
-                if not next_revision_empty_text and curr_revision_empty_text != current_revision:
+                if not next_revision_empty_text and curr_revision_empty_text != current_revision and self.previous_revision:
+                    # check previous_revision is not the first one (=None)
                     next_revision_empty_text = current_revision
 
                     if not saved:
