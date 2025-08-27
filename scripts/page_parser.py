@@ -19,7 +19,7 @@ def batch_insert(conn, revision, changes, change_metadata):
     
     try:
         insert_rows(conn, 'revision', revision, ['revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment'])
-        insert_rows(conn, 'change', changes, ['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'change_type', 'change_magnitude'])
+        insert_rows(conn, 'change', changes, ['revision_id', 'entity_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'action', 'target'])
         insert_rows(conn, 'change_metadata', change_metadata, ['revision_id', 'entity_id', 'property_id', 'value_id', 'datatype_metadata', 'change_magnitude'])
     except Exception as e:
         print(f'There was an error when batch inserting revisions and changes: {e}')
