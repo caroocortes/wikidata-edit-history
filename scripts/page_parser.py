@@ -70,7 +70,7 @@ class PageParser():
             current_revision = json.loads(json_text)
             return current_revision
         except json.JSONDecodeError as e:
-            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped. Revision text: {json_text}')
+            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped. Revision text: {revision_text}')
             return None
     
     @staticmethod
@@ -662,7 +662,7 @@ class PageParser():
             if not curr_claims and not curr_label and not curr_desc:
                 # Skipped revision -> could be a deleted revision, not necessarily a deleted entity
                 print(f'Revision does not contain labels, descriptions, nor claims. Skipped revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}')
-                return []
+                return changes, changes_metadata 
 
             # --- Labels and Description changes ---
             change, change_metadata = self._handle_description_label_change(previous_revision, current_revision)
