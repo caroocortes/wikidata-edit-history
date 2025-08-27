@@ -750,6 +750,7 @@ class PageParser():
                 if current_revision is None:
                     # The json parsing for the revision text failed. Probably a redirect
                     change = []
+                    change_metadata = []
                     prev_revision_empty_text = self.previous_revision
                     curr_revision_empty_text = revision_text
                 else:
@@ -818,7 +819,7 @@ class PageParser():
         else:
             # Insert remaining changes if the BATCH_SIZE was not reached
             if self.changes:
-                batch_insert(self.conn, self.revision, self.changes)
+                batch_insert(self.conn, self.revision, self.changes, self.changes_metadata)
                 self.changes = []
                 self.revision = []
                 self.changes_metadata = []
