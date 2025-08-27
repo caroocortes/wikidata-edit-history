@@ -32,7 +32,7 @@ class PageParser():
         # probably a lot of them don't have to be here and can be local variables of the method page_parser (they where here for the previous sax parser)
         self.changes = []
         self.revision = []
-        self.change_metadata = []
+        self.changes_metadata = []
         self.entity_id = ''
         self.entity_label = ''
 
