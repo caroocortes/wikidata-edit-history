@@ -659,7 +659,7 @@ class PageParser():
                 revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
                 current_revision = self._parse_json_revision(revision_text)
                 
-                if not current_revision:
+                if current_revision is None:
                     # The json parsing for the revision text failed. Probably a redirect
                     change = []
                     prev_revision_empty_text = self.previous_revision
@@ -670,7 +670,7 @@ class PageParser():
                         self.entity_label = curr_label
                     change = self.get_changes_from_revisions(current_revision, self.previous_revision)
 
-                if not next_revision_empty_text and curr_revision_empty_text != current_revision and self.previous_revision:
+                if self.previous_revision and (not next_revision_empty_text) and curr_revision_empty_text:
                     # check previous_revision is not the first one (=None)
                     next_revision_empty_text = current_revision
 
