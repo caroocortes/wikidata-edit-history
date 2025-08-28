@@ -1,8 +1,8 @@
 #!/bin/bash
 
 LOG="parser_output_2.log"
-MAX_FILES=100
-BATCH_SIZE=4
+MAX_FILES=50
+BATCH_SIZE=3
 count=0
 
 while [ "$count" -lt "$MAX_FILES" ]; do

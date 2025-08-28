@@ -760,7 +760,12 @@ class PageParser():
                 with open("error_revision_text.txt", "a") as f:
                     f.write(f"-------------------------------------------\n")
                     f.write(f"Current revision None for {self.entity_id} - {self.entity_label}:\n")
-                    f.write(f"Revision element: {rev_elem}\n")
+                    revision_xml_str = etree.tostring(
+                        rev_elem,
+                        pretty_print=True,
+                        encoding="unicode" 
+                    )
+                    f.write(revision_xml_str + "\n")
                     f.write(f"-------------------------------------------\n")
             else:
                 curr_label = self._get_english_label(current_revision)
