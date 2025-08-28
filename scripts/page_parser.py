@@ -71,6 +71,7 @@ class PageParser():
             return current_revision
         except json.JSONDecodeError as e:
             print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.entity_id}: {e}. Revision skipped. Revision text: {revision_text}')
+            
             return None
     
     @staticmethod
@@ -700,9 +701,6 @@ class PageParser():
 
     def process_page(self):
         
-        # TODO: remove this
-        duplicated_entity = False
-        timestamps = []
         num_revisions = 0
         revisions_without_changes = 0
 
@@ -712,11 +710,6 @@ class PageParser():
         revision_tag = f'{{{ns}}}revision'
         revision_text_tag = f'{{{ns}}}text'
 
-        # TODO: remove this, just for testing
-        prev_revision_empty_text = None
-        curr_revision_empty_text = None
-        next_revision_empty_text = None
-        saved = False
 
         # Extract title / entity_id
         title_elem = self.page_elem.find(title_tag)
@@ -735,117 +728,91 @@ class PageParser():
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
 
-            if duplicated_entity:
-                # Only get timestamps and store them -> allow to check if there are more revisions or if the entity is duplicated
-                ts_elem = rev_elem.findtext(f'{{{ns}}}timestamp', '')
-                if ts_elem is not None:
-                    timestamps.append(ts_elem.text)
-            else:
-                # Extract text, id, timestamp, comment, username, user_id
-
-                contrib_elem = rev_elem.find(f'{{{ns}}}contributor')
             
-                if contrib_elem is not None:
-                    username = (contrib_elem.findtext(f'{{{ns}}}username') or '').strip()
-                    user_id = (contrib_elem.findtext(f'{{{ns}}}id') or '').strip()
-                else:
-                    username = ''
-                    user_id = ''
+            # Extract text, id, timestamp, comment, username, user_id
 
-                self.revision_meta = {
-                    'entity_id': self.entity_id,
-                    'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
-                    'timestamp': rev_elem.findtext(f'{{{ns}}}timestamp', '').strip(),
-                    'comment': rev_elem.findtext(f'{{{ns}}}comment', '').strip(),
-                    'username': username,
-                    'user_id': user_id
-                }
-                
-                # Get revision text
-                revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
-                current_revision = self._parse_json_revision(revision_text)
-                
-                if current_revision is None:
-                    # The json parsing for the revision text failed. Probably a redirect
-                    change = []
-                    change_metadata = []
-                    prev_revision_empty_text = self.previous_revision
-                    curr_revision_empty_text = revision_text
-                else:
-                    curr_label = self._get_english_label(current_revision)
-                    if curr_label and self.entity_label != curr_label and curr_label != '':
-                        self.entity_label = curr_label
-                    change, change_metadata = self.get_changes_from_revisions(current_revision, self.previous_revision)
+            contrib_elem = rev_elem.find(f'{{{ns}}}contributor')
+        
+            if contrib_elem is not None:
+                username = (contrib_elem.findtext(f'{{{ns}}}username') or '').strip()
+                user_id = (contrib_elem.findtext(f'{{{ns}}}id') or '').strip()
+            else:
+                username = ''
+                user_id = ''
 
-                # TODO: remove -> only for testing
-                if self.previous_revision and (not next_revision_empty_text) and curr_revision_empty_text:
-                    # check previous_revision is not the first one (=None)
-                    next_revision_empty_text = current_revision
+            self.revision_meta = {
+                'entity_id': self.entity_id,
+                'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
+                'timestamp': rev_elem.findtext(f'{{{ns}}}timestamp', '').strip(),
+                'comment': rev_elem.findtext(f'{{{ns}}}comment', '').strip(),
+                'username': username,
+                'user_id': user_id
+            }
+            
+            # Get revision text
+            revision_text = (rev_elem.findtext(revision_text_tag) or '').strip()
+            current_revision = self._parse_json_revision(revision_text)
+            
+            if current_revision is None:
+                # The json parsing for the revision text failed. Probably a redirect
+                change = []
+                change_metadata = []
+                with open("error_revision_text.txt", "a") as f:
+                    f.write(f"-------------------------------------------\n")
+                    f.write(f"Current revision None for {self.entity_id} - {self.entity_label}:\n")
+                    f.write(f"Revision element: {rev_elem}\n")
+                    f.write(f"-------------------------------------------\n")
+            else:
+                curr_label = self._get_english_label(current_revision)
+                if curr_label and self.entity_label != curr_label and curr_label != '':
+                    self.entity_label = curr_label
+                change, change_metadata = self.get_changes_from_revisions(current_revision, self.previous_revision)
 
-                    if not saved:
-                        with open("empty_revisions.txt", "a") as f:
-                            f.write(f"-------------------------------------------\n")
-                            f.write(f"Empty revision text for {self.entity_id} - {self.entity_label}:\n")
-                            f.write(f"Previous revision: {prev_revision_empty_text}\n")
-                            f.write(f"Current revision: {curr_revision_empty_text}\n")
-                            f.write(f"Next revision: {next_revision_empty_text}\n")
-                            f.write(f"-------------------------------------------\n")
-                            saved = True
+            if change:
+                self.changes.extend(change)
 
-                if change:
-                    self.changes.extend(change)
+                self.revision.append((
+                    self.revision_meta['revision_id'],
+                    self.revision_meta['entity_id'],
+                    self.revision_meta['timestamp'],
+                    self.revision_meta['user_id'],
+                    self.revision_meta['username'],
+                    self.revision_meta['comment'],
+                ))
 
-                    self.revision.append((
-                        self.revision_meta['revision_id'],
-                        self.revision_meta['entity_id'],
-                        self.revision_meta['timestamp'],
-                        self.revision_meta['user_id'],
-                        self.revision_meta['username'],
-                        self.revision_meta['comment'],
-                    ))
+                if change_metadata: # some changes may have no change_metadata
+                    self.changes_metadata.extend(change_metadata)
 
-                    if change_metadata: # some changes may have no change_metadata
-                        self.changes_metadata.extend(change_metadata)
+            else:
+                revisions_without_changes += 1
 
-                else:
-                    revisions_without_changes += 1
+            # some revisions may be redirects so _parse_json_revision returns None
+            # so we only update previous_revision with an actual revision (that has a json in the revision <text></text>)
+            if current_revision is not None:
+                self.previous_revision = current_revision
+            
+            num_revisions += 1
 
-                # some revisions may be redirects so _parse_json_revision returns None
-                # so we only update previous_revision with an actual revision (that has a json in the revision <text></text>)
-                if current_revision is not None:
-                    self.previous_revision = current_revision
-                
-                num_revisions += 1
-
-                # Batch insert
-                if len(self.changes) >= BATCH_SIZE_CHANGES:
-                    self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata)
-                    self.changes = []
-                    self.revision = []
-                    self.changes_metadata = []
-
-            # free memory
-            rev_elem.clear()
-
-        if duplicated_entity:
-            if timestamps:
-                first_ts = timestamps[0]   # first revision
-                last_ts = timestamps[-1]   # last revision
-                print(f'Entity {self.entity_id} was already inserted in DB. Skipped')
-                with open("duplicate_entities.txt", "a") as f:
-                    f.write(f"{self.entity_id}\t{self.entity_label}\t{self.file_path} - First revision: {first_ts}, Last revision: {last_ts} \n")
-        else:
-            # Insert remaining changes if the BATCH_SIZE was not reached
-            if self.changes:
-                batch_insert(self.conn, self.revision, self.changes, self.changes_metadata)
+            # Batch insert
+            if len(self.changes) >= BATCH_SIZE_CHANGES:
+                self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata)
                 self.changes = []
                 self.revision = []
                 self.changes_metadata = []
 
-            # Update entity label with last label
-            update_entity_label(self.conn, self.entity_id, self.entity_label)
-            # end_time_entity = time.time()
-            # print(f'Finished processing entity (in PageParser.page_parser) {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
+        # free memory
+        rev_elem.clear()
+
+        if self.changes:
+            batch_insert(self.conn, self.revision, self.changes, self.changes_metadata)
+            self.changes = []
+            self.revision = []
+            self.changes_metadata = []
+
+        # Update entity label with last label
+        update_entity_label(self.conn, self.entity_id, self.entity_label)
+        # end_time_entity = time.time()
+        # print(f'Finished processing entity (in PageParser.page_parser) {self.entity_id} - {num_revisions} revisions in {end_time_entity - start_time_entity:.2f}s')
 
         # Clear element to free memory
         self.page_elem.clear()
