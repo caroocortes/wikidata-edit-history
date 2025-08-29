@@ -72,7 +72,7 @@ class PageParser():
             current_revision = json.loads(json_text)
             return current_revision
         except json.JSONDecodeError as e:
-            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.revision_meta['revision_id']['entity_id']}: {e}. Revision skipped. Revision text: {revision_text}')
+            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}: {e}. Revision skipped. Revision text: {revision_text}')
             
             return None
     
