@@ -362,7 +362,7 @@ def update_entity_label(conn, entity_id, entity_label):
     """
 
     query = """
-        UPDATE entity
+        UPDATE revision
         SET entity_label = %s
         WHERE entity_id = %s
     """
@@ -492,45 +492,24 @@ def load_csv_to_db(csv_path, table_name):
 def create_db_schema(conn):
 
     query = """
-        CREATE TABLE entity (
-            entity_id TEXT PRIMARY KEY,
-            entity_label TEXT,
-            file_path TEXT
-        );
-
-        CREATE TABLE class (
-            class_id TEXT PRIMARY KEY,
-            class_label TEXT
-        );
-
-        CREATE TABLE entity_type (
-            entity_id TEXT,
-            class_id TEXT,
-            PRIMARY KEY (entity_id, class_id),
-            -- FOREIGN KEY (class_id) REFERENCES class(class_id),
-            FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
-        );
-
-        CREATE TABLE property (
-            property_id TEXT PRIMARY KEY,
-            property_label TEXT
-        );
-
         CREATE TABLE revision (
             revision_id TEXT,
             entity_id TEXT,
+            entity_label TEXT,
+            class_id TEXT,
+            class_label TEXT,
+            file_path TEXT,
             timestamp TIMESTAMP WITH TIME ZONE,
             user_id TEXT,
             username TEXT,
             comment TEXT,
-            PRIMARY KEY (revision_id, entity_id),
-            FOREIGN KEY (entity_id) REFERENCES entity(entity_id)
+            PRIMARY KEY (revision_id)
         );
 
         CREATE TABLE change (
             revision_id TEXT,
-            entity_id TEXT,
             property_id TEXT,
+            property_label TEXT,
             value_id TEXT,
             old_value JSONB,
             new_value JSONB,
@@ -538,19 +517,20 @@ def create_db_schema(conn):
             datatype_metadata TEXT,
             action TEXT,
             target TEXT,
-            PRIMARY KEY (revision_id, entity_id, property_id, value_id, datatype_metadata),
-            FOREIGN KEY (revision_id, entity_id) REFERENCES revision(revision_id, entity_id)
+            old_hash TEXT,
+            new_hash TEXT,
+            PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata),
+            FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
         );
 
         CREATE TABLE change_metadata (
             revision_id TEXT,
-            entity_id TEXT,
             property_id TEXT,
             value_id TEXT,
             datatype_metadata TEXT,
             change_magnitude DOUBLE PRECISION,
-            PRIMARY KEY (revision_id, entity_id, property_id, value_id, datatype_metadata),
-            FOREIGN KEY (revision_id, entity_id) REFERENCES change(revision_id, entity_id)
+            PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata),
+            FOREIGN KEY (revision_id, property_id, value_id, datatype_metadata) REFERENCES change(revision_id, property_id, value_id, datatype_metadata)
         );
     """
     try:
