@@ -730,7 +730,7 @@ class PageParser():
             if revision_text is not None:
                 # If the revision was deleted the text tag looks like: <text bytes="11179" sha1="ou0t1tihux9rw2wb939kv22axo3h2uh" deleted="deleted"/>
                 # and there's no content inside
-                deleted_attr = revision_text.get("deleted")
+                deleted_attr = rev_elem.get("deleted")
                 if deleted_attr:
                     with open("error_revision_text.txt", "a") as f:
                         f.write(f"-------------------------------------------\n")
