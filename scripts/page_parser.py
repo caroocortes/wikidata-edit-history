@@ -640,8 +640,9 @@ class PageParser():
                         # Datatype change implies a value change
 
                         change_magnitude = None
-                        if old_datatype not in WD_ENTITY_TYPES:
+                        if old_datatype == new_datatype and old_datatype not in WD_ENTITY_TYPES:
                             # Only calculate magnitude of change for non-entity datatypes
+                            # and for the same datatype
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
                         
                         self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
