@@ -5,6 +5,8 @@ See requirement.txt for libraries to install.
 A .env template file is provided with the variables needed to connect to the postgres DB which will store the tables revision, change and change_metadata.
 *Change the values to comply with your DB.*
 
+When running the parsers, the table schemas are automatically created.
+
 ### Structure of the repo
 
 - *scripts*: contains classes DumpParser and PageParser which parse Wikidata's XML files.
