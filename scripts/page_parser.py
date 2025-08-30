@@ -102,12 +102,8 @@ class PageParser():
             Calculates magnitude of change between new and old value that have the same datatype.
             The field metadata indicates if the old and new values correspond to datatype metadata values (True) or property value (False).
         """
-        print('Parameters:')
-        print(old_value, new_value, datatype, metadata)
         if new_value is not None and old_value is not None and not metadata:
             if datatype == 'quantity':
-                print('datatype is quantity!!!')
-                print(datatype)
                 new_num = float(new_value)
                 old_num = float(old_value)
                 return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
@@ -236,7 +232,7 @@ class PageParser():
 
         else:
             value = NO_VALUE if snaktype == 'novalue' else SOME_VALUE
-            return value, None, None
+            return value, 'unknown-values', None
 
     @staticmethod
     def _description_label_change_type(old_value, new_value):
