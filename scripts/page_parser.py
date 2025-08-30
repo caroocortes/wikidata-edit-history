@@ -132,7 +132,6 @@ class PageParser():
             # - globecoordinate: precision
             # - quantity: lowerBound and upperBound
             # - time: timezone and precision
-            print(datatype, old_value, new_value)
             if datatype not in WD_STRING_TYPES:
                 new_num = float(new_value)
                 old_num = float(old_value)
