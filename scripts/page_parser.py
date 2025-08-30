@@ -102,8 +102,12 @@ class PageParser():
             Calculates magnitude of change between new and old value that have the same datatype.
             The field metadata indicates if the old and new values correspond to datatype metadata values (True) or property value (False).
         """
+        print('Parameters:')
+        print(old_value, new_value, datatype, metadata)
         if new_value is not None and old_value is not None and not metadata:
             if datatype == 'quantity':
+                print('datatype is quantity!!!')
+                print(datatype)
                 new_num = float(new_value)
                 old_num = float(old_value)
                 return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
@@ -132,6 +136,7 @@ class PageParser():
             # - globecoordinate: precision
             # - quantity: lowerBound and upperBound
             # - time: timezone and precision
+            print(datatype, old_value, new_value)
             if datatype not in WD_STRING_TYPES:
                 new_num = float(new_value)
                 old_num = float(old_value)
@@ -638,8 +643,6 @@ class PageParser():
 
                         change_magnitude = None
                         if old_datatype not in WD_ENTITY_TYPES:
-                            print(old_datatype, new_datatype)
-                            print(WD_ENTITY_TYPES)
                             # Only calculate magnitude of change for non-entity datatypes
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
                         
