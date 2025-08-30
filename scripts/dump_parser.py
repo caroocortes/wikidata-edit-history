@@ -1,7 +1,4 @@
 import xml.sax
-import io
-import concurrent.futures
-from xml.sax.saxutils import escape
 import sys
 import multiprocessing as mp
 import time
@@ -10,7 +7,6 @@ from lxml import etree
 
 from scripts.page_parser import PageParser
 from scripts.const import *
-from scripts.utils import initialize_csv_files
 
 
 def process_page_xml(page_elem_str, file_path):
@@ -37,7 +33,7 @@ class DumpParser():
         self.futures = []  
 
         if max_workers is None:
-            max_workers = THREADS_PAGE_PROCESS # change in const. TODO: maybe move to config file or something
+            max_workers = NUM_PAGE_PROCESS # change in const. TODO: maybe move to config file or something
             print('Number of workers to use: ', max_workers)
         
         self.num_workers = max_workers
