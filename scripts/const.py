@@ -23,3 +23,6 @@ SOME_VALUE = 'unknown'
 
 # Wikidata's XML namespace
 NS = '{http://www.mediawiki.org/xml/export-0.11/}'
+
+WD_STRING_TYPES = ['monolingualtext', 'string', 'external-id', 'url', 'commonsMedia', 'geo-shape', 'tabular-data', 'math', 'musical-notation']
+WD_ENTITY_TYPES = ['wikibase-item', 'wikibase-property', 'wikibase-lexeme', 'wikibase-sense', 'wikibase-form', 'entity-schema']
