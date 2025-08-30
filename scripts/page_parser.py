@@ -99,7 +99,8 @@ class PageParser():
     @staticmethod
     def magnitude_of_change(old_value, new_value, datatype, metadata=False):
         """ 
-            Calculates magnitude of change between new and old value
+            Calculates magnitude of change between new and old value that have the same datatype.
+            The field metadata indicates if the old and new values correspond to datatype metadata values (True) or property value (False).
         """
         if new_value is not None and old_value is not None and not metadata:
             if datatype == 'quantity':
@@ -122,7 +123,7 @@ class PageParser():
                 lat2, lon2 = float(new_value['latitude']), float(new_value['longitude'])
                 return float(haversine_metric(lon1, lat1, lon2, lat2))
             
-            if datatype == 'string' or datatype == 'monolingualtext': # for entities doesn't make sense to compare ids
+            if datatype in WD_STRING_TYPES:
                 return float(Levenshtein.distance(old_value, new_value))
         elif new_value is not None and old_value is not None and metadata:
             # Calculate magnitude of change for datatype metadata
@@ -131,13 +132,12 @@ class PageParser():
             # - globecoordinate: precision
             # - quantity: lowerBound and upperBound
             # - time: timezone and precision
-            if datatype != 'monolingualtext':
+            if datatype not in WD_STRING_TYPES:
                 new_num = float(new_value)
                 old_num = float(old_value)
                 return new_num - old_num
             else:
                 return float(Levenshtein.distance(old_value, new_value))
-
         else:
             return None
 
@@ -596,7 +596,7 @@ class PageParser():
             prev_statements = prev_claims.get(pid, []) 
             curr_statements = curr_claims.get(pid, [])
 
-            # Map by statement ID
+            # Map by value ID
             prev_by_id = {stmt["id"]: stmt for stmt in prev_statements}
             curr_by_id = {stmt["id"]: stmt for stmt in curr_statements}
 
@@ -634,16 +634,17 @@ class PageParser():
                     change_detected = True
                     # Property was updated
                     if (old_datatype != new_datatype) or (old_value != new_value):
-                        # Datatype change -> value and metadata change
-                        if old_datatype == new_datatype and old_datatype != 'wikibase-entityid':
-                            # only value change
+                        # Datatype change implies a value change
+
+                        change_magnitude = None
+                        if old_datatype not in WD_ENTITY_TYPES:
+                            # Only calculate magnitude of change for non-entity datatypes
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
-                            self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
-                        else:
-                            self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash)
+                        
+                        self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
 
                     if (old_datatype != new_datatype) or (old_datatype_metadata != new_datatype_metadata):
-                        # Datatype change -> value and metadata change
+                        # Datatype change imples a datatype_metadata change
                         self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, new_datatype, pid, UPDATE_PROPERTY_DATATYPE_METADATA, old_hash, new_hash)
 
         return change_detected
