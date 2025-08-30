@@ -638,6 +638,8 @@ class PageParser():
 
                         change_magnitude = None
                         if old_datatype not in WD_ENTITY_TYPES:
+                            print(old_datatype, new_datatype)
+                            print(WD_ENTITY_TYPES)
                             # Only calculate magnitude of change for non-entity datatypes
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
                         
