@@ -489,10 +489,10 @@ def load_csv_to_db(csv_path, table_name):
         cur.close()
         conn.close()
 
-def create_db_schema(conn):
-
+def create_db_schema():
+    # TODO: maybe move this to a file, so it's not embedded in code
     query = """
-        CREATE TABLE revision (
+        CREATE TABLE IF NOT EXISTS revision (
             revision_id TEXT,
             entity_id TEXT,
             entity_label TEXT,
@@ -506,7 +506,7 @@ def create_db_schema(conn):
             PRIMARY KEY (revision_id)
         );
 
-        CREATE TABLE change (
+        CREATE TABLE IF NOT EXISTS change (
             revision_id TEXT,
             property_id TEXT,
             property_label TEXT,
@@ -523,7 +523,7 @@ def create_db_schema(conn):
             FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
         );
 
-        CREATE TABLE change_metadata (
+        CREATE TABLE IF NOT EXISTS change_metadata (
             revision_id TEXT,
             property_id TEXT,
             value_id TEXT,
@@ -534,6 +534,24 @@ def create_db_schema(conn):
         );
     """
     try:
+
+        dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+        load_dotenv(dotenv_path)
+
+        DB_USER = os.environ.get("DB_USER")
+        DB_PASS = os.environ.get("DB_PASS")
+        DB_NAME = os.environ.get("DB_NAME")
+        DB_HOST = os.environ.get("DB_HOST")
+        DB_PORT = os.environ.get("DB_PORT")
+
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS, 
+            host=DB_HOST,
+            port=DB_PORT
+        )
+
         cursor = conn.cursor()
 
         cursor.execute(query=query)

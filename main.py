@@ -5,10 +5,9 @@ import bz2
 import logging
 from argparse import ArgumentParser
 from pathlib import Path
-import multiprocessing
 import concurrent.futures
 
-from scripts.utils import human_readable_size
+from scripts.utils import human_readable_size, create_db_schema
 from scripts.dump_parser import DumpParser
 
 logging.basicConfig(
@@ -92,6 +91,9 @@ if  __name__ == "__main__":
             processed_files = set(line.strip() for line in f)
     else:
         processed_files = set()
+
+    # create tables if they don't exist
+    create_db_schema()
 
     if args.file:
         input_bz2 = args.file
