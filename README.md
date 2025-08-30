@@ -45,6 +45,11 @@ chmod +x run_parser.sh
 
 Inside run_parser the variables BATCH_SIZE and MAX_FILES can be modified.
 
+The parser run generates 3 files:
+- processed_files.txt: stores the list of files processed. This is used to check which files have already been processed.
+- parser_output.log: log of dump_parser + page_parser.
+- parser_log_files.log: summary of processed files with number of entities, time of processing
+
 **Run in detach**
 - Create tmux session: `tmux new -s session_name``
 - Run main.py: `nohup python3 -m main -n NUMBER_FILES -d DIR_DUMPS > parser_output.log 2>&1 &``

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG="parser_output_2.log"
+LOG="parser_output.log"
 MAX_FILES=50
 BATCH_SIZE=3
 count=0

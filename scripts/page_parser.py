@@ -104,8 +104,6 @@ class PageParser():
         """
         if new_value is not None and old_value is not None and not metadata:
             if datatype == 'quantity':
-                print('Inside the quantity')
-                print(old_value, new_value, datatype)
                 new_num = float(new_value)
                 old_num = float(old_value)
                 return float(new_num - old_num) # don't use abs() so we have the "sign" and we can determine if it was an increase or decrease
