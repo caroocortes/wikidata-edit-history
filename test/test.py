@@ -15,6 +15,7 @@ file_path = args.file
 print(f"Processing: {file_path}")
 with open(f'test/{file_path}', 'rt', encoding='utf-8') as in_f:
     try:
-        parser.parse(in_f)
-    except xml.sax.SAXParseException as e:
+        parser = DumpParser(file_path=file_path)
+        parser.parse_dump(in_f)
+    except Exception as e:
         print(f"Parsing error: {e}")
