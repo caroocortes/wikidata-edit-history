@@ -103,51 +103,8 @@ def human_readable_size(size, decimal_places=2):
 """
 def fetch_wikidata_properties():
     """
-        Querys Wikidata to obtain properties and their english labels.
-        Stores them in a csv
-    """
-    output_dir = '../data/output_csvs'
-    os.makedirs(output_dir, exist_ok=True)
-
-    property_file_path = f'{output_dir}/property.csv'
-
-    if os.path.isfile(property_file_path):
-        print(f'File property.csv already exists in {property_file_path}')
-    else:
-        query = """
-        SELECT ?pid ?propertyLabel
-        WHERE {
-            ?property a wikibase:Property.
-            BIND(STRAFTER(STR(?property), "http://www.wikidata.org/entity/") AS ?pid)
-            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-        }
-        ORDER BY ASC(xsd:integer(SUBSTR(?pid, 2)))
-        """
-
-        url = "https://query.wikidata.org/sparql"
-        headers = {"Accept": "application/sparql-results+json"}
-
-        response = requests.get(url, params={'query': query, 'format': 'json'}, headers=headers)
-
-        if response.status_code == 200:
-            results = response.json()["results"]["bindings"]
-            data = []
-            for result in results:
-                prop_id = result["pid"]["value"]
-                label = result["propertyLabel"]["value"]
-                data.append({"Property_ID": prop_id, "Label": label})
-
-            df = pd.DataFrame(data)
-            df.to_csv(property_file_path, index=False)
-            print(f"Saved {len(df)} properties to '{property_file_path}'")
-        else:
-            print("Failed to fetch data:", response.status_code)
-
-def fetch_class_label():
-    """ 
-        Obtains class_id, class_label from wikidata's SPARQL query service
-
-        NOTE: fetch_entity_types needs to be ran before running this method, since it depends on the list of entity_id, class_id pairs
+        Querys Wikidata to obtain english labels for properties in the change table.
+        Stores them in the table change 
     """
 
     dotenv_path = Path(__file__).resolve().parent.parent / ".env"
@@ -167,12 +124,27 @@ def fetch_class_label():
         port=DB_PORT
     )
 
-
     cur = conn.cursor()
-    cur.execute("SELECT DISTINCT class_id FROM entity_type")
-    class_ids = cur.fetchall()
 
-    print(f"Loaded {len(class_ids)} unique class IDs from entity_type table")
+    query_get_prop_ids = """
+        SELECT DISTINCT property_id 
+        FROM change
+        WHERE property_label IS NOT NULL 
+    """  # only properties without label yet
+    cur.execute(query_get_prop_ids)
+    property_ids = list(cur.fetchall())
+
+    query = """
+    SELECT ?pid ?propertyLabel
+    WHERE {
+        ?property a wikibase:Property.
+        BIND(STRAFTER(STR(?property), "http://www.wikidata.org/entity/") AS ?pid)
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+    }
+    ORDER BY ASC(xsd:integer(SUBSTR(?pid, 2)))
+    """
+
+    batch_size = 50
     
     url = "https://query.wikidata.org/sparql"
     headers = {
@@ -180,21 +152,18 @@ def fetch_class_label():
         "User-Agent": "WikidataFetcher/1.0 (carolina.cortes@hpi.de)"
     }
 
-    batch_size = 50
-    class_list = list(class_ids)
-    
-    for i in range(0, len(class_list), batch_size):
+    for i in range(0, len(property_ids), batch_size):
         classes = []
-        batch = class_list[i:i + batch_size]
+        batch = property_ids[i:i + batch_size]
         values_str = " ".join(f"wd:{cid[0]}" for cid in batch)
-        print(f"Fetching classes (Batch: {i} - {i + batch_size})...")
+        print(f"Fetching properties (Batch: {i} - {i + batch_size})...")
 
         query = f"""
-        SELECT ?class ?classLabel
+        SELECT ?property ?propertyLabel
         WHERE {{
-            VALUES ?class {{ {values_str} }}
-            ?class rdfs:label ?classLabel.
-            FILTER(LANG(?classLabel) = "en")
+            VALUES ?property {{ {values_str} }}
+            ?class rdfs:label ?propertyLabel.
+            FILTER(LANG(?propertyLabel) = "en")
         }}
         """
 
@@ -202,28 +171,37 @@ def fetch_class_label():
             response = requests.get(url, params={'query': query, 'format': 'json'}, headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print(f"Failed to fetch classes on batch {i} - {i+ batch_size}: {e}")
+            print(f"Failed to fetch properties on batch {i} - {i+ batch_size}: {e}")
             break
 
         results = response.json()["results"]["bindings"]
         if not results:
             print("No more results.")
             break
-
+        
+        query = """
+            UPDATE change
+            SET property_label = %s
+            WHERE property_id = %s
+        """
+        
+        properties = []
         for result in results:
-            class_id = result["class"]["value"].split("/")[-1]
-            class_label = result["classLabel"]["value"]
+            property_label = result["propertyLabel"]["value"]
+            property_id = result["property"]["value"].split("/")[-1]
+            properties.append((property_label, property_id))  # order matches %s
 
-            classes.append((class_id, class_label))
-
-        insert_rows(conn, 'class', rows=classes, columns=['class_id', 'class_label'])
+        cur.executemany(query, classes)
+        conn.commit()
+        
         time.sleep(10)
     
     conn.close()
 
+
 def fetch_entity_types():
     """ 
-        Obtains entity_id, class_id, class_label from wikidata's SPARQL query service
+        Obtains class_id, class_label from wikidata's SPARQL query service 
     """
 
     dotenv_path = Path(__file__).resolve().parent.parent / ".env"
@@ -244,7 +222,7 @@ def fetch_entity_types():
     )
 
     cur = conn.cursor()
-    cur.execute("SELECT entity_id FROM entity")
+    cur.execute("SELECT DISTINCT entity_id FROM revision WHERE class_id = ''") # only entities without class yet
     entity_ids = cur.fetchall()
 
     url = "https://query.wikidata.org/sparql"
@@ -257,13 +235,12 @@ def fetch_entity_types():
     entity_list = list(entity_ids)
 
     for i in range(0, len(entity_list), batch_size):
-        entities = []
         batch = entity_list[i:i + batch_size]
         values_str = " ".join(f"wd:{eid[0]}" for eid in batch)
         print(f"Fetching page (Batch size: {i} - {i + batch_size})...")
         
         query = f"""
-        SELECT ?entity ?class
+        SELECT ?entity ?class ?classLabel
         WHERE {{
             VALUES ?entity {{ {values_str} }}
             ?entity wdt:P31 ?class.
@@ -273,9 +250,7 @@ def fetch_entity_types():
             }}
         }}
         """
-        print('Query to use:')
 
-        print(query)
         try:
             response = requests.get(url, params={'query': query, 'format': 'json'}, headers=headers)
             response.raise_for_status()
@@ -287,17 +262,25 @@ def fetch_entity_types():
         if not results:
             print("No more results.")
             break
+        
+        entity_class = []
+        query = """
+            UPDATE revision
+            SET class_id = %s, class_label = %s
+            WHERE entity_id = %s
+        """
 
         for result in results:
             entity_id = result["entity"]["value"].split("/")[-1]
             class_id = result["class"]["value"].split("/")[-1]
+            class_label = result["classLabel"]["value"]
 
-            entities.append((entity_id, class_id))
+            entity_class.append((class_id, class_label, entity_id))  # order matches %s
+            cur.executemany(query, entity_class)
+            conn.commit()
 
         time.sleep(10) 
         
-        #insert in batches
-        insert_rows(conn, table_name='entity_type', rows=entities, columns=['entity_id', 'class_id'])
 
     # close db connection
     conn.close()
