@@ -59,3 +59,4 @@ The parser run generates 3 files:
 
 ### Test files
 In test/ there are 2 test files (*test.xml* and *example.xml*) to run the parser.
+To run the parser on the test files run ```python3 -m test -f <file_name>``` where file_name is either ```example.xml``` or ```test.xml```.
