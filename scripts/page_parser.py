@@ -123,8 +123,11 @@ class PageParser():
                 lat2, lon2 = float(new_value['latitude']), float(new_value['longitude'])
                 return float(haversine_metric(lon1, lat1, lon2, lat2))
             
+           
             if datatype in WD_STRING_TYPES:
+                # TODO: check if this makes sense for monolingual text, comparing between different languages, what happens with languages like chinese, arabic...?
                 return float(Levenshtein.distance(old_value, new_value))
+        
         elif new_value is not None and old_value is not None and metadata:
             # Calculate magnitude of change for datatype metadata
             # the values will be:
