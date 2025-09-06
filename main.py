@@ -6,16 +6,17 @@ import logging
 from argparse import ArgumentParser
 from pathlib import Path
 import concurrent.futures
+import json
 
 from scripts.utils import human_readable_size, create_db_schema
 from scripts.dump_parser import DumpParser
 
-logging.basicConfig(
-    filename=f'parser_log_files.log',
-    filemode='a',
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.INFO,
-)
+# logging.basicConfig(
+#     filename=f'parser_log_files.log',
+#     filemode='a',
+#     format='%(asctime)s - %(levelname)s - %(message)s',
+#     level=logging.INFO,
+# )
 
 def process_file(file_path):
 
@@ -66,6 +67,20 @@ def process_file(file_path):
         f"{base} size: {human_readable_size(size)} MB\t"
         f"Number of entities: {parser.num_entities}\t"
     )
+    
+    parser_log_files = "parser_log_files.json"
+    
+    if not os.path.exists(parser_log_files):
+        with open(parser_log_files, "w") as f:
+            pass  
+    with open(parser_log_files, "a", encoding="utf-8") as f:
+        json_line = {
+            "file": input_bz2,
+            "size_MB": size_hr,
+            "num_entities": parser.num_entities,
+            "process_time_sec": f"{process_time:.2f}"
+        }
+        f.write(json.dumps(json_line) + "\n")
 
     return process_time, parser.num_entities, file_path, size_hr
 
