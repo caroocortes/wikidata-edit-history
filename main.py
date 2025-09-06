@@ -11,13 +11,6 @@ import json
 from scripts.utils import human_readable_size, create_db_schema
 from scripts.dump_parser import DumpParser
 
-# logging.basicConfig(
-#     filename=f'parser_log_files.log',
-#     filemode='a',
-#     format='%(asctime)s - %(levelname)s - %(message)s',
-#     level=logging.INFO,
-# )
-
 def process_file(file_path):
 
     input_bz2 = os.path.basename(file_path)

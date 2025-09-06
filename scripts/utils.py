@@ -475,7 +475,7 @@ def load_csv_to_db(csv_path, table_name):
 def create_db_schema():
     # TODO: maybe move this to a file, so it's not embedded in code
     query = """
-        CREATE TABLE IF NOT EXISTS revision (
+        CREATE TABLE revision (
             revision_id TEXT,
             entity_id TEXT,
             entity_label TEXT,
@@ -489,7 +489,7 @@ def create_db_schema():
             PRIMARY KEY (revision_id)
         );
 
-        CREATE TABLE IF NOT EXISTS change (
+        CREATE TABLE change (
             revision_id TEXT,
             property_id TEXT,
             property_label TEXT,
@@ -506,7 +506,7 @@ def create_db_schema():
             FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
         );
 
-        CREATE TABLE IF NOT EXISTS change_metadata (
+        CREATE TABLE change_metadata (
             revision_id TEXT,
             property_id TEXT,
             value_id TEXT,
