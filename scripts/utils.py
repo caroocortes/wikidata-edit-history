@@ -473,49 +473,12 @@ def load_csv_to_db(csv_path, table_name):
         conn.close()
 
 def create_db_schema():
-    # TODO: maybe move this to a file, so it's not embedded in code
-    query = """
-        CREATE TABLE revision (
-            revision_id TEXT,
-            entity_id TEXT,
-            entity_label TEXT,
-            class_id TEXT,
-            class_label TEXT,
-            file_path TEXT,
-            timestamp TIMESTAMP WITH TIME ZONE,
-            user_id TEXT,
-            username TEXT,
-            comment TEXT,
-            PRIMARY KEY (revision_id)
-        );
+    
+    sql_file_path = "../change_schema.sql"
 
-        CREATE TABLE change (
-            revision_id TEXT,
-            property_id TEXT,
-            property_label TEXT,
-            value_id TEXT,
-            old_value JSONB,
-            new_value JSONB,
-            datatype TEXT,
-            datatype_metadata TEXT,
-            action TEXT,
-            target TEXT,
-            old_hash TEXT,
-            new_hash TEXT,
-            PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata),
-            FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
-        );
-
-        CREATE TABLE change_metadata (
-            revision_id TEXT,
-            property_id TEXT,
-            value_id TEXT,
-            datatype_metadata TEXT,
-            change_magnitude DOUBLE PRECISION,
-            PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata),
-            FOREIGN KEY (revision_id, property_id, value_id, datatype_metadata) REFERENCES change(revision_id, property_id, value_id, datatype_metadata)
-        );
-    """
+    with open(sql_file_path, "r", encoding="utf-8") as f:
+        query = f.read()
+    
     try:
 
         dotenv_path = Path(__file__).resolve().parent.parent / ".env"
