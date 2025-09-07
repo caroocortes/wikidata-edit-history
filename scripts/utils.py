@@ -473,8 +473,10 @@ def load_csv_to_db(csv_path, table_name):
         conn.close()
 
 def create_db_schema():
+    base_dir = Path(__file__).resolve().parent.parent
     
-    sql_file_path = "../change_schema.sql"
+    sql_file_path = f"{base_dir}/change_schema.sql"
+    print(f"Creating DB schema from {sql_file_path}...")
 
     with open(sql_file_path, "r", encoding="utf-8") as f:
         query = f.read()
