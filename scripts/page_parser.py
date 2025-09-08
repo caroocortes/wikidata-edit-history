@@ -279,6 +279,7 @@ class PageParser():
                 property_id if property_id else '',
                 value_id if value_id else '',
                 datatype_metadata if datatype_metadata else '', # can't be None since datatype_metadata is part of the key of the table
+                'CHANGE_MAGNITUDE',
                 change_magnitude
             )
             self.changes_metadata.append(change_metadata)

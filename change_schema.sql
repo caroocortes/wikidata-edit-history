@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS change_metadata (
     property_id TEXT,
     value_id TEXT,
     datatype_metadata TEXT,
-    change_magnitude DOUBLE PRECISION,
-    PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata),
+    change_metadata TEXT,
+    value DOUBLE PRECISION,
+    PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata, change_metadata),
     FOREIGN KEY (revision_id, property_id, value_id, datatype_metadata) REFERENCES change(revision_id, property_id, value_id, datatype_metadata)
 );
