@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import csv
 import time
+import bz2
 from pathlib import Path
 import re
 from psycopg2.extras import execute_batch
@@ -91,15 +92,9 @@ def get_time_dict(timestring):
 
     return datetime_dict
 
-def human_readable_size(size, decimal_places=2):
-    for unit in ['B','KB','MB','GB','TB']:
-        if size < 1024:
-            return f"{size:.{decimal_places}f} {unit}"
-        size /= 1024
-
 
 """
-    Methods for obtaining data for tables entity_type, class, property, from the wikidata query service
+    Methods for obtaining class and property, from the wikidata query service
 """
 def fetch_wikidata_properties():
     """
@@ -286,56 +281,8 @@ def fetch_entity_types():
     conn.close()
     
 """
-    Methods for inserting in DB / CSV files
+    Methods for inserting in DB
 """
-
-def initialize_csv_files(suffix=None):
-    output_dir = Path("data/output_csvs")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if suffix:
-        files_info = {
-            f"entity_{suffix}.csv": ["entity_id", "label"],
-            f"{suffix}.jsonl": ["entity_id", "revision_id", "property_id", "value_id", "old_value", "new_value", "datatype", "datatype_metadata", "change_type", "change_magnitude"],
-            f"revision_{suffix}.csv": ["entity_id", "revision_id", "timestamp", "user_id", "username", "comment"]
-        }
-    else:
-        files_info = {
-            "entity.csv": ["entity_id", "label"],
-            "change.csv": ["entity_id", "revision_id", "property_id", "value_id", "old_value", "new_value", "datatype", "datatype_metadata", "change_type", "change_magnitude"],
-            "revision.csv": ["entity_id", "revision_id", "timestamp", "user_id", "username", "comment"]
-        }
-
-    writers = {}
-    paths = {}
-
-    for filename, headers in files_info.items():
-        file_path = output_dir / filename
-        file_exists = file_path.exists()
-
-        f = open(file_path, mode="a", newline='', encoding="utf-8")
-        writer = csv.writer(f)
-
-        if not file_exists:
-            writer.writerow(headers)
-
-        writers[filename] = writer
-        paths[filename] = str(file_path)
-
-    if suffix:
-        return (
-            paths[f'entity_{suffix}.csv'],
-            paths[f'{suffix}.jsonl'],
-            paths[f'revision_{suffix}.csv']
-        )
-
-    else:
-        return (
-            paths['entity.csv'],
-            paths['change.csv'],
-            paths['revision.csv']
-        )
-
 
 def update_entity_label(conn, entity_id, entity_label):
     """
@@ -426,52 +373,6 @@ def insert_rows(conn, table_name, rows, columns):
         print("\nOriginal batch insert error:")
         print(e)
 
-def load_csv_to_db(csv_path, table_name):
-    """
-        Stores csv in BD
-        CSV column names must match the column names in the table
-    """
-    
-    # Load CSV
-    df = pd.read_csv(csv_path, dtype=str)
-    
-    # Prepare data for insertion
-    cols = list(df.columns)
-    values = [tuple(x) for x in df.to_numpy()]
-    
-    # Build INSERT statement
-    cols_str = ', '.join(cols)
-    insert_query = f"INSERT INTO {table_name} ({cols_str}) VALUES %s ON CONFLICT DO NOTHING;"
-    
-    dotenv_path = Path(__file__).resolve().parent.parent / ".env"
-    load_dotenv(dotenv_path)
-
-    # Connect and insert
-    DB_USER = os.environ.get("DB_USER")
-    DB_PASS = os.environ.get("DB_PASS")
-    DB_NAME = os.environ.get("DB_NAME")
-    DB_HOST = os.environ.get("DB_HOST")
-    DB_PORT = os.environ.get("DB_PORT")
-
-    conn = psycopg2.connect(
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS, 
-        host=DB_HOST,
-        port=DB_PORT
-    )
-    cur = conn.cursor()
-    try:
-        execute_values(cur, insert_query, values)
-        conn.commit()
-        print(f"Inserted {len(values)} rows into {table_name}.")
-    except Exception as e:
-        conn.rollback()
-        print("Error inserting data:", e)
-    finally:
-        cur.close()
-        conn.close()
-
 def create_db_schema():
     base_dir = Path(__file__).resolve().parent.parent
     
@@ -511,7 +412,37 @@ def create_db_schema():
         print(f'Error when saving or connecting to DB: {e}')
 
 
-def get_dump_links(self):
+""" Other utility methods """
+
+def human_readable_size(size, decimal_places=2):
+    for unit in ['B','KB','MB','GB','TB']:
+        if size < 1024:
+            return f"{size:.{decimal_places}f} {unit}"
+        size /= 1024
+
+def print_exception_details(e, file_path):
+    # Get the error position
+    err_line = e.getLineNumber()
+    err_col = e.getColumnNumber()
+
+    print(f"Error at line {err_line}, column {err_col}")
+
+    # Reopen the file and get surrounding lines
+    with bz2.open(file_path, 'rt', encoding='utf-8') as f_err:
+        lines = []
+        for i, line in enumerate(f_err, start=1):
+            if i >= err_line - 14 and i <= err_line + 4:  # 14 lines before, 4 after
+                lines.append((i, line.rstrip("\n")))
+            if i > err_line + 1:
+                break
+
+    print("\n--- XML snippet around error ---")
+    for ln, txt in lines:
+        prefix = ">>" if ln == err_line else "  "
+        print(f"{prefix} Line {ln}: {txt}")
+    print("-------------------------------")
+
+def get_dump_links():
     #  Get list of .bz2 files from the wikidata dump service (Scrapper)
     response = requests.get(WIKIDATA_SERVICE_URL)
     soup = BeautifulSoup(response.text, "html.parser")

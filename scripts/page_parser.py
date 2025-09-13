@@ -15,7 +15,7 @@ from scripts.const import *
 
 def batch_insert(conn, revision, changes, change_metadata):
     # NOTE: copy may be faster
-    """Function to insert into DB asynchronously."""
+    """Function to insert into DB in parallel."""
     
     try:
         insert_rows(conn, 'revision', revision, ['revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'class_id', 'class_label'])
@@ -26,12 +26,13 @@ def batch_insert(conn, revision, changes, change_metadata):
         sys.stdout.flush()
 
 class PageParser():
-    def __init__(self, file_path, page_elem_str):
+    def __init__(self, file_path, page_elem_str, config):
 
-        # TODO: review this variables, 
         self.changes = []
         self.revision = []
         self.changes_metadata = []
+
+        self.config = config
 
         self.label_hash_counter = 0
         self.description_hash_counter = 0
@@ -49,6 +50,7 @@ class PageParser():
         dotenv_path = Path(__file__).resolve().parent.parent / ".env"
         load_dotenv(dotenv_path)
 
+        # credentials for DB connection
         DB_USER = os.environ.get("DB_USER")
         DB_PASS = os.environ.get("DB_PASS")
         DB_NAME = os.environ.get("DB_NAME")
@@ -74,6 +76,17 @@ class PageParser():
         except json.JSONDecodeError as e:
             print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}: {e}. Revision skipped. Revision text: {revision_text}')
             
+            with open("error_revision_text.txt", "a") as f:
+                f.write(f"-------------------------------------------\n")
+                f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
+                revision_xml_str = etree.tostring(
+                    current_revision,
+                    pretty_print=True,
+                    encoding="unicode" 
+                )
+                f.write(revision_xml_str + "\n")
+                f.write(f"-------------------------------------------\n")
+
             return None
     
     @staticmethod
@@ -179,9 +192,9 @@ class PageParser():
         else:
             return current
     
-    @staticmethod
-    def _get_english_label(revision):
-        label = PageParser._safe_get_nested(revision, 'labels', 'en', 'value') 
+    def get_label(self, revision):
+        lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
+        label = PageParser._safe_get_nested(revision, 'labels', lang, 'value') 
         return label if not isinstance(label, dict) else None
     
     @staticmethod
@@ -441,8 +454,9 @@ class PageParser():
                         )
 
         # If there's no description or label, the revisions shows them as []
-        labels = PageParser._safe_get_nested(revision, 'labels', 'en', 'value')
-        descriptions = PageParser._safe_get_nested(revision, 'descriptions', 'en', 'value')
+        lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
+        labels = PageParser._safe_get_nested(revision, 'labels', lang, 'value')
+        descriptions = PageParser._safe_get_nested(revision, 'descriptions', lang, 'value')
 
         # Process labels and descriptions (non-claim properties)
         for pid, val in [('label', labels), ('description', descriptions)]:
@@ -490,9 +504,10 @@ class PageParser():
 
         # --- Label change ---
         prev_label = None
+        lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
         if previous_revision:
-            prev_label = PageParser._safe_get_nested(previous_revision, 'labels', 'en', 'value')
-        curr_label = PageParser._safe_get_nested(current_revision, 'labels', 'en', 'value')
+            prev_label = PageParser._safe_get_nested(previous_revision, 'labels', lang, 'value')
+        curr_label = PageParser._safe_get_nested(current_revision, 'labels', lang, 'value')
         
         if curr_label != prev_label:
             change_detected = True
@@ -520,9 +535,10 @@ class PageParser():
             
         # --- Description change ---
         prev_desc = None
+        lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
         if previous_revision:
-            prev_desc = PageParser._safe_get_nested(previous_revision, 'descriptions', 'en', 'value')
-        curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', 'en', 'value')
+            prev_desc = PageParser._safe_get_nested(previous_revision, 'descriptions', lang, 'value')
+        curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', lang, 'value')
 
         if curr_desc != prev_desc:
             change_detected = True
@@ -711,12 +727,10 @@ class PageParser():
         """
             Processes all the revisions in a <page></page> and stores the extracted data in the corresponding tables revision, change and change_metadata
         """
-        # Namespace for XML elements
-        ns = "http://www.mediawiki.org/xml/export-0.11/"
 
-        title_tag = f"{{{ns}}}title"
-        revision_tag = f'{{{ns}}}revision'
-        revision_text_tag = f'{{{ns}}}text'
+        title_tag = f"{{{NS}}}title"
+        revision_tag = f'{{{NS}}}revision'
+        revision_text_tag = f'{{{NS}}}text'
 
         entity_id = ''
         entity_label = ''
@@ -732,31 +746,36 @@ class PageParser():
         for rev_elem in self.page_elem.findall(revision_tag):
 
             # Get revision text
+            revision_id = rev_elem.findtext(f'{{{NS}}}id', '').strip()
             revision_text = rev_elem.findtext(revision_text_tag)
             if revision_text is not None:
                 # If the revision was deleted the text tag looks like: <text bytes="11179" sha1="ou0t1tihux9rw2wb939kv22axo3h2uh" deleted="deleted"/>
                 # and there's no content inside
                 deleted_attr = rev_elem.get("deleted")
-                if deleted_attr:
-                    with open("error_revision_text.txt", "a") as f:
-                        f.write(f"-------------------------------------------\n")
-                        f.write(f"Current revision was deleted for {entity_id} - {entity_label}:\n")
-                        revision_xml_str = etree.tostring(
-                            rev_elem,
-                            pretty_print=True,
-                            encoding="unicode" 
-                        )
-                        f.write(revision_xml_str + "\n")
-                        f.write(f"-------------------------------------------\n")
+                if deleted_attr == "deleted":
+                    file_path = 'deleted_revisions.json'
+                    if os.path.exists(file_path):
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            try:
+                                deleted_revisions = json.load(f)
+                            except json.JSONDecodeError:
+                                deleted_revisions = {}
+                    else:
+                        deleted_revisions = {}
+
+                    deleted_revisions[entity_id] = revision_id
+
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump(deleted_revisions, f, ensure_ascii=False, indent=2)
                 else:
                     # Revision was not deleted
 
                     # Extract text, id, timestamp, comment, username, user_id
-                    contrib_elem = rev_elem.find(f'{{{ns}}}contributor')
+                    contrib_elem = rev_elem.find(f'{{{NS}}}contributor')
                 
                     if contrib_elem is not None:
-                        username = (contrib_elem.findtext(f'{{{ns}}}username') or '').strip()
-                        user_id = (contrib_elem.findtext(f'{{{ns}}}id') or '').strip()
+                        username = (contrib_elem.findtext(f'{{{NS}}}username') or '').strip()
+                        user_id = (contrib_elem.findtext(f'{{{NS}}}id') or '').strip()
                     else:
                         username = ''
                         user_id = ''
@@ -765,9 +784,9 @@ class PageParser():
                     self.revision_meta = {
                         'entity_id': entity_id,
                         'entity_label': entity_label,
-                        'revision_id': rev_elem.findtext(f'{{{ns}}}id', '').strip(),
-                        'timestamp': rev_elem.findtext(f'{{{ns}}}timestamp', '').strip(),
-                        'comment': rev_elem.findtext(f'{{{ns}}}comment', '').strip(),
+                        'revision_id': revision_id,
+                        'timestamp': rev_elem.findtext(f'{{{NS}}}timestamp', '').strip(),
+                        'comment': rev_elem.findtext(f'{{{NS}}}comment', '').strip(),
                         'username': username,
                         'user_id': user_id,
                         'file_path': self.file_path,
@@ -784,7 +803,7 @@ class PageParser():
                         change = False
                     else:
                         # update label
-                        curr_label = self._get_english_label(current_revision)
+                        curr_label = self.get_label(current_revision)
                         if curr_label and entity_label != curr_label and curr_label != '':
                             entity_label = curr_label
 
@@ -812,7 +831,7 @@ class PageParser():
                         previous_revision = current_revision
                     
                     # Batch insert (changes >= revision because one revision can have multiple changes)
-                    if len(self.changes) >= BATCH_SIZE_CHANGES:
+                    if len(self.changes) >= self.config('batch_changes_store', 10000):
                         self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata)
                         # remove already stored changes + revisions to avoid duplicates
                         self.changes = []
