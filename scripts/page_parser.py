@@ -831,7 +831,7 @@ class PageParser():
                         previous_revision = current_revision
                     
                     # Batch insert (changes >= revision because one revision can have multiple changes)
-                    if len(self.changes) >= self.config('batch_changes_store', 10000):
+                    if len(self.changes) >= self.config.get('batch_changes_store', 10000):
                         self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata)
                         # remove already stored changes + revisions to avoid duplicates
                         self.changes = []
