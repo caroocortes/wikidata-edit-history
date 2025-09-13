@@ -78,6 +78,8 @@ class DumpParser():
                 print(f"Pages added to queue: {self.pages_added_to_queue}")
                 print(f"Current queue size: {queue_size}")
                 print(f"Average queue size: {avg_queue_size:.1f}")
+
+                sys.stdout.flush()
                 
                 # Simple resource check
                 try:
@@ -160,6 +162,7 @@ class DumpParser():
         total_time = total_process_time + total_wait_time
         efficiency = (total_process_time / total_time) * 100 if total_time > 0 else 0
         print(f"Worker {worker_id} finished: {pages_processed} pages, {efficiency:.1f}% efficiency, {total_process_time:.2f}s processing")
+        sys.stdout.flush()
         # ---- stats ----
 
     def parse_dump(self, file_obj):
@@ -235,6 +238,7 @@ class DumpParser():
         print(f"Average processing rate: {final_stats['pages_queued']/final_stats['runtime']:.2f} entities/sec")
         print(f"Workers used: {final_stats['num_workers']}")
         
+        sys.stdout.flush()
         # Simple recommendations
         if final_stats['avg_queue_size'] < 10:
             print("Consider reducing workers or increasing files_in_parallel")
