@@ -6,3 +6,4 @@ scripts/__pycache__/*
 *.pyo
 *.pyd
 .env
+.DS_STORE

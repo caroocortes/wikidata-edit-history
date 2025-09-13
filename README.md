@@ -29,30 +29,35 @@ To obtain new download links use the scrapper in *scripts/utils* (change link to
 The simple way of running the parser is with the following command: `python3 -m  main [options]`.
 
 `[options]`:
-`-f`: path to .xml.bz2 file to process (for single file processing).
-`-n`: Limit the number of files to process when running on a directory.
+`-f`: path to .xml.bz2 file to process (for single file).
 `-dir`: Directory containing .xml.bz2 files to process. Required.
 
-The parsing of each file takes approx. 50 minutes.
-We provide a script run_parser.sh to run multiple files in parallel (BATCH_SIZE), with an option to set the maximum number of files to process (MAX_FILES).
+The parsing of each file takes approx. 50 minutes (using 6 processes in parallel to process pages inside file).
+We provide a script run_parser.sh to run multiple files in parallel.
 
-By default, main.py creates a process for each file (BATCH_SIZE) and calls DumpParser. DumpParser creates NUM_PAGE_PROCESS (can be found in scripts/const.py) processes which call page_parser and process a page (all revisions for an entity).
-Therefore, the system where the main.py is run needs to support at least BATCH_SIZE * NUM_PAGE_PROCESS cores.
+By default, main.py creates *files_in_parallel* (config.json) processes that call DumpParser. DumpParser creates *pages_in_parallel* (config.json) processes which call page_parser and process a page (all revisions for an entity).
+Therefore, the system where the main.py is run needs to support at least *files_in_parallel * pages_in_parallel* cores.
 
-**Run BATCH_SIZE files at a time until MAX_FILES files are reached**
+**Config file**
+*config.json* contains the following parameters:
+- language: specifies the language of labels/descriptions (by default it's english - 'en')
+- files_in_parallel: number of xml.bz2 files to run in parallel
+- pages_in_parallel: number of pages of a single xml.bz2 to process in parallel
+- batch_changes_store: size of batch of changes to store in DB (page_parser accumulates changes until batch_changes_store and then saves them to the DB)
+- max_files: max files to process (for all files use 2125)
+
+**Run multiple files at a time until max_files files are reached**
 chmod +x run_parser.sh
 ./run_parser.sh &
 
-Inside run_parser the variables BATCH_SIZE and MAX_FILES can be modified.
-
-The parser run generates 3 files:
+The run generates 3 files:
 - processed_files.txt: stores the list of files processed. This is used to check which files have already been processed.
 - parser_output.log: log of dump_parser + page_parser.
-- parser_log_files.log: summary of processed files with number of entities, time of processing
+- parser_log_files.json: summary of processed files with number of entities, time of processing
 
 **Run in detach**
 - Create tmux session: `tmux new -s session_name``
-- Run main.py: `nohup python3 -m main -n NUMBER_FILES -d DIR_DUMPS > parser_output.log 2>&1 &``
+- Run script: `./run_parser.sh &`
 - Save PID to file (optional, but useful): `echo $! > parser.pid``
 - Get out of session: `ctrl + b` and then press `d``
 - To go inside the session again: `tmux attach -t session_name`
