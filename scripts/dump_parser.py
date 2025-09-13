@@ -67,7 +67,7 @@ class DumpParser():
             self.queue_size_history.append(queue_size)
             
             # Simple report every minute
-            if current_time - last_report_time > 60:
+            if current_time - last_report_time > 300:
                 elapsed = current_time - self.start_time
                 
                 # Calculate average queue size
@@ -87,7 +87,7 @@ class DumpParser():
                     memory = psutil.virtual_memory()
                     print(f"CPU: {cpu_percent:.1f}% | Memory: {memory.percent:.1f}%")
                 except:
-                    pass  # Skip if psutil fails
+                    pass
                 
                 # Simple recommendations
                 if avg_queue_size < 5:
