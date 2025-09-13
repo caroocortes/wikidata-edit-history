@@ -28,22 +28,15 @@ class DumpParser():
         self.config = config
         self.file_path = file_path
         self.num_entities = 0  
-        self.futures = []  
         
-        self.num_workers = config.get('pages_in_parallel', 6) # processes that process pages in parallel
-        self.page_queue = mp.Queue(maxsize=100) 
+        self.num_workers = config.get('pages_in_parallel', 2) # processes that process pages in parallel
+        self.page_queue = mp.Queue(maxsize=20) # queue with size 20
         self.stop_event = mp.Event()
 
-        # Monitoring additions
-        self.worker_stats = mp.Manager().dict()
-        self.queue_size_history = deque(maxlen=1000)  # Track queue size over time
+        # TODO: remove
         self.start_time = time.time()
-
-        # Initialize stats 
-        self.start_time = time.time()
-        self.pages_added_to_queue = 0
         self.last_queue_check = time.time()
-        self.queue_size_history = deque(maxlen=100)
+        self.queue_size_history = deque(maxlen=100) # store last 100 queue sizes
 
         self.workers = []
         for i in range(self.num_workers):
@@ -51,7 +44,8 @@ class DumpParser():
             p.start()
             self.workers.append(p)
             
-        # Start monitoring thread
+        # TODO: remove
+        # monitoring thread
         self.monitor_thread = threading.Thread(target=self._simple_monitor, daemon=True)
         self.monitor_thread.start()
 
@@ -59,13 +53,13 @@ class DumpParser():
         last_report_time = time.time()
         
         while not self.stop_event.is_set():
-            time.sleep(10)  # Check every 10 seconds
+            time.sleep(300)  # Check every 5 minutess
             
             current_time = time.time()
             queue_size = self.page_queue.qsize()
             self.queue_size_history.append(queue_size)
             
-            # Simple report every minute
+            # Simple report every 5 minutes
             if current_time - last_report_time > 300:
                 elapsed = current_time - self.start_time
                 
@@ -74,7 +68,7 @@ class DumpParser():
                 
                 print(f"\n=== STATUS REPORT ===")
                 print(f"Runtime: {elapsed:.1f}s")
-                print(f"Pages added to queue: {self.pages_added_to_queue}")
+                print(f"Pages added to queue: {self.num_entities}")
                 print(f"Current queue size: {queue_size}")
                 print(f"Average queue size: {avg_queue_size:.1f}")
 
@@ -88,7 +82,7 @@ class DumpParser():
                 except:
                     pass
                 
-                # Check resources used by the main process
+                # Check resources used by the parse_dump process
                 current_process = psutil.Process()
                 process_memory = current_process.memory_info().rss / 1024**2  # MB
                 process_cpu = current_process.cpu_percent()
@@ -104,20 +98,19 @@ class DumpParser():
                 # Simple recommendations
                 if avg_queue_size < 5:
                     print("Queue size is low - workers might be idle")
-                elif avg_queue_size > 85:
+                elif avg_queue_size > 15:
                     print("Queue is nearly full - consider more workers")
                 
                 print("=" * 30)
                 last_report_time = current_time
 
     def get_simple_stats(self):
-        """Get basic statistics without complex shared objects"""
         runtime = time.time() - self.start_time
         queue_size = self.page_queue.qsize()
         
         stats = {
             'runtime': runtime,
-            'pages_queued': self.pages_added_to_queue,
+            'entities_processed': self.num_entities,
             'current_queue_size': queue_size,
             'num_workers': self.num_workers,
         }
@@ -188,8 +181,7 @@ class DumpParser():
         title_tag = f"{{{ns}}}title"
 
         context = etree.iterparse(file_obj, events=("end",), tag=page_tag)
-
-        pages_read = 0
+        
         last_report = time.time()
         
         for event, page_elem in context:
@@ -206,22 +198,18 @@ class DumpParser():
 
             if keep:
                 queue_size = self.page_queue.qsize()
-                if queue_size > 90:  # Queue is getting full
-                    print(f"Warning: Queue is {queue_size}/100 full - processing may be bottlenecked")
+                if queue_size > 15:  # Queue is getting full
+                    print(f"Warning: Queue is {queue_size}/20 full - processing may be bottlenecked")
 
                 # Serialize the page element
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
 
-                # monitoring
-                self.pages_added_to_queue += 1
-                pages_read += 1
-
             # Periodic progress report
-            if time.time() - last_report > 30:  # Every 30 seconds
-                rate = pages_read / (time.time() - self.start_time)
-                print(f"Progress: {pages_read} entities read, {rate:.1f} entities/sec, queue: {queue_size}/100")
+            if time.time() - last_report > 300:  # Every 30 seconds
+                rate = self.num_entities / (time.time() - self.start_time)
+                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/100")
                 last_report = time.time()
 
             # Clear page element to free memory
@@ -246,8 +234,8 @@ class DumpParser():
         final_stats = self.get_simple_stats()
         print(f"\n=== FINAL STATISTICS ===")
         print(f"Total runtime: {final_stats['runtime']:.1f}s")
-        print(f"Total entities processed: {final_stats['pages_queued']}")
-        print(f"Average processing rate: {final_stats['pages_queued']/final_stats['runtime']:.2f} entities/sec")
+        print(f"Total entities processed: {self.num_entities}")
+        print(f"Average processing rate: {self.num_entities/final_stats['runtime']:.2f} entities/sec")
         print(f"Workers used: {final_stats['num_workers']}")
         
         sys.stdout.flush()
