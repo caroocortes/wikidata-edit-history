@@ -65,7 +65,8 @@ class PageParser():
             port=DB_PORT
         )
 
-    def _parse_json_revision(self, revision_text):
+    def _parse_json_revision(self, revision_elem, revision_text):
+        # TODO: remove revision_elem from args - only for debugging
         """
             Returns the text of a revision as a json
         """
@@ -80,7 +81,7 @@ class PageParser():
                 f.write(f"-------------------------------------------\n")
                 f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
                 revision_xml_str = etree.tostring(
-                    current_revision,
+                    revision_elem,
                     pretty_print=True,
                     encoding="unicode" 
                 )
@@ -796,7 +797,7 @@ class PageParser():
 
                     # decode content inside <text></text>
                     revision_text = revision_text.strip()
-                    current_revision = self._parse_json_revision(revision_text)
+                    current_revision = self._parse_json_revision(rev_elem, revision_text)
                     
                     if current_revision is None:
                         # The json parsing for the revision text failed.
