@@ -56,7 +56,6 @@ class DumpParser():
         self.monitor_thread.start()
 
     def _simple_monitor(self):
-        """Simplified monitoring without Manager objects"""
         last_report_time = time.time()
         
         while not self.stop_event.is_set():
@@ -85,9 +84,22 @@ class DumpParser():
                 try:
                     cpu_percent = psutil.cpu_percent(interval=1)
                     memory = psutil.virtual_memory()
-                    print(f"CPU: {cpu_percent:.1f}% | Memory: {memory.percent:.1f}%")
+                    print(f"System CPU: {cpu_percent:.1f}% | System Memory: {memory.percent:.1f}%")
                 except:
                     pass
+                
+                # Check resources used by the main process
+                current_process = psutil.Process()
+                process_memory = current_process.memory_info().rss / 1024**2  # MB
+                process_cpu = current_process.cpu_percent()
+
+                # Check resources of child processes (workers)
+                children = current_process.children(recursive=True)
+                total_worker_memory = sum(child.memory_info().rss for child in children) / 1024**2  # MB
+                
+                print(f"Parser process: {process_cpu:.1f}% CPU, {process_memory:.1f} MB RAM")
+                print(f"All worker processes: {total_worker_memory:.1f} MB RAM")
+                print(f"Total project memory: {(process_memory + total_worker_memory):.1f} MB")
                 
                 # Simple recommendations
                 if avg_queue_size < 5:

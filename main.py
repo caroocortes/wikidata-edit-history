@@ -25,7 +25,7 @@ def process_file(file_path, config):
     
     print(f"Processing: {file_path}")
     start_process = time.time()
-    with bz2.open(file_path, 'rb') as in_f:
+    with bz2.open(file_path, 'rb', buffering=8*1024*1024) as in_f:
         try:
             parser.parse_dump(in_f)
         except Exception as e:
