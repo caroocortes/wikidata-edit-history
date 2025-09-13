@@ -13,17 +13,10 @@ from scripts.page_parser import PageParser
 from scripts.const import *
 
 
-def process_page_xml(page_elem_str, file_path, config, worker_stats):
-    worker_id = os.getpid()
-    start_time = time.time()
+def process_page_xml(page_elem_str, file_path, config):
     parser = PageParser(file_path=file_path, page_elem_str=page_elem_str, config=config)
     try:
-        sys.stdout.flush()
         parser.process_page()
-
-        processing_time = time.time() - start_time
-        worker_stats['processing_times'].append(processing_time)
-        worker_stats['pages_processed'] += 1
     except Exception as e:
         print('Error in page parser')
         print(e)
@@ -46,15 +39,11 @@ class DumpParser():
         self.queue_size_history = deque(maxlen=1000)  # Track queue size over time
         self.start_time = time.time()
 
-        # Initialize stats for each worker
-        for i in range(self.num_workers):
-            self.worker_stats[i] = mp.Manager().dict({
-                'pages_processed': 0,
-                'total_processing_time': 0,
-                'total_wait_time': 0,
-                'last_activity': time.time(),
-                'processing_times': mp.Manager().list()
-            })
+        # Initialize stats 
+        self.start_time = time.time()
+        self.pages_added_to_queue = 0
+        self.last_queue_check = time.time()
+        self.queue_size_history = deque(maxlen=100)
 
         self.workers = []
         for i in range(self.num_workers):
@@ -63,131 +52,115 @@ class DumpParser():
             self.workers.append(p)
             
         # Start monitoring thread
-        self.monitor_thread = threading.Thread(target=self._monitor_workers, daemon=True)
+        self.monitor_thread = threading.Thread(target=self._simple_monitor, daemon=True)
         self.monitor_thread.start()
 
-    def _monitor_workers(self):
-        """Background thread to monitor worker performance"""
+    def _simple_monitor(self):
+        """Simplified monitoring without Manager objects"""
+        last_report_time = time.time()
+        
         while not self.stop_event.is_set():
-            time.sleep(5)  # Monitor every 5 seconds
+            time.sleep(10)  # Check every 10 seconds
             
             current_time = time.time()
-            total_pages = sum(stats['pages_processed'] for stats in self.worker_stats.values())
             queue_size = self.page_queue.qsize()
-            self.queue_size_history.append((current_time, queue_size))
+            self.queue_size_history.append(queue_size)
             
-            print(f"\n=== WORKER PERFORMANCE REPORT ===")
-            print(f"Total pages processed: {total_pages}")
-            print(f"Current queue size: {queue_size}")
-            print(f"Runtime: {current_time - self.start_time:.1f}s")
-            
-            active_workers = 0
-            idle_workers = 0
-            
-            for worker_id, stats in self.worker_stats.items():
-                pages = stats['pages_processed']
-                total_proc_time = stats['total_processing_time']
-                total_wait_time = stats['total_wait_time']
-                last_activity = stats['last_activity']
+            # Simple report every minute
+            if current_time - last_report_time > 60:
+                elapsed = current_time - self.start_time
                 
-                # Calculate efficiency metrics
-                total_time = total_proc_time + total_wait_time
-                if total_time > 0:
-                    efficiency = (total_proc_time / total_time) * 100
-                else:
-                    efficiency = 0
-                    
-                # Check if worker is active (processed something in last 10 seconds)
-                idle_time = current_time - last_activity
-                if idle_time < 10:
-                    active_workers += 1
-                    status = "ACTIVE"
-                else:
-                    idle_workers += 1
-                    status = f"IDLE ({idle_time:.1f}s)"
+                # Calculate average queue size
+                avg_queue_size = sum(self.queue_size_history) / len(self.queue_size_history) if self.queue_size_history else 0
                 
-                avg_proc_time = total_proc_time / pages if pages > 0 else 0
+                print(f"\n=== STATUS REPORT ===")
+                print(f"Runtime: {elapsed:.1f}s")
+                print(f"Pages added to queue: {self.pages_added_to_queue}")
+                print(f"Current queue size: {queue_size}")
+                print(f"Average queue size: {avg_queue_size:.1f}")
                 
-                print(f"Worker {worker_id}: {pages:4d} pages | "
-                      f"Efficiency: {efficiency:5.1f}% | "
-                      f"Avg: {avg_proc_time:.3f}s/page | "
-                      f"Status: {status}")
-            
-            print(f"Active workers: {active_workers}/{self.num_workers}")
-            
-            # Resource utilization
-            process = psutil.Process()
-            cpu_percent = process.cpu_percent()
-            memory_info = process.memory_info()
-            print(f"CPU: {cpu_percent:.1f}% | Memory: {memory_info.rss / 1024**2:.1f} MB")
-            print("=" * 50)
-            
-    def get_optimization_recommendations(self):
-        """Analyze performance and suggest optimizations"""
-        total_runtime = time.time() - self.start_time
-        if total_runtime < 30:  # Need some runtime to make recommendations
-            return "Not enough runtime data for recommendations"
-        
-        recommendations = []
-        
-        # Analyze worker efficiency
-        efficiencies = []
-        idle_workers = 0
-        
-        for worker_id, stats in self.worker_stats.items():
-            total_proc_time = stats['total_processing_time']
-            total_wait_time = stats['total_wait_time']
-            total_time = total_proc_time + total_wait_time
-            
-            if total_time > 0:
-                efficiency = (total_proc_time / total_time) * 100
-                efficiencies.append(efficiency)
+                # Simple resource check
+                try:
+                    cpu_percent = psutil.cpu_percent(interval=1)
+                    memory = psutil.virtual_memory()
+                    print(f"CPU: {cpu_percent:.1f}% | Memory: {memory.percent:.1f}%")
+                except:
+                    pass  # Skip if psutil fails
                 
-                if efficiency < 50:  # Worker is idle more than 50% of the time
-                    idle_workers += 1
+                # Simple recommendations
+                if avg_queue_size < 5:
+                    print("Queue size is low - workers might be idle")
+                elif avg_queue_size > 85:
+                    print("Queue is nearly full - consider more workers")
+                
+                print("=" * 30)
+                last_report_time = current_time
+
+    def get_simple_stats(self):
+        """Get basic statistics without complex shared objects"""
+        runtime = time.time() - self.start_time
+        queue_size = self.page_queue.qsize()
         
-        avg_efficiency = sum(efficiencies) / len(efficiencies) if efficiencies else 0
+        stats = {
+            'runtime': runtime,
+            'pages_queued': self.pages_added_to_queue,
+            'current_queue_size': queue_size,
+            'num_workers': self.num_workers,
+        }
         
-        # Queue size analysis
-        if len(self.queue_size_history) > 10:
-            recent_queue_sizes = [size for _, size in list(self.queue_size_history)[-10:]]
-            avg_queue_size = sum(recent_queue_sizes) / len(recent_queue_sizes)
+        if self.queue_size_history:
+            stats['avg_queue_size'] = sum(self.queue_size_history) / len(self.queue_size_history)
+        else:
+            stats['avg_queue_size'] = 0
             
-            if avg_queue_size < 5:
-                recommendations.append("Queue size is low - consider reducing workers or increasing files_in_parallel")
-            elif avg_queue_size > 80:
-                recommendations.append("Queue is nearly full - consider increasing workers")
-        
-        # Worker efficiency analysis
-        if avg_efficiency < 60:
-            recommendations.append(f"Low worker efficiency ({avg_efficiency:.1f}%) - workers spend too much time waiting")
-            
-        if idle_workers > self.num_workers // 3:
-            recommendations.append(f"{idle_workers} workers are mostly idle - consider reducing pages_in_parallel")
-        
-        # CPU utilization check
-        cpu_usage = psutil.cpu_percent(interval=1)
-        if cpu_usage < 70:
-            recommendations.append(f"CPU usage is low ({cpu_usage:.1f}%) - you could increase files_in_parallel")
-        
-        return recommendations
+        return stats
 
     def _worker(self, worker_id):
         """
             Process started in init
             Gets pages from queue and calls process_page_xml which processes the page (entity)
         """
-        worker_stats = self.worker_stats[worker_id]
+        pages_processed = 0
+        total_wait_time = 0
+        total_process_time = 0
         while not self.stop_event.is_set() or not self.page_queue.empty():
+            wait_start = time.time()
             try:
                 page_elem_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
+                
+                # ---- stats ----
+                wait_time = time.time() - wait_start
+                total_wait_time += wait_time
+                # ---- stats ----
+                
                 if page_elem_str is None:  # no more pages to process
                     break
                 
-                process_page_xml(page_elem_str, self.file_path, self.config, worker_stats)
+                process_start = time.time()
+                process_page_xml(page_elem_str, self.file_path, self.config)
+                
+                # ---- stats ----
+                process_time = time.time() - process_start
+                total_process_time += process_time
+                pages_processed += 1
+                # ---- stats ----
+
+                # ---- stats ----
+                if pages_processed % 100 == 0:
+                    efficiency = (total_process_time / (total_process_time + total_wait_time)) * 100 if total_wait_time > 0 else 100 # time spent processing / total time
+                    print(f"Worker {worker_id}: {pages_processed} pages processed, {efficiency:.1f}% efficiency")
+                # ---- stats ----
+                
                 sys.stdout.flush()
             except queue.Empty:
+                total_wait_time += time.time() - wait_start
                 continue
+        
+        # ---- stats ----
+        total_time = total_process_time + total_wait_time
+        efficiency = (total_process_time / total_time) * 100 if total_time > 0 else 0
+        print(f"Worker {worker_id} finished: {pages_processed} pages, {efficiency:.1f}% efficiency, {total_process_time:.2f}s processing")
+        # ---- stats ----
 
     def parse_dump(self, file_obj):
         """
@@ -202,9 +175,8 @@ class DumpParser():
         context = etree.iterparse(file_obj, events=("end",), tag=page_tag)
 
         pages_read = 0
-        read_start_time = time.time()
+        last_report = time.time()
         
-        sys.stdout.flush()
         for event, page_elem in context:
             keep = False
             entity_id = ""
@@ -227,11 +199,15 @@ class DumpParser():
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
 
-            # Periodic performance logging
-            if pages_read % 5000 == 0 and pages_read > 0:
-                elapsed = time.time() - read_start_time
-                rate = pages_read / elapsed
-                print(f"Reading rate: {rate:.1f} pages/second")
+                # monitoring
+                self.pages_added_to_queue += 1
+                pages_read += 1
+
+            # Periodic progress report
+            if time.time() - last_report > 30:  # Every 30 seconds
+                rate = pages_read / (time.time() - self.start_time)
+                print(f"Progress: {pages_read} entities read, {rate:.1f} entities/sec, queue: {queue_size}/100")
+                last_report = time.time()
 
             # Clear page element to free memory
             page_elem.clear()
@@ -241,17 +217,28 @@ class DumpParser():
             if self.stop_event.is_set():
                 break
         
+        # Send stop signals to workers
         for _ in range(self.num_workers):
             self.page_queue.put(None)
 
-        for p in self.workers:
+        # Wait for workers to finish
+        for i, p in enumerate(self.workers):
             p.join()
+            print(f"Worker {i} finished")
 
         self.stop_event.set()
 
-        recommendations = self.get_optimization_recommendations()
-        print("\n=== OPTIMIZATION RECOMMENDATIONS ===")
-        for rec in recommendations:
-            print(f"• {rec}")
+        final_stats = self.get_simple_stats()
+        print(f"\n=== FINAL STATISTICS ===")
+        print(f"Total runtime: {final_stats['runtime']:.1f}s")
+        print(f"Total entities processed: {final_stats['pages_queued']}")
+        print(f"Average processing rate: {final_stats['pages_queued']/final_stats['runtime']:.2f} entities/sec")
+        print(f"Workers used: {final_stats['num_workers']}")
         
-        print("Finished processing file")
+        # Simple recommendations
+        if final_stats['avg_queue_size'] < 10:
+            print("Consider reducing workers or increasing files_in_parallel")
+        elif final_stats['avg_queue_size'] > 80:
+            print("Consider increasing workers (pages_in_parallel)")
+        else:
+            print("Worker configuration seems well balanced")
