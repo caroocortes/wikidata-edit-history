@@ -113,12 +113,13 @@ if  __name__ == "__main__":
             process_time, num_entities, file_path, size = process_file(files_to_parse[0], config)
             log_file_process(process_time, num_entities, file_path, size)
         else:
-            files_to_parse = files_to_parse[:max_files]
             if max_files < max_workers:
                 max_workers = max_files
 
             print(f"Found {len(files_to_parse)} unprocessed .bz2 files in {dump_dir}, processing up to {max_files} files with {max_workers} workers in parallel.")
-            
+
+            files_to_parse = files_to_parse[:max_files]
+
             with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor: 
                 configs = [config] * len(files_to_parse) # has to be an iterable
                 for process_time, num_entities, file_path, size in executor.map(process_file, files_to_parse, configs): 
