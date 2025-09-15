@@ -188,27 +188,28 @@ class DumpParser():
                 entity_id = title_elem.text or ""
                 if entity_id.startswith("Q"):
                     keep = True
-                    self.entity_id = entity_id
+                else:
+                    print(f"Skipping non-entity page {entity_id}", end='\r')
+                    sys.stdout.flush()
 
             if keep:
                 queue_size = self.page_queue.qsize()
                 if queue_size > 15:  # Queue is getting full
                     print(f"Warning: Queue is {queue_size}/20 full - processing may be bottlenecked")
-                print(f"Keeping entity {entity_id}, queue size: {queue_size}/20 -  total entities read: {self.num_entities + 1}", end='\r')
-                sys.stdout.flush()
 
                 # Serialize the page element
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
-            else:
-                print(f"Skipping non-entity page {self.entity_id}", end='\r')
+
+                print(f"Keeping entity {entity_id}, queue size: {self.page_queue.qsize()}/20 -  total entities read: {self.num_entities + 1}", end='\r')
                 sys.stdout.flush()
+            
 
             # Periodic progress report
             if time.time() - last_report > 300:  # Every 30 seconds
                 rate = self.num_entities / (time.time() - self.start_time)
-                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/100")
+                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/20")
                 sys.stdout.flush()
                 last_report = time.time()
 
