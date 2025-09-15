@@ -210,6 +210,9 @@ class DumpParser():
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
+            else:
+                print(f"Skipping non-entity page {self.entity_id}", end='\r')
+                sys.stdout.flush()
 
             # Periodic progress report
             if time.time() - last_report > 300:  # Every 30 seconds
