@@ -16,7 +16,6 @@ from scripts.const import *
 def process_page_xml(page_elem_str, file_path, config):
     parser = PageParser(file_path=file_path, page_elem_str=page_elem_str, config=config)
     try:
-        print('Processing page XML...')
         parser.process_page()
     except Exception as e:
         print('Error in page parser')
@@ -44,8 +43,6 @@ class DumpParser():
             p = mp.Process(target=self._worker, args=(i,))
             p.start()
             self.workers.append(p)
-
-        print(f"Started {self.num_workers} worker processes")
             
         # TODO: remove
         # monitoring thread
@@ -136,7 +133,6 @@ class DumpParser():
         while not self.stop_event.is_set() or not self.page_queue.empty():
             wait_start = time.time()
             try:
-                print('Worker waiting for page...')
                 page_elem_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
                 
                 # ---- stats ----
@@ -148,7 +144,6 @@ class DumpParser():
                     break
                 
                 process_start = time.time()
-                print('Worker calling process_page_xml...')
                 process_page_xml(page_elem_str, self.file_path, self.config)
                 
                 # ---- stats ----
@@ -157,12 +152,6 @@ class DumpParser():
                 pages_processed += 1
                 # ---- stats ----
 
-                # ---- stats ----
-                if pages_processed % 100 == 0:
-                    efficiency = (total_process_time / (total_process_time + total_wait_time)) * 100 if total_wait_time > 0 else 100 # time spent processing / total time
-                    print(f"Worker {worker_id}: {pages_processed} pages processed, {efficiency:.1f}% efficiency")
-                # ---- stats ----
-                
                 sys.stdout.flush()
             except queue.Empty:
                 total_wait_time += time.time() - wait_start
@@ -171,7 +160,7 @@ class DumpParser():
         # ---- stats ----
         total_time = total_process_time + total_wait_time
         efficiency = (total_process_time / total_time) * 100 if total_time > 0 else 0
-        print(f"Worker {worker_id} finished: {pages_processed} pages, {efficiency:.1f}% efficiency, {total_process_time:.2f}s processing")
+        print(f"Worker {worker_id} finished: {pages_processed} pages, {efficiency:.1f}% efficiency, {total_process_time:.2f}s processing, {total_wait_time:.2f}s waiting")
         sys.stdout.flush()
         # ---- stats ----
 
@@ -188,8 +177,6 @@ class DumpParser():
         context = etree.iterparse(file_obj, events=("end",), tag=page_tag)
         
         last_report = time.time()
-        
-        print("Starting to parse dump...")
 
         for event, page_elem in context:
             keep = False
