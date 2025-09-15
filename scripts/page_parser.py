@@ -35,6 +35,7 @@ class PageParser():
         self.config = config
 
         print('Initializing PageParser')
+        print(f'Config batch_changes_store: {self.config['batch_changes_store']}')
 
         self.label_hash_counter = 0
         self.description_hash_counter = 0
