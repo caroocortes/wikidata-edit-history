@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 import concurrent.futures
 import json
+import sys
 
 from scripts.utils import human_readable_size, create_db_schema, print_exception_details
 from scripts.dump_parser import DumpParser
@@ -24,6 +25,7 @@ def process_file(file_path, config):
     parser = DumpParser(file_path=input_bz2, config=config)
     
     print(f"Processing: {file_path}")
+    sys.stdout.flush()
     start_process = time.time()
     with bz2.open(file_path, 'rb', buffering=8*1024*1024) as in_f:
         try:
@@ -40,6 +42,7 @@ def process_file(file_path, config):
     size_hr = human_readable_size(size)
 
     print(f"Processed {input_bz2} in {process_time:.2f} seconds, {human_readable_size(size)}, {parser.num_entities} entities")
+    sys.stdout.flush()
     
     parser_log_files = "parser_log_files.json"
     if not os.path.exists(parser_log_files):
@@ -105,7 +108,8 @@ if  __name__ == "__main__":
 
         max_workers = config.get('files_in_parallel', 5)
         max_files = config.get('max_files', 1)
-
+        print(f"Found {len(files_to_parse)} unprocessed .bz2 files in {dump_dir}, processing up to {max_files} files with {max_workers} workers in parallel.")
+        sys.stdout.flush()
         if max_files == 1:        
             process_time, num_entities, file_path, size = process_file(files_to_parse[0], config)
             log_file_process(process_time, num_entities, file_path, size)
