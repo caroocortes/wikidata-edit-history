@@ -19,7 +19,6 @@ def process_file(file_path, config):
     """
     Process a single .xml.bz2 file, parse it, and log the results.
     """
-    print('inside process_file')
     input_bz2 = os.path.basename(file_path)
 
     parser = DumpParser(file_path=input_bz2, config=config)
@@ -108,16 +107,18 @@ if  __name__ == "__main__":
 
         max_workers = config.get('files_in_parallel', 5)
         max_files = config.get('max_files', 1)
-        print(f"Found {len(files_to_parse)} unprocessed .bz2 files in {dump_dir}, processing up to {max_files} files with {max_workers} workers in parallel.")
+        
         sys.stdout.flush()
         if max_files == 1:        
             process_time, num_entities, file_path, size = process_file(files_to_parse[0], config)
             log_file_process(process_time, num_entities, file_path, size)
         else:
             files_to_parse = files_to_parse[:max_files]
-            print(f"Processing {len(files_to_parse)} files...")
             if max_files < max_workers:
                 max_workers = max_files
+
+            print(f"Found {len(files_to_parse)} unprocessed .bz2 files in {dump_dir}, processing up to {max_files} files with {max_workers} workers in parallel.")
+            
             with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor: 
                 configs = [config] * len(files_to_parse) # has to be an iterable
                 for process_time, num_entities, file_path, size in executor.map(process_file, files_to_parse, configs): 
