@@ -16,6 +16,7 @@ from scripts.const import *
 def process_page_xml(page_elem_str, file_path, config):
     parser = PageParser(file_path=file_path, page_elem_str=page_elem_str, config=config)
     try:
+        print('Processing page XML...')
         parser.process_page()
     except Exception as e:
         print('Error in page parser')
@@ -133,6 +134,7 @@ class DumpParser():
         while not self.stop_event.is_set() or not self.page_queue.empty():
             wait_start = time.time()
             try:
+                print('Worker waiting for page...')
                 page_elem_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
                 
                 # ---- stats ----
@@ -144,6 +146,7 @@ class DumpParser():
                     break
                 
                 process_start = time.time()
+                print('Worker calling process_page_xml...')
                 process_page_xml(page_elem_str, self.file_path, self.config)
                 
                 # ---- stats ----
@@ -202,7 +205,7 @@ class DumpParser():
                     print(f"Warning: Queue is {queue_size}/20 full - processing may be bottlenecked")
                 print(f"Keeping entity {entity_id}, queue size: {queue_size}/20 -  total entities read: {self.num_entities + 1}", end='\r')
                 sys.stdout.flush()
-                
+
                 # Serialize the page element
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
                 self.page_queue.put(page_elem_str)
