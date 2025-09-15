@@ -195,6 +195,7 @@ class DumpParser():
                 if entity_id.startswith("Q"):
                     keep = True
                     self.entity_id = entity_id
+                    print(f"Reading entity {entity_id} - total entities read: {self.num_entities + 1}", end='\r')
 
             if keep:
                 queue_size = self.page_queue.qsize()
