@@ -27,12 +27,14 @@ def batch_insert(conn, revision, changes, change_metadata):
 
 class PageParser():
     def __init__(self, file_path, page_elem_str, config):
-
+        
         self.changes = []
         self.revision = []
         self.changes_metadata = []
 
         self.config = config
+
+        print('Initializing PageParser')
 
         self.label_hash_counter = 0
         self.description_hash_counter = 0
