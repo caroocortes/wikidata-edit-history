@@ -19,7 +19,7 @@ def process_file(file_path, config):
     """
     Process a single .xml.bz2 file, parse it, and log the results.
     """
-
+    print('inside process_file')
     input_bz2 = os.path.basename(file_path)
 
     parser = DumpParser(file_path=input_bz2, config=config)
@@ -115,7 +115,7 @@ if  __name__ == "__main__":
             log_file_process(process_time, num_entities, file_path, size)
         else:
             files_to_parse = files_to_parse[:max_files]
-
+            print(f"Processing {len(files_to_parse)} files...")
             if max_files < max_workers:
                 max_workers = max_files
             with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor: 
