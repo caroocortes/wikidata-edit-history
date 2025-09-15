@@ -46,8 +46,8 @@ class DumpParser():
             
         # TODO: remove
         # monitoring thread
-        self.monitor_thread = threading.Thread(target=self._simple_monitor, daemon=True)
-        self.monitor_thread.start()
+        # self.monitor_thread = threading.Thread(target=self._simple_monitor, daemon=True)
+        # self.monitor_thread.start()
 
     def _simple_monitor(self):
         last_report_time = time.time()
@@ -196,6 +196,7 @@ class DumpParser():
                     keep = True
                     self.entity_id = entity_id
                     print(f"Reading entity {entity_id} - total entities read: {self.num_entities + 1}", end='\r')
+                    sys.stdout.flush()
 
             if keep:
                 queue_size = self.page_queue.qsize()
@@ -211,6 +212,7 @@ class DumpParser():
             if time.time() - last_report > 300:  # Every 30 seconds
                 rate = self.num_entities / (time.time() - self.start_time)
                 print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/100")
+                sys.stdout.flush()
                 last_report = time.time()
 
             # Clear page element to free memory
