@@ -752,23 +752,8 @@ class PageParser():
             if revision_text is not None:
                 # If the revision was deleted the text tag looks like: <text bytes="11179" sha1="ou0t1tihux9rw2wb939kv22axo3h2uh" deleted="deleted"/>
                 # and there's no content inside
-                deleted_attr = rev_elem.get("deleted")
-                if deleted_attr == "deleted":
-                    file_path = 'deleted_revisions.json'
-                    if os.path.exists(file_path):
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            try:
-                                deleted_revisions = json.load(f)
-                            except json.JSONDecodeError:
-                                deleted_revisions = {}
-                    else:
-                        deleted_revisions = {}
-
-                    deleted_revisions[entity_id] = revision_id
-
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        json.dump(deleted_revisions, f, ensure_ascii=False, indent=2)
-                else:
+                deleted_attr = revision_text.get("deleted")
+                if not deleted_attr:
                     # Revision was not deleted
 
                     # Extract text, id, timestamp, comment, username, user_id
