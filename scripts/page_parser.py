@@ -746,16 +746,15 @@ class PageParser():
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
 
-            # Get revision text
-            revision_id = rev_elem.findtext(f'{{{NS}}}id', '').strip()
-            revision_text = rev_elem.findtext(revision_text_tag)
-            if revision_text is not None:
+            revision_id = rev_elem.findtext(f'{{{NS}}}id', '').strip() # revision id
+            revision_text_elem = rev_elem.find(revision_text_tag) # revision <text></text>
+            if revision_text_elem is not None:
                 # If the revision was deleted the text tag looks like: <text bytes="11179" sha1="ou0t1tihux9rw2wb939kv22axo3h2uh" deleted="deleted"/>
                 # and there's no content inside
-                deleted_attr = revision_text.get("deleted")
-                if not deleted_attr:
-                    # Revision was not deleted
-
+                
+                deleted_attr = revision_text_elem.get("deleted")
+                if not deleted_attr: # Revision was not deleted
+                    
                     # Extract text, id, timestamp, comment, username, user_id
                     contrib_elem = rev_elem.find(f'{{{NS}}}contributor')
                 
@@ -781,7 +780,7 @@ class PageParser():
                     }
 
                     # decode content inside <text></text>
-                    revision_text = revision_text.strip()
+                    revision_text = (revision_text_elem.text).strip()
                     current_revision = self._parse_json_revision(rev_elem, revision_text)
                     
                     if current_revision is None:
