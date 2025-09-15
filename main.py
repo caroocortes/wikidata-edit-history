@@ -11,6 +11,8 @@ from scripts.utils import human_readable_size, create_db_schema, print_exception
 from scripts.dump_parser import DumpParser
     
 def log_file_process(process_time, num_entities, file_path, size):
+    if not isinstance(file_path, Path):
+        file_path = Path(file_path) 
     print(f"Finished processing {file_path} ({size}, {num_entities} entities) in {process_time} seconds") 
     with open('processed_files.txt', "a") as f: 
         f.write(f"{file_path.resolve()}\n") 
@@ -106,7 +108,7 @@ if  __name__ == "__main__":
         files_to_parse = [f for f in files_sorted if f not in processed_files]
 
         max_workers = config.get('files_in_parallel', 5)
-        max_files = config.get('max_files', 1)
+        max_files = config.get('max_files', 5)
         
         sys.stdout.flush()
         if max_files == 1:        
@@ -119,12 +121,15 @@ if  __name__ == "__main__":
             print(f"Found {len(files_to_parse)} unprocessed .bz2 files in {dump_dir}, processing up to {max_files} files with {max_workers} workers in parallel.")
 
             files_to_parse = files_to_parse[:max_files]
-
-            with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor: 
+            executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
+            try:
                 configs = [config] * len(files_to_parse) # has to be an iterable
                 for process_time, num_entities, file_path, size in executor.map(process_file, files_to_parse, configs): 
                     if process_time == 0:
                         print(f"Error processing {file_path}, skipping logging.")
                     else:
                         log_file_process(process_time, num_entities, file_path, size)
+            finally:
+                executor.shutdown(wait=True)
+                
                 
