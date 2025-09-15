@@ -44,6 +44,8 @@ class DumpParser():
             p = mp.Process(target=self._worker, args=(i,))
             p.start()
             self.workers.append(p)
+
+        print(f"Started {self.num_workers} worker processes")
             
         # TODO: remove
         # monitoring thread
@@ -187,6 +189,8 @@ class DumpParser():
         
         last_report = time.time()
         
+        print("Starting to parse dump...")
+
         for event, page_elem in context:
             keep = False
             entity_id = ""
