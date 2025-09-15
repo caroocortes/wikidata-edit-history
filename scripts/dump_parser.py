@@ -195,14 +195,14 @@ class DumpParser():
                 if entity_id.startswith("Q"):
                     keep = True
                     self.entity_id = entity_id
-                    print(f"Reading entity {entity_id} - total entities read: {self.num_entities + 1}", end='\r')
-                    sys.stdout.flush()
 
             if keep:
                 queue_size = self.page_queue.qsize()
                 if queue_size > 15:  # Queue is getting full
                     print(f"Warning: Queue is {queue_size}/20 full - processing may be bottlenecked")
-
+                print(f"Keeping entity {entity_id}, queue size: {queue_size}/20 -  total entities read: {self.num_entities + 1}", end='\r')
+                sys.stdout.flush()
+                
                 # Serialize the page element
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
                 self.page_queue.put(page_elem_str)
