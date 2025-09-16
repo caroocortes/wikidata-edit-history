@@ -682,7 +682,7 @@ class PageParser():
                     removed_values = set(prev_values) - set(curr_values)
                     for removed_value in removed_values:
                         # Find the corresponding previous statement for the value to get datatype and hash
-                        prev_stmt = next(qs for qs in prev_qual_stmts if PageParser._parse_datavalue(qs)[0] == removed_value)
+                        prev_stmt = next(qs for qs in prev_qual_stmts if qs['datavalue']['value'] == removed_value)
                         prev_qual_value = prev_stmt['datavalue']['value']
                         prev_qual_datatype = prev_stmt['datavalue']['type']
 
@@ -704,7 +704,7 @@ class PageParser():
                     addedd_values = set(curr_values) - set(prev_values)
                     for added_value in addedd_values:
                         # Find the corresponding current statement for the value to get datatype and hash
-                        curr_stmt = next(qs for qs in curr_qual_stmts if PageParser._parse_datavalue(qs)[0] == added_value)
+                        curr_stmt = next(qs for qs in curr_qual_stmts if qs['datavalue']['value'] == added_value)
                         curr_qual_value = curr_stmt['datavalue']['value']
                         curr_qual_datatype = curr_stmt['datavalue']['type']
                         curr_qual_hash = curr_stmt.get('hash', '') if curr_stmt else None
