@@ -626,7 +626,8 @@ class PageParser():
             # qualifiers were added
             for qual_pid, qual_stmts in curr_qualifiers.items():
                 for qual_stmt in qual_stmts:
-                    qual_value, qual_datatype, _ = PageParser._parse_datavalue(qual_stmt)
+                    qual_value = qual_stmt['datavalue']['value']
+                    qual_datatype = qual_stmt['datavalue']['type']
      
                     new_hash = qual_stmt.get('hash', '') if qual_stmt else ''
 
@@ -647,8 +648,9 @@ class PageParser():
             # qualifiers were removed
             for qual_pid, qual_stmts in prev_qualifiers.items():
                 for qual_stmt in qual_stmts:
-                    qual_value, qual_datatype, _ = PageParser._parse_datavalue(qual_stmt)
-     
+                    qual_value = qual_stmt['datavalue']['value']
+                    qual_datatype = qual_stmt['datavalue']['type']
+
                     old_hash = qual_stmt.get('hash', '') if qual_stmt else ''
 
                     # only qualifier "value" change is recorded, not datatype_metadata changes
@@ -671,8 +673,8 @@ class PageParser():
                 prev_qual_stmts = prev_qualifiers.get(qual_pid, []) # only have a hash, there's no id for qualifiers
                 curr_qual_stmts = curr_qualifiers.get(qual_pid, []) 
 
-                prev_values = [PageParser._parse_datavalue(qs)[0] for qs in prev_qual_stmts]
-                curr_values = [PageParser._parse_datavalue(qs)[0] for qs in curr_qual_stmts]
+                prev_values = [qs['datavalue']['value'] for qs in prev_qual_stmts]
+                curr_values = [qs['datavalue']['value'] for qs in curr_qual_stmts]
 
                 # TODO: refactor thos
                 # Some qualifier value was removed 
@@ -681,7 +683,9 @@ class PageParser():
                     for removed_value in removed_values:
                         # Find the corresponding previous statement for the value to get datatype and hash
                         prev_stmt = next(qs for qs in prev_qual_stmts if PageParser._parse_datavalue(qs)[0] == removed_value)
-                        prev_qual_value, prev_qual_datatype, _ = PageParser._parse_datavalue(prev_stmt)
+                        prev_qual_value = prev_stmt['datavalue']['value']
+                        prev_qual_datatype = prev_stmt['datavalue']['type']
+
                         prev_qual_hash = prev_stmt.get('hash', '') if prev_stmt else ''
 
                         self.save_changes(
@@ -701,7 +705,8 @@ class PageParser():
                     for added_value in addedd_values:
                         # Find the corresponding current statement for the value to get datatype and hash
                         curr_stmt = next(qs for qs in curr_qual_stmts if PageParser._parse_datavalue(qs)[0] == added_value)
-                        curr_qual_value, curr_qual_datatype, _ = PageParser._parse_datavalue(curr_stmt)
+                        curr_qual_value = curr_stmt['datavalue']['value']
+                        curr_qual_datatype = curr_stmt['datavalue']['type']
                         curr_qual_hash = curr_stmt.get('hash', '') if curr_stmt else None
 
                         self.save_changes(
