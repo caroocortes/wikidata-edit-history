@@ -464,6 +464,9 @@ class PageParser():
                             new_hash=new_hash if change_type == CREATE_ENTITY else None
                         )
 
+                if stmt.get('qualifiers', None):
+                    self._handle_qualifiers_changes(property_id, value_id, None, stmt)
+
         # If there's no description or label, the revisions shows them as []
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
         labels = PageParser._safe_get_nested(revision, 'labels', lang, 'value')
@@ -686,10 +689,9 @@ class PageParser():
                     )
 
         elif prev_qualifiers and curr_qualifiers:
-            change_detected = True
-            # qualifier values were added/removed 
 
             all_qual_pids = set(prev_qualifiers.keys()).union(set(curr_qualifiers.keys()))
+            
             for qual_pid in all_qual_pids:
                 prev_qual_stmts = prev_qualifiers.get(qual_pid, []) # only have a hash, there's no id for qualifiers
                 curr_qual_stmts = curr_qualifiers.get(qual_pid, []) 
@@ -705,9 +707,10 @@ class PageParser():
                     for qs in curr_qual_stmts
                     if qs.get('datavalue') is not None
                 ]
-                # TODO: refactor thos
+
                 # Some qualifier value was removed 
                 if len(curr_values) < len(prev_values):
+                    change_detected = True
                     removed_values = set(prev_values) - set(curr_values)
                     for removed_value in removed_values:
                         # Find the corresponding previous statement for the value to get datatype and hash
@@ -733,8 +736,10 @@ class PageParser():
                             old_hash=prev_qual_hash,
                             new_hash=None
                         )
+
                 # A qualifier value was added
                 elif len(curr_values) > len(prev_values):
+                    change_detected = True
                     addedd_values = set(curr_values) - set(prev_values)
                     for added_value in addedd_values:
                         # Find the corresponding current statement for the value to get datatype and hash
@@ -759,6 +764,7 @@ class PageParser():
                             old_hash=None,
                             new_hash=curr_qual_hash
                         )
+
         return change_detected
 
     def _handle_remaining_pids(self, remaining_pids, prev_claims, curr_claims):
@@ -844,14 +850,17 @@ class PageParser():
                         old_hash=old_hash,
                         new_hash=new_hash
                     )
-
+                print('Change detected befor qualifier changes: ', change_detected)
                 # qualifiers changes
                 qualifier_change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
+                print('Change detected after qualifier changes', qualifier_change_detected)
 
+                change_detected = change_detected or qualifier_change_detected
+                print('Final change detected: ', change_detected)
                 # references changes
                 # TODO: implement references changes
 
-        return change_detected or qualifier_change_detected
+        return change_detected
     
     def get_changes_from_revisions(self, current_revision, previous_revision):
         """
