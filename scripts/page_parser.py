@@ -11,7 +11,7 @@ from lxml import etree
 import hashlib
 import re
 
-from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label
+from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label, id_to_int
 from scripts.const import *
 
 def batch_insert(conn, revision, changes, change_metadata):
@@ -19,7 +19,7 @@ def batch_insert(conn, revision, changes, change_metadata):
     """Function to insert into DB in parallel."""
     
     try:
-        insert_rows(conn, 'revision', revision, ['revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'class_id', 'class_label'])
+        insert_rows(conn, 'revision', revision, ['revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path'])
         insert_rows(conn, 'change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'datatype_metadata', 'action', 'target', 'old_hash', 'new_hash'])
         insert_rows(conn, 'change_metadata', change_metadata, ['revision_id', 'property_id', 'value_id', 'datatype_metadata', 'change_metadata', 'value'])
     except Exception as e:
@@ -277,9 +277,9 @@ class PageParser():
         action, target = PageParser.get_target_action_from_change_type(change_type)
 
         change = (
-            self.revision_meta['revision_id'] if self.revision_meta['revision_id'] else '',
-            property_id if property_id else '',
-            value_id if value_id else '',
+            self.revision_meta['revision_id'],
+            property_id,
+            value_id,
             old_value,
             new_value,
             datatype,
@@ -295,9 +295,9 @@ class PageParser():
         change_metadata = ()
         if change_magnitude is not None:
             change_metadata = (
-                self.revision_meta['revision_id'] if self.revision_meta['revision_id'] else '',
-                property_id if property_id else '',
-                value_id if value_id else '',
+                self.revision_meta['revision_id'],
+                property_id,
+                value_id,
                 datatype_metadata if datatype_metadata else '', # can't be None since datatype_metadata is part of the key of the table
                 'CHANGE_MAGNITUDE',
                 change_magnitude
@@ -748,11 +748,13 @@ class PageParser():
         title_elem = self.page_elem.find(title_tag)
         if title_elem is not None:
             entity_id = (title_elem.text or '').strip()
-    
+
+        entity_id = id_to_int(entity_id) # convert Q-ID to integer (remove the 'Q')
+
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
 
-            revision_id = rev_elem.findtext(f'{{{NS}}}id', '').strip() # revision id
+            revision_id = int(rev_elem.findtext(f'{{{NS}}}id', '').strip()) # revision id
             revision_text_elem = rev_elem.find(revision_text_tag) # revision <text></text>
             if revision_text_elem is not None:
                 # If the revision was deleted the text tag looks like: <text bytes="11179" sha1="ou0t1tihux9rw2wb939kv22axo3h2uh" deleted="deleted"/>
@@ -780,9 +782,7 @@ class PageParser():
                         'comment': rev_elem.findtext(f'{{{NS}}}comment', '').strip(),
                         'username': username,
                         'user_id': user_id,
-                        'file_path': self.file_path,
-                        'class_id': '',
-                        'class_label': ''
+                        'file_path': self.file_path
                     }
 
                     # decode content inside <text></text>
@@ -811,9 +811,7 @@ class PageParser():
                             self.revision_meta['user_id'],
                             self.revision_meta['username'],
                             self.revision_meta['comment'],
-                            self.revision_meta['file_path'],
-                            self.revision_meta['class_id'],
-                            self.revision_meta['class_label']
+                            self.revision_meta['file_path']
                         ))
 
                     # if parse_revisions_text returns None then

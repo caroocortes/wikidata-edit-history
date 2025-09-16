@@ -471,6 +471,12 @@ def get_dump_links():
     
     return bz2_links
 
+def id_to_int(wd_id):
+    """
+    Converts Wikidata ID like Q38830 or P31 to integer.
+    """
+    return int(wd_id[1:])
+
 
 if "__main__":
     fetch_entity_types()
