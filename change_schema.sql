@@ -2,8 +2,6 @@ CREATE TABLE IF NOT EXISTS revision (
     revision_id TEXT,
     entity_id TEXT,
     entity_label TEXT,
-    class_id TEXT,
-    class_label TEXT,
     file_path TEXT,
     timestamp TIMESTAMP WITH TIME ZONE,
     user_id TEXT,
@@ -38,4 +36,13 @@ CREATE TABLE IF NOT EXISTS change_metadata (
     value DOUBLE PRECISION,
     PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata, change_metadata),
     FOREIGN KEY (revision_id, property_id, value_id, datatype_metadata) REFERENCES change(revision_id, property_id, value_id, datatype_metadata)
+);
+
+CREATE TABLE IF NOT EXISTS entity_types (
+    entity_id TEXT,
+    class_id TEXT,
+    class_label TEXT,
+    rank TEXT,
+    PRIMARY KEY (entity_id, class_id),
+    FOREIGN KEY (entity_id) REFERENCES revision(entity_id)
 );

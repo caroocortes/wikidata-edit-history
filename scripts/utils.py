@@ -186,7 +186,7 @@ def fetch_wikidata_properties():
             property_id = result["property"]["value"].split("/")[-1]
             properties.append((property_label, property_id))  # order matches %s
 
-        cur.executemany(query, classes)
+        cur.executemany(query, properties)
         conn.commit()
         
         time.sleep(10)
@@ -231,14 +231,16 @@ def fetch_entity_types():
 
     for i in range(0, len(entity_list), batch_size):
         batch = entity_list[i:i + batch_size]
-        values_str = " ".join(f"wd:{eid[0]}" for eid in batch)
+        values_str = " ".join(f"wd:{eid[0]}" for eid in batch) # add base uri (wd:) to each entity id
         print(f"Fetching page (Batch size: {i} - {i + batch_size})...")
         
         query = f"""
-        SELECT ?entity ?class ?classLabel
+        SELECT ?entity ?class ?classLabel ?rank
         WHERE {{
             VALUES ?entity {{ {values_str} }}
-            ?entity wdt:P31 ?class.
+            ?entity p:P31 ?statement.
+            ?statement ps:P31 ?class.
+            ?statement wikibase:rank ?rank.
           
             SERVICE wikibase:label {{
                 bd:serviceParam wikibase:language "en".
@@ -260,19 +262,26 @@ def fetch_entity_types():
         
         entity_class = []
         query = """
-            UPDATE revision
-            SET class_id = %s, class_label = %s
-            WHERE entity_id = %s
+            INSERT INTO entity_types (entity_id, class_id, class_label, rank)
+            VALUES entity_id = %s, class_id = %s, class_label = %s, rank = %s
         """
 
         for result in results:
             entity_id = result["entity"]["value"].split("/")[-1]
             class_id = result["class"]["value"].split("/")[-1]
             class_label = result["classLabel"]["value"]
+            
+            rank_wd = result["rank"]["value"].split("/")[-1]
+            rank = "normal" # by default all statements have normal rank
+            if rank_wd == "PreferredRank":
+                rank = "preferred"
+            elif rank_wd == "DeprecatedRank":   
+                rank = "deprecated"
 
-            entity_class.append((class_id, class_label, entity_id))  # order matches %s
-            cur.executemany(query, entity_class)
-            conn.commit()
+            entity_class.append((entity_id, class_id, class_label, rank))
+        
+        cur.executemany(query, entity_class)
+        conn.commit()
 
         time.sleep(10) 
         
