@@ -30,13 +30,13 @@ class DumpParser():
         self.num_entities = 0  
         
         self.num_workers = config.get('pages_in_parallel', 2) # processes that process pages in parallel
-        self.page_queue = mp.Queue(maxsize=200) # queue with size 20
+        self.page_queue = mp.Queue(maxsize=QUEUE_SIZE) # queue that stores pages as they are read
         self.stop_event = mp.Event()
 
         # TODO: remove
         self.start_time = time.time()
         self.last_queue_check = time.time()
-        self.queue_size_history = deque(maxlen=100) # store last 100 queue sizes
+        self.queue_size_history = deque(maxlen=50) # store last 50 queue sizes
 
         self.workers = []
         for i in range(self.num_workers):
@@ -188,21 +188,18 @@ class DumpParser():
                 entity_id = title_elem.text or ""
                 if entity_id.startswith("Q"):
                     keep = True
-                else:
-                    print(f"Skipping non-entity page {entity_id}", end='\r')
-                    sys.stdout.flush()
 
             if keep:
                 queue_size = self.page_queue.qsize()
                 if queue_size > 15:  # Queue is getting full
-                    print(f"Warning: Queue is {queue_size}/20 full - processing may be bottlenecked")
+                    print(f"Warning: Queue is {queue_size}/{QUEUE_SIZE} full - processing may be bottlenecked")
 
                 # Serialize the page element
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
 
-                print(f"Keeping entity {entity_id}, queue size: {self.page_queue.qsize()}/20 -  total entities read: {self.num_entities + 1}", end='\r')
+                print(f"Keeping entity {entity_id}, queue size: {self.page_queue.qsize()}/{QUEUE_SIZE} -  total entities read: {self.num_entities + 1}", end='\r')
                 sys.stdout.flush()
             
 
