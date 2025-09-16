@@ -30,7 +30,7 @@ class DumpParser():
         self.num_entities = 0  
         
         self.num_workers = config.get('pages_in_parallel', 2) # processes that process pages in parallel
-        self.page_queue = mp.Queue(maxsize=20) # queue with size 20
+        self.page_queue = mp.Queue(maxsize=200) # queue with size 20
         self.stop_event = mp.Event()
 
         # TODO: remove
