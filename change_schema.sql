@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS change (
     old_value JSONB,
     new_value JSONB,
     datatype TEXT,
-    datatype_metadata TEXT,
+    change_target TEXT, -- can be '' (value), p-id of qualifier, 'rank', name of datatype metadata (e.g. 'upperBound' for quantity)
     action TEXT,
     target TEXT,
     old_hash TEXT,
