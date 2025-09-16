@@ -213,6 +213,8 @@ class PageParser():
             # complex datatypes - time, quantity, globecoordinate, monolingualtext
             # we consider entity as a simple type
             if datatype == 'globecoordinate':
+                print('EL VALUE JSON')
+                print(value_json)
                 value = {
                     "longitude": value_json['longitude'],
                     "latitude": value_json['latitude']
@@ -494,7 +496,7 @@ class PageParser():
                     new_hash = self.description_hash if change_type == CREATE_ENTITY else None
 
                 self.save_changes(
-                        id_to_int(pid), 
+                        pid, 
                         value_id=pid,
                         old_value=old_value if not isinstance(old_value, dict) else None,
                         new_value=new_value if not isinstance(new_value, dict) else None,
