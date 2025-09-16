@@ -202,7 +202,7 @@ class PageParser():
     def get_label(self, revision):
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
         label = PageParser._safe_get_nested(revision, 'labels', lang, 'value') 
-        return label if not isinstance(label, dict) else None
+        return label if not isinstance(label, dict) else ''
     
     @staticmethod
     def parse_datavalue_json(value_json, datatype):
@@ -470,14 +470,14 @@ class PageParser():
         descriptions = PageParser._safe_get_nested(revision, 'descriptions', lang, 'value')
 
         # Process labels and descriptions (non-claim properties)
-        for pid, val in [('label', labels), ('description', descriptions)]:
+        for pid, val in [(LABEL_PROP_ID, labels), (DESCRIPTION_PROP_ID, descriptions)]:
             if val:
                 old_value = None if change_type == CREATE_ENTITY else val
                 new_value = val if change_type == CREATE_ENTITY else None
 
                 # Label and description don't have hashes, so
                 # I manually create it
-                if pid == 'label':
+                if pid == LABEL_PROP_ID:
                     old_hash = None if change_type == CREATE_ENTITY else self.label_hash
                     if change_type == CREATE_ENTITY:
                         # generate hash for the label
@@ -485,7 +485,7 @@ class PageParser():
                     
                     new_hash = self.label_hash if change_type == CREATE_ENTITY else None
   
-                if pid == 'description':
+                if pid == DESCRIPTION_PROP_ID:
                     old_hash = None if change_type == CREATE_ENTITY else self.description_hash
                     if change_type == CREATE_ENTITY:
                         # generate hash for the description
@@ -532,7 +532,7 @@ class PageParser():
             self.label_hash = PageParser.generate_unique_hash(self.label_hash_counter)
 
             self.save_changes(
-                property_id="label",
+                property_id=LABEL_PROP_ID,
                 value_id='label',
                 old_value=old_value,
                 new_value=new_value,
@@ -562,7 +562,7 @@ class PageParser():
             self.description_hash = PageParser.generate_unique_hash(self.description_hash_counter)
 
             self.save_changes(
-                property_id="description",
+                property_id=DESCRIPTION_PROP_ID,
                 value_id='description',
                 old_value=old_value,
                 new_value=new_value,
