@@ -24,8 +24,6 @@ def process_page_xml(page_elem_str, file_path, config):
 
 class DumpParser():
     def __init__(self, file_path=None, config=None):
-
-        print("Initializing DumpParser for file ", file_path)
        
         self.config = config
         self.file_path = file_path
