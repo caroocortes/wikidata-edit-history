@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from lxml import etree
 import hashlib
+import re
 
 from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label
 from scripts.const import *
@@ -71,6 +72,11 @@ class PageParser():
             Returns the text of a revision as a json
         """
         json_text = html.unescape(revision_text.strip())
+        
+        # normalize to regular quotes & remove control characters so json parsing doesnt break
+        json_text = json_text.replace('“', '"').replace('”', '"').replace('„', '"').replace('‟', '"')
+        json_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', json_text)
+        
         try:
             current_revision = json.loads(json_text)
             return current_revision

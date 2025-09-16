@@ -129,6 +129,8 @@ if  __name__ == "__main__":
                         print(f"Error processing {file_path}, skipping logging.")
                     else:
                         log_file_process(process_time, num_entities, file_path, size)
+            except Exception as e:
+                print("Error in executor:", e)
             finally:
                 executor.shutdown(wait=True)
                 
