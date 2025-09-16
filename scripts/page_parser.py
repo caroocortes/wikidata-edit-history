@@ -408,7 +408,7 @@ class PageParser():
     def _handle_value_changes(self, new_datatype, new_value, old_value, datavalue_id, property_id, change_type, old_hash, new_hash, change_magnitude=None):
 
         self.save_changes(
-            property_id, 
+            id_to_int(property_id), 
             value_id=datavalue_id,
             old_value=old_value,
             new_value=new_value,
