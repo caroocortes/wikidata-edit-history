@@ -490,6 +490,3 @@ def id_to_int(wd_id):
     """
     return int(wd_id[1:])
 
-
-if "__main__":
-    fetch_entity_types()
