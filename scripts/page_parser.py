@@ -668,10 +668,15 @@ class PageParser():
         elif prev_qualifiers and curr_qualifiers:
             change_detected = True
             # qualifier values were added/removed 
+
             all_qual_pids = set(prev_qualifiers.keys()).union(set(curr_qualifiers.keys()))
             for qual_pid in all_qual_pids:
                 prev_qual_stmts = prev_qualifiers.get(qual_pid, []) # only have a hash, there's no id for qualifiers
                 curr_qual_stmts = curr_qualifiers.get(qual_pid, []) 
+
+                print('STMTS CURR Y PREV DE QUAL')
+                print(curr_qual_stmts)
+                print(prev_qual_stmts)
 
                 prev_values = [qs['datavalue']['value'] for qs in prev_qual_stmts]
                 curr_values = [qs['datavalue']['value'] for qs in curr_qual_stmts]
