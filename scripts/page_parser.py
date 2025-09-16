@@ -324,7 +324,7 @@ class PageParser():
                 if old_meta != new_meta: # save only what changed
 
                     self.save_changes(
-                        property_id,
+                        id_to_int(property_id),
                         value_id=datavalue_id,
                         old_value=old_meta,
                         new_value=new_meta,
@@ -372,7 +372,7 @@ class PageParser():
                         keys_to_skip.add(new_meta_key)
                 
                 self.save_changes(
-                    property_id,
+                    id_to_int(property_id),
                     value_id=datavalue_id,
                     old_value=old_meta,
                     new_value=new_meta,
@@ -394,7 +394,7 @@ class PageParser():
                     old_meta = None
                 
                 self.save_changes(
-                    property_id,
+                    id_to_int(property_id),
                     value_id=datavalue_id,
                     old_value=old_meta,
                     new_value=new_meta,
@@ -436,7 +436,7 @@ class PageParser():
                 new_value = value if change_type == CREATE_ENTITY else None
                 
                 self.save_changes(
-                    property_id, 
+                    id_to_int(property_id), 
                     value_id=datavalue_id,
                     old_value=old_value,
                     new_value=new_value,
@@ -453,7 +453,7 @@ class PageParser():
                         new_value = v if change_type == CREATE_ENTITY else None
                         
                         self.save_changes(
-                            property_id,
+                            id_to_int(property_id),
                             value_id=datavalue_id,
                             old_value=old_value,
                             new_value=new_value,
@@ -494,7 +494,7 @@ class PageParser():
                     new_hash = self.description_hash if change_type == CREATE_ENTITY else None
 
                 self.save_changes(
-                        pid, 
+                        id_to_int(pid), 
                         value_id=pid,
                         old_value=old_value if not isinstance(old_value, dict) else None,
                         new_value=new_value if not isinstance(new_value, dict) else None,
@@ -797,7 +797,7 @@ class PageParser():
                 if prev_rank != curr_rank:
                     change_detected = True
                     self.save_changes(
-                        property_id=pid,
+                        property_id=id_to_int(pid),
                         value_id=sid,
                         old_value=prev_rank,
                         new_value=curr_rank,
