@@ -696,17 +696,23 @@ class PageParser():
                 prev_qual_stmts = prev_qualifiers.get(qual_pid, []) # only have a hash, there's no id for qualifiers
                 curr_qual_stmts = curr_qualifiers.get(qual_pid, []) 
 
-                prev_values = [
-                    PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0]
-                    for qs in prev_qual_stmts
-                    if qs.get('datavalue') is not None
-                ]
+                prev_values = []
+                for qs in prev_qual_stmts:
+                    stmt_val = qs.get('datavalue', None)
+                    if stmt_val:
+                        val = PageParser.parse_datavalue_json(stmt_val['value'], stmt_val['type'])[0]
+                        if isinstance(val, dict): # for globecoordinate
+                            val = json.dumps(val)
+                        prev_values.append(val)
 
-                curr_values = [
-                    PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0]
-                    for qs in curr_qual_stmts
-                    if qs.get('datavalue') is not None
-                ]
+                curr_values = []
+                for qs in curr_qual_stmts:
+                    stmt_val = qs.get('datavalue', None)
+                    if stmt_val:
+                        val = PageParser.parse_datavalue_json(stmt_val['value'], stmt_val['type'])[0]
+                        if isinstance(val, dict): # for globecoordinate
+                            val = json.dumps(val)
+                        curr_values.append(val)
 
                 # Some qualifier value was removed 
                 if len(curr_values) < len(prev_values):
@@ -850,7 +856,7 @@ class PageParser():
                         old_hash=old_hash,
                         new_hash=new_hash
                     )
-                    
+
                 # qualifiers changes
                 qualifier_change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
 
