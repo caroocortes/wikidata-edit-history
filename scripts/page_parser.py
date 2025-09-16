@@ -645,6 +645,7 @@ class PageParser():
                         datatype=qual_datatype,
                         change_target=qual_pid,
                         change_type=CREATE_QUALIFIER,
+                        change_magnitude=None,
                         old_hash=None,
                         new_hash=new_hash
                     )
@@ -666,6 +667,7 @@ class PageParser():
                         datatype=qual_datatype,
                         change_target=qual_pid,
                         change_type=DELETE_QUALIFIER,
+                        change_magnitude=None,
                         old_hash=old_hash,
                         new_hash=None
                     )
@@ -700,6 +702,7 @@ class PageParser():
                             datatype=prev_qual_datatype,
                             change_target=qual_pid,
                             change_type=DELETE_QUALIFIER_VALUE,
+                            change_magnitude=None,
                             old_hash=prev_qual_hash,
                             new_hash=None
                         )
@@ -721,6 +724,7 @@ class PageParser():
                             datatype=curr_qual_datatype,
                             change_target=qual_pid,
                             change_type=CREATE_QUALIFIER_VALUE,
+                            change_magnitude=None,
                             old_hash=None,
                             new_hash=curr_qual_hash
                         )
@@ -811,7 +815,7 @@ class PageParser():
                     )
 
                 # qualifiers changes
-                # change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
+                change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
 
                 # references changes
                 # TODO: implement references changes
