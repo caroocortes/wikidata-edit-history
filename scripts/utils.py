@@ -283,17 +283,17 @@ def fetch_entity_types():
             entity_types_data.append((entity_id, class_id))
             class_data.append((class_id, class_label, rank))
 
-        query_entity_types = """
-            INSERT INTO entity_types (entity_id, class_id)
-            VALUES (%s, %s)
-        """
-        cur.executemany(query_entity_types, entity_types_data)
-
         query_class = """
             INSERT INTO class (class_id, class_label, rank)
             VALUES (%s, %s, %s)
         """
         cur.executemany(query_class, class_data)
+
+        query_entity_types = """
+            INSERT INTO entity_types (entity_id, class_id)
+            VALUES (%s, %s)
+        """
+        cur.executemany(query_entity_types, entity_types_data)
 
         conn.commit()
 
