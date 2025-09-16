@@ -636,7 +636,7 @@ class PageParser():
 
                     # only qualifier "value" change is recorded, not change_target changes
                     self.save_changes(
-                        property_id=pid,
+                        property_id=id_to_int(pid),
                         value_id=value_id,
                         old_value=None,
                         new_value=qual_value,
@@ -657,7 +657,7 @@ class PageParser():
 
                     # only qualifier "value" change is recorded, not datatype_metadata changes
                     self.save_changes(
-                        property_id=pid,
+                        property_id=id_to_int(pid),
                         value_id=value_id,
                         old_value=qual_value,
                         new_value=None,
@@ -691,7 +691,7 @@ class PageParser():
                         prev_qual_hash = prev_stmt.get('hash', '') if prev_stmt else ''
 
                         self.save_changes(
-                            property_id=pid,
+                            property_id=id_to_int(pid),
                             value_id=value_id,
                             old_value=prev_qual_value,
                             new_value=None,
@@ -712,7 +712,7 @@ class PageParser():
                         curr_qual_hash = curr_stmt.get('hash', '') if curr_stmt else None
 
                         self.save_changes(
-                            property_id=pid,
+                            property_id=id_to_int(pid),
                             value_id=value_id,
                             old_value=None,
                             new_value=curr_qual_value,
