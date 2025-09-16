@@ -1,0 +1,342 @@
+{
+    "type": "item",
+    "id": "Q11084185",
+    "labels": {
+        "zh-tw": {
+            "language": "zh-tw",
+            "value": "新興里"
+        },
+        "zh-hant": {
+            "language": "zh-hant",
+            "value": "新興里"
+        },
+        "zh": {
+            "language": "zh",
+            "value": "新興里"
+        },
+        "en": {
+            "language": "en",
+            "value": "XinXing Village (Tainan)"
+        }
+    },
+    "descriptions": {
+        "zh-tw": {
+            "language": "zh-tw",
+            "value": "中華民國台南市下營區轄下一里行政區"
+        },
+        "zh-hant": {
+            "language": "zh-hant",
+            "value": "中華民國台南市下營區轄下一里行政區"
+        },
+        "zh": {
+            "language": "zh",
+            "value": "中華民國台南市下營區轄下一里行政區"
+        },
+        "nl": {
+            "language": "nl",
+            "value": "dorp in Taiwan"
+        },
+        "ar": {
+            "language": "ar",
+            "value": "قرية في تايوان"
+        }
+    },
+    "aliases": {
+        "zh-tw": [
+            {
+                "language": "zh-tw",
+                "value": "新興里 (下營區)"
+            }
+        ],
+        "zh": [
+            {
+                "language": "zh",
+                "value": "新興里 (下營區)"
+            }
+        ],
+        "zh-hant": [
+            {
+                "language": "zh-hant",
+                "value": "新興里 (下營區)"
+            }
+        ]
+    },
+    "claims": {
+        "P31": [
+            {
+                "mainsnak": {
+                    "snaktype": "value",
+                    "property": "P31",
+                    "hash": "724e93a7fd58956becd9ccd55e8c2823c47a1afa",
+                    "datavalue": {
+                        "value": {
+                            "entity-type": "item",
+                            "numeric-id": 7930614,
+                            "id": "Q7930614"
+                        },
+                        "type": "wikibase-entityid"
+                    }
+                },
+                "type": "statement",
+                "id": "Q11084185$127B9A18-42E2-4501-A216-00600FF7EA3A",
+                "rank": "normal"
+            }
+        ],
+        "P17": [
+            {
+                "mainsnak": {
+                    "snaktype": "value",
+                    "property": "P17",
+                    "hash": "7553f3ae5a55dd330b2cd67429b85d6aa148c45d",
+                    "datavalue": {
+                        "value": {
+                            "entity-type": "item",
+                            "numeric-id": 865,
+                            "id": "Q865"
+                        },
+                        "type": "wikibase-entityid"
+                    }
+                },
+                "type": "statement",
+                "id": "Q11084185$9507BAB0-11D6-4194-8411-82687ECCA81B",
+                "rank": "normal"
+            }
+        ],
+        "P131": [
+            {
+                "mainsnak": {
+                    "snaktype": "value",
+                    "property": "P131",
+                    "hash": "845b750708a62538b95f3402e1ec7f70fae2d048",
+                    "datavalue": {
+                        "value": {
+                            "entity-type": "item",
+                            "numeric-id": 708705,
+                            "id": "Q708705"
+                        },
+                        "type": "wikibase-entityid"
+                    }
+                },
+                "type": "statement",
+                "id": "Q11084185$B81F8CAE-4D8F-4D62-AD37-38ADADBAF629",
+                "rank": "normal",
+                "references": [
+                    {
+                        "hash": "489861b83a4d79e279f4171a96204345d3c836a3",
+                        "snaks": {
+                            "P854": [
+                                {
+                                    "snaktype": "value",
+                                    "property": "P854",
+                                    "hash": "f63949fcd1a1671bd01dc34dfa295ccef8daea3e",
+                                    "datavalue": {
+                                        "value": "https://www.stat.gov.tw/public/Attachment/712693030RPKUP4RX.xlsx",
+                                        "type": "string"
+                                    }
+                                }
+                            ],
+                            "P813": [
+                                {
+                                    "snaktype": "value",
+                                    "property": "P813",
+                                    "hash": "b000b2311099faac2af992afcf13e6a11affb03e",
+                                    "datavalue": {
+                                        "value": {
+                                            "time": "+2020-07-05T00:00:00Z",
+                                            "timezone": 0,
+                                            "before": 0,
+                                            "after": 0,
+                                            "precision": 11,
+                                            "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                                        },
+                                        "type": "time"
+                                    }
+                                }
+                            ],
+                            "P407": [
+                                {
+                                    "snaktype": "value",
+                                    "property": "P407",
+                                    "hash": "be1895ba8772fa4c8d7d0a170934feab51262bff",
+                                    "datavalue": {
+                                        "value": {
+                                            "entity-type": "item",
+                                            "numeric-id": 262828,
+                                            "id": "Q262828"
+                                        },
+                                        "type": "wikibase-entityid"
+                                    }
+                                }
+                            ]
+                        },
+                        "snaks-order": [
+                            "P854",
+                            "P813",
+                            "P407"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "P421": [
+            {
+                "mainsnak": {
+                    "snaktype": "value",
+                    "property": "P421",
+                    "hash": "5fd7841343ad0a707a1e8c9a164ae4eaac239d89",
+                    "datavalue": {
+                        "value": {
+                            "entity-type": "item",
+                            "numeric-id": 712168,
+                            "id": "Q712168"
+                        },
+                        "type": "wikibase-entityid"
+                    }
+                },
+                "type": "statement",
+                "id": "Q11084185$259D7552-30D8-4F1E-B5F2-FF1F26ACD772",
+                "rank": "normal"
+            }
+        ],
+        "P5020": [
+            {
+                "mainsnak": {
+                    "snaktype": "value",
+                    "property": "P5020",
+                    "hash": "5863a4bae9d5267ecd01c7675f309df931f590f7",
+                    "datavalue": {
+                        "value": "67000080005",
+                        "type": "string"
+                    }
+                },
+                "type": "statement",
+                "id": "Q11084185$ABC58271-1133-46D2-A412-1D7FDFB9C521",
+                "rank": "normal",
+                "references": [
+                    {
+                        "hash": "489861b83a4d79e279f4171a96204345d3c836a3",
+                        "snaks": {
+                            "P854": [
+                                {
+                                    "snaktype": "value",
+                                    "property": "P854",
+                                    "hash": "f63949fcd1a1671bd01dc34dfa295ccef8daea3e",
+                                    "datavalue": {
+                                        "value": "https://www.stat.gov.tw/public/Attachment/712693030RPKUP4RX.xlsx",
+                                        "type": "string"
+                                    }
+                                }
+                            ],
+                            "P813": [
+                                {
+                                    "snaktype": "value",
+                                    "property": "P813",
+                                    "hash": "b000b2311099faac2af992afcf13e6a11affb03e",
+                                    "datavalue": {
+                                        "value": {
+                                            "time": "+2020-07-05T00:00:00Z",
+                                            "timezone": 0,
+                                            "before": 0,
+                                            "after": 0,
+                                            "precision": 11,
+                                            "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                                        },
+                                        "type": "time"
+                                    }
+                                }
+                            ],
+                            "P407": [
+                                {
+                                    "snaktype": "value",
+                                    "property": "P407",
+                                    "hash": "be1895ba8772fa4c8d7d0a170934feab51262bff",
+                                    "datavalue": {
+                                        "value": {
+                                            "entity-type": "item",
+                                            "numeric-id": 262828,
+                                            "id": "Q262828"
+                                        },
+                                        "type": "wikibase-entityid"
+                                    }
+                                }
+                            ]
+                        },
+                        "snaks-order": [
+                            "P854",
+                            "P813",
+                            "P407"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "P2671": [
+            {
+                "mainsnak": {
+                    "snaktype": "value",
+                    "property": "P2671",
+                    "hash": "577e2dab33af25591bd5088b0c6318c0fa102b51",
+                    "datavalue": {
+                        "value": "/g/12ckhnwn2",
+                        "type": "string"
+                    }
+                },
+                "type": "statement",
+                "id": "Q11084185$A6E0D010-B7F2-46A2-8082-13A0E94BD65B",
+                "rank": "normal"
+            }
+        ],
+        "P625": [
+            {
+                "mainsnak": {
+                    "snaktype": "value",
+                    "property": "P625",
+                    "hash": "91cb5d26ce27057a54154da9960fec63c17f77c9",
+                    "datavalue": {
+                        "value": {
+                            "latitude": 23.234561936720674,
+                            "longitude": 120.27420980209149,
+                            "altitude": null,
+                            "precision": 0.000001,
+                            "globe": "http://www.wikidata.org/entity/Q2"
+                        },
+                        "type": "globecoordinate"
+                    }
+                },
+                "type": "statement",
+                "qualifiers": {
+                    "P813": [
+                        {
+                            "snaktype": "value",
+                            "property": "P813",
+                            "hash": "54358f6e346b19bed53f5b3a57e82a4f562940aa",
+                            "datavalue": {
+                                "value": {
+                                    "time": "+2021-12-31T00:00:00Z",
+                                    "timezone": 0,
+                                    "before": 0,
+                                    "after": 0,
+                                    "precision": 11,
+                                    "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                                },
+                                "type": "time"
+                            }
+                        }
+                    ]
+                },
+                "qualifiers-order": [
+                    "P813"
+                ],
+                "id": "Q11084185$E9E5F008-DB78-4BE5-A7FA-14CD299586BA",
+                "rank": "normal"
+            }
+        ]
+    },
+    "sitelinks": {
+        "zhwiki": {
+            "site": "zhwiki",
+            "title": "新興里 (臺南市下營區)",
+            "badges": []
+        }
+    }
+}
