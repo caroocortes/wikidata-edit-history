@@ -628,7 +628,7 @@ class PageParser():
                 for qual_stmt in qual_stmts:
                     qual_value, qual_datatype, _ = PageParser._parse_datavalue(qual_stmt)
      
-                    new_hash = PageParser._get_property_mainsnak(qual_stmt, 'hash') if qual_stmt else None
+                    new_hash = qual_stmt.get('hash', '') if qual_stmt else ''
 
                     # only qualifier "value" change is recorded, not change_target changes
                     self.save_changes(
@@ -649,7 +649,7 @@ class PageParser():
                 for qual_stmt in qual_stmts:
                     qual_value, qual_datatype, _ = PageParser._parse_datavalue(qual_stmt)
      
-                    old_hash = PageParser._get_property_mainsnak(qual_stmt, 'hash') if qual_stmt else None
+                    old_hash = qual_stmt.get('hash', '') if qual_stmt else ''
 
                     # only qualifier "value" change is recorded, not datatype_metadata changes
                     self.save_changes(
@@ -682,7 +682,7 @@ class PageParser():
                         # Find the corresponding previous statement for the value to get datatype and hash
                         prev_stmt = next(qs for qs in prev_qual_stmts if PageParser._parse_datavalue(qs)[0] == removed_value)
                         prev_qual_value, prev_qual_datatype, _ = PageParser._parse_datavalue(prev_stmt)
-                        prev_qual_hash = PageParser._get_property_mainsnak(prev_stmt, 'hash')
+                        prev_qual_hash = prev_stmt.get('hash', '') if prev_stmt else ''
 
                         self.save_changes(
                             property_id=pid,
@@ -701,8 +701,8 @@ class PageParser():
                     for added_value in addedd_values:
                         # Find the corresponding current statement for the value to get datatype and hash
                         curr_stmt = next(qs for qs in curr_qual_stmts if PageParser._parse_datavalue(qs)[0] == added_value)
-                        curr_qual_value, curr_qual_datatype, _ = PageParser._parse_datavalue(prev_stmt)
-                        curr_qual_hash = PageParser._get_property_mainsnak(prev_stmt, 'hash')
+                        curr_qual_value, curr_qual_datatype, _ = PageParser._parse_datavalue(curr_stmt)
+                        curr_qual_hash = curr_stmt.get('hash', '') if curr_stmt else None
 
                         self.save_changes(
                             property_id=pid,
