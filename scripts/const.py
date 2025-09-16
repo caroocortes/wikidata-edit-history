@@ -16,8 +16,8 @@ CREATE_QUALIFIER_VALUE = "CREATE_QUALIFIER_VALUE"
 DELETE_QUALIFIER_VALUE = "DELETE_QUALIFIER_VALUE"
 
 # Label and description aren't considered "properties" with their own P-id's so we create our own
-LABEL_PROP_ID = "-1"
-DESCRIPTION_PROP_ID = "-2"
+LABEL_PROP_ID = -1
+DESCRIPTION_PROP_ID = -2
 
 NO_VALUE = 'novalue'
 SOME_VALUE = 'unknown'
