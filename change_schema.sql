@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS change (
     target TEXT,
     old_hash TEXT,
     new_hash TEXT,
-    PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata),
+    PRIMARY KEY (revision_id, property_id, value_id, change_target),
     FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
 );
 
@@ -31,11 +31,11 @@ CREATE TABLE IF NOT EXISTS change_metadata (
     revision_id INT,
     property_id INT,
     value_id TEXT,
-    datatype_metadata TEXT,
+    change_target TEXT,
     change_metadata TEXT,
     value DOUBLE PRECISION,
-    PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata, change_metadata),
-    FOREIGN KEY (revision_id, property_id, value_id, datatype_metadata) REFERENCES change(revision_id, property_id, value_id, datatype_metadata)
+    PRIMARY KEY (revision_id, property_id, value_id, datatype_metadata, change_target),
+    FOREIGN KEY (revision_id, property_id, value_id, change_target) REFERENCES change(revision_id, property_id, value_id, change_target)
 );
 
 CREATE TABLE IF NOT EXISTS class (
