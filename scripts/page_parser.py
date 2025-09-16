@@ -811,7 +811,7 @@ class PageParser():
                     )
 
                 # qualifiers changes
-                change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
+                # change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
 
                 # references changes
                 # TODO: implement references changes
