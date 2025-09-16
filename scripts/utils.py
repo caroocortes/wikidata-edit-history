@@ -291,7 +291,7 @@ def fetch_entity_types():
         cur.executemany(query_class, class_data)
 
         query_entity_types = """
-            INSERT INTO entity_types (entity_id, class_id)
+            INSERT INTO entity_type (entity_id, class_id)
             VALUES (%s, %s)
         """
         cur.executemany(query_entity_types, entity_types_data)
