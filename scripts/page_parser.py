@@ -911,11 +911,9 @@ class PageParser():
             # --- Check updates of statements between revisions ---
             remaining_pids = prev_claims_pids.intersection(curr_claims_pids)
             if remaining_pids:
-                prev_change_detected = change_detected # in case there was a new/removed property and no changes in existing properties
-                change_detected = self._handle_remaining_pids(remaining_pids, prev_claims, curr_claims)
+                change_detected_rem_pids = self._handle_remaining_pids(remaining_pids, prev_claims, curr_claims)
 
-                if prev_change_detected:
-                    change_detected = True
+                change_detected = change_detected or change_detected_rem_pids
 
         return change_detected
 
