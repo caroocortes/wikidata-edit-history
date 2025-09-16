@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS revision (
-    revision_id INT,
+    revision_id BIGINT,
     entity_id INT,
     entity_label TEXT,
     file_path TEXT,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS revision (
 );
 
 CREATE TABLE IF NOT EXISTS change (
-    revision_id INT,
+    revision_id BIGINT,
     property_id INT,
     property_label TEXT,
     value_id TEXT,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS change (
 );
 
 CREATE TABLE IF NOT EXISTS change_metadata (
-    revision_id INT,
+    revision_id BIGINT,
     property_id INT,
     value_id TEXT,
     change_target TEXT,
