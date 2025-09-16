@@ -850,13 +850,11 @@ class PageParser():
                         old_hash=old_hash,
                         new_hash=new_hash
                     )
-                print('Change detected befor qualifier changes: ', change_detected)
+                    
                 # qualifiers changes
                 qualifier_change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
-                print('Change detected after qualifier changes', qualifier_change_detected)
 
                 change_detected = change_detected or qualifier_change_detected
-                print('Final change detected: ', change_detected)
                 # references changes
                 # TODO: implement references changes
 
