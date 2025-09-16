@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS revision (
-    revision_id TEXT,
-    entity_id TEXT,
+    revision_id INT,
+    entity_id INT,
     entity_label TEXT,
     file_path TEXT,
     timestamp TIMESTAMP WITH TIME ZONE,
@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS revision (
 );
 
 CREATE TABLE IF NOT EXISTS change (
-    revision_id TEXT,
-    property_id TEXT,
+    revision_id INT,
+    property_id INT,
     property_label TEXT,
     value_id TEXT,
     old_value JSONB,
@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS change (
 );
 
 CREATE TABLE IF NOT EXISTS change_metadata (
-    revision_id TEXT,
-    property_id TEXT,
+    revision_id INT,
+    property_id INT,
     value_id TEXT,
     datatype_metadata TEXT,
     change_metadata TEXT,
@@ -39,10 +39,9 @@ CREATE TABLE IF NOT EXISTS change_metadata (
 );
 
 CREATE TABLE IF NOT EXISTS entity_types (
-    entity_id TEXT,
-    class_id TEXT,
+    entity_id INT,
+    class_id INT,
     class_label TEXT,
     rank TEXT,
-    PRIMARY KEY (entity_id, class_id),
-    FOREIGN KEY (entity_id) REFERENCES revision(entity_id)
+    PRIMARY KEY (entity_id, class_id)
 );

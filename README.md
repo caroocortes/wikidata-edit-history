@@ -38,6 +38,14 @@ We provide a script run_parser.sh to run multiple files in parallel.
 By default, main.py creates *files_in_parallel* (config.json) processes that call DumpParser. DumpParser creates *pages_in_parallel* (config.json) processes which call page_parser and process a page (all revisions for an entity).
 Therefore, the system where the main.py is run needs to support at least *files_in_parallel * pages_in_parallel* cores.
 
+### Fetch entity types and property labels
+
+From root run: 
+- `python3 -c "from scripts.utils import fetch_entity_types; fetch_entity_types()"`
+- `python3 -c "from scripts.utils import fetch_wikidata_properties; fetch_wikidata_properties()"`
+
+or create a "__main__" inside utils.py and run `python3 -m main`
+
 **Config file**
 *config.json* contains the following parameters:
 - language: specifies the language of labels/descriptions (by default it's english - 'en')
