@@ -263,7 +263,7 @@ def fetch_entity_types():
         entity_class = []
         query = """
             INSERT INTO entity_types (entity_id, class_id, class_label, rank)
-            VALUES entity_id = %s, class_id = %s, class_label = %s, rank = %s
+            VALUES (%s, %s, %s, %s)
         """
 
         for result in results:
@@ -470,3 +470,7 @@ def get_dump_links():
             f.write(f"{file}\n")
     
     return bz2_links
+
+
+if "__main__":
+    fetch_entity_types()
