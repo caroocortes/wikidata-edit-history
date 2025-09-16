@@ -286,6 +286,7 @@ def fetch_entity_types():
         query_class = """
             INSERT INTO class (class_id, class_label, rank)
             VALUES (%s, %s, %s)
+            ON CONFLICT (class_id) DO NOTHING
         """
         cur.executemany(query_class, class_data)
 
