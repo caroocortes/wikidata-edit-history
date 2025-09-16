@@ -148,10 +148,8 @@ def fetch_wikidata_properties():
     }
 
     for i in range(0, len(property_ids), batch_size):
-        classes = []
         batch = property_ids[i:i + batch_size]
         values_str = " ".join(f"wd:{cid[0]}" for cid in batch)
-        print(f"Fetching properties (Batch: {i} - {i + batch_size})...")
 
         query = f"""
         SELECT ?property ?propertyLabel
@@ -237,7 +235,6 @@ def fetch_entity_types():
     for i in range(0, len(entity_list), batch_size):
         batch = entity_list[i:i + batch_size]
         values_str = " ".join(f"wd:{eid[0]}" for eid in batch) # add base uri (wd:) to each entity id
-        print(f"Fetching page (Batch size: {i} - {i + batch_size})...")
         
         query = f"""
         SELECT ?entity ?class ?classLabel ?rank
