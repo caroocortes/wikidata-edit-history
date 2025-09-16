@@ -308,7 +308,7 @@ class PageParser():
             )
             self.changes_metadata.append(change_metadata)
         
-    def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, datavalue_id, old_datatype, new_datatype, property_id, change_type, old_hash, new_hash):
+    def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash, new_hash):
         
         if old_datatype == new_datatype:
         
@@ -325,7 +325,7 @@ class PageParser():
 
                     self.save_changes(
                         id_to_int(property_id),
-                        value_id=datavalue_id,
+                        value_id=value_id,
                         old_value=old_meta,
                         new_value=new_meta,
                         datatype=new_datatype,
@@ -373,7 +373,7 @@ class PageParser():
                 
                 self.save_changes(
                     id_to_int(property_id),
-                    value_id=datavalue_id,
+                    value_id=value_id,
                     old_value=old_meta,
                     new_value=new_meta,
                     datatype=new_datatype,
@@ -395,7 +395,7 @@ class PageParser():
                 
                 self.save_changes(
                     id_to_int(property_id),
-                    value_id=datavalue_id,
+                    value_id=value_id,
                     old_value=old_meta,
                     new_value=new_meta,
                     datatype=new_datatype,
@@ -405,11 +405,11 @@ class PageParser():
                     new_hash=new_hash
                 )
     
-    def _handle_value_changes(self, new_datatype, new_value, old_value, datavalue_id, property_id, change_type, old_hash, new_hash, change_magnitude=None):
+    def _handle_value_changes(self, new_datatype, new_value, old_value, value_id, property_id, change_type, old_hash, new_hash, change_magnitude=None):
 
         self.save_changes(
             id_to_int(property_id), 
-            value_id=datavalue_id,
+            value_id=value_id,
             old_value=old_value,
             new_value=new_value,
             datatype=new_datatype,
@@ -430,14 +430,14 @@ class PageParser():
                 
                 value, datatype, datatype_metadata = PageParser._parse_datavalue(stmt)
                 new_hash = PageParser._get_property_mainsnak(stmt, 'hash') if stmt else None
-                datavalue_id = stmt.get('id', None)
+                value_id = stmt.get('id', None)
                 
                 old_value = None if change_type == CREATE_ENTITY else value
                 new_value = value if change_type == CREATE_ENTITY else None
                 
                 self.save_changes(
                     id_to_int(property_id), 
-                    value_id=datavalue_id,
+                    value_id=value_id,
                     old_value=old_value,
                     new_value=new_value,
                     datatype=datatype,
@@ -454,7 +454,7 @@ class PageParser():
                         
                         self.save_changes(
                             id_to_int(property_id),
-                            value_id=datavalue_id,
+                            value_id=value_id,
                             old_value=old_value,
                             new_value=new_value,
                             datatype=datatype,
@@ -584,15 +584,17 @@ class PageParser():
             curr_statements = curr_claims.get(new_pid, [])
             for s in curr_statements:
                 new_value, new_datatype, new_datatype_metadata = PageParser._parse_datavalue(s)
-                datavalue_id = s.get('id', None)
+                value_id = s.get('id', None)
 
                 old_hash = None
                 new_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
 
-                self._handle_value_changes(new_datatype, new_value, None, datavalue_id, new_pid, CREATE_PROPERTY, old_hash, new_hash)
+                self._handle_value_changes(new_datatype, new_value, None, value_id, new_pid, CREATE_PROPERTY, old_hash, new_hash)
 
                 if new_datatype_metadata:
-                    self._handle_datatype_metadata_changes(None, new_datatype_metadata, datavalue_id, None, new_datatype, new_pid, CREATE_PROPERTY, old_hash, new_hash)
+                    self._handle_datatype_metadata_changes(None, new_datatype_metadata, value_id, None, new_datatype, new_pid, CREATE_PROPERTY, old_hash, new_hash)
+
+                self._handle_qualifiers_changes(new_pid, value_id, None, s)
     
     def _handle_removed_pids(self, removed_pids, prev_claims):
         """
@@ -604,15 +606,17 @@ class PageParser():
             for s in prev_statements:
                 old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(s)
 
-                datavalue_id = s.get('id', None)
+                value_id = s.get('id', None)
 
                 new_hash = None
                 old_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
 
-                self._handle_value_changes(None, None, old_value, datavalue_id, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
+                self._handle_value_changes(None, None, old_value, value_id, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
 
                 if old_datatype_metadata:
-                    self._handle_datatype_metadata_changes(old_datatype_metadata, {}, datavalue_id, old_datatype, None, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
+                    self._handle_datatype_metadata_changes(old_datatype_metadata, {}, value_id, old_datatype, None, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
+
+                self._handle_qualifiers_changes(removed_pid, value_id, s, None)
 
     def _handle_qualifiers_changes(self, pid, value_id, prev_stmt, curr_stmt):
         """
@@ -647,6 +651,7 @@ class PageParser():
                         old_hash=None,
                         new_hash=new_hash
                     )
+
         elif prev_qualifiers and not curr_qualifiers:
             change_detected = True
             # qualifiers were removed
@@ -669,6 +674,7 @@ class PageParser():
                         old_hash=old_hash,
                         new_hash=None
                     )
+
         elif prev_qualifiers and curr_qualifiers:
             change_detected = True
             # qualifier values were added/removed 
@@ -813,12 +819,12 @@ class PageParser():
                     )
 
                 # qualifiers changes
-                change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
+                qualifier_change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
 
                 # references changes
                 # TODO: implement references changes
 
-        return change_detected
+        return change_detected or qualifier_change_detected
     
     def get_changes_from_revisions(self, current_revision, previous_revision):
         """
