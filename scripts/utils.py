@@ -217,7 +217,12 @@ def fetch_entity_types():
     )
 
     cur = conn.cursor()
-    cur.execute("SELECT DISTINCT entity_id FROM revision WHERE class_id = ''") # only entities without class yet
+    # entities that haven't been added to the entity_types table yet (without a class)
+    cur.execute("""
+        SELECT DISTINCT r.entity_id 
+        FROM revision r LEFT JOIN entity_types et ON r.entity_id = et.entity_id
+        WHERE et.entity_id IS NULL
+    """) 
     entity_ids = cur.fetchall()
 
     url = "https://query.wikidata.org/sparql"
