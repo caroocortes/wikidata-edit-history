@@ -676,10 +676,6 @@ class PageParser():
                 prev_qual_stmts = prev_qualifiers.get(qual_pid, []) # only have a hash, there's no id for qualifiers
                 curr_qual_stmts = curr_qualifiers.get(qual_pid, []) 
 
-                print('STMTS CURR Y PREV DE QUAL')
-                print(curr_qual_stmts)
-                print(prev_qual_stmts)
-
                 prev_values = [PageParser.parse_datavalue_json(qs) for qs in prev_qual_stmts]
                 curr_values = [PageParser.parse_datavalue_json(qs) for qs in curr_qual_stmts]
 
