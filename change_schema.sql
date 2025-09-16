@@ -38,10 +38,17 @@ CREATE TABLE IF NOT EXISTS change_metadata (
     FOREIGN KEY (revision_id, property_id, value_id, datatype_metadata) REFERENCES change(revision_id, property_id, value_id, datatype_metadata)
 );
 
-CREATE TABLE IF NOT EXISTS entity_types (
+CREATE TABLE IF NOT EXISTS entity_type (
     entity_id INT,
+    class_id INT,
+    PRIMARY KEY (entity_id, class_id),
+    FOREIGN KEY (class_id) REFERENCES class(class_id)
+);
+
+CREATE TABLE IF NOT EXISTS class (
     class_id INT,
     class_label TEXT,
     rank TEXT,
-    PRIMARY KEY (entity_id, class_id)
+    PRIMARY KEY (class_id)
 );
+    
