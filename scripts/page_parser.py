@@ -494,16 +494,16 @@ class PageParser():
                     new_hash = self.description_hash if change_type == CREATE_ENTITY else None
 
                 self.save_changes(
-                        pid, 
-                        value_id=pid,
-                        old_value=old_value if not isinstance(old_value, dict) else None,
-                        new_value=new_value if not isinstance(new_value, dict) else None,
-                        datatype='string',
-                        change_target=None,
-                        change_type=change_type,
-                        old_hash=old_hash,
-                        new_hash=new_hash
-                    )
+                    pid, 
+                    value_id=pid,
+                    old_value=old_value if not isinstance(old_value, dict) else None,
+                    new_value=new_value if not isinstance(new_value, dict) else None,
+                    datatype='string',
+                    change_target=None,
+                    change_type=change_type,
+                    old_hash=old_hash,
+                    new_hash=new_hash
+                )
      
     def _handle_description_label_change(self, previous_revision, current_revision):
         """
@@ -594,7 +594,8 @@ class PageParser():
                 if new_datatype_metadata:
                     self._handle_datatype_metadata_changes(None, new_datatype_metadata, value_id, None, new_datatype, new_pid, CREATE_PROPERTY, old_hash, new_hash)
 
-                self._handle_qualifiers_changes(new_pid, value_id, None, s)
+                if s.get('qualifiers', None):
+                    self._handle_qualifiers_changes(new_pid, value_id, None, s)
     
     def _handle_removed_pids(self, removed_pids, prev_claims):
         """
@@ -616,7 +617,8 @@ class PageParser():
                 if old_datatype_metadata:
                     self._handle_datatype_metadata_changes(old_datatype_metadata, {}, value_id, old_datatype, None, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
 
-                self._handle_qualifiers_changes(removed_pid, value_id, s, None)
+                if s.get('qualifiers', None):
+                    self._handle_qualifiers_changes(removed_pid, value_id, s, None)
 
     def _handle_qualifiers_changes(self, pid, value_id, prev_stmt, curr_stmt):
         """
@@ -634,7 +636,11 @@ class PageParser():
             # qualifiers were added
             for qual_pid, qual_stmts in curr_qualifiers.items():
                 for qual_stmt in qual_stmts:
-                    qual_value, qual_datatype, _ = PageParser.parse_datavalue_json(qual_stmt['datavalue']['value'], qual_stmt['datavalue']['type'])
+
+                    stmt_value = qual_stmt.get('datavalue', None)
+                    if not stmt_value:
+                        continue
+                    qual_value, qual_datatype, _ = PageParser.parse_datavalue_json(stmt_value['value'], stmt_value['type'])
      
                     new_hash = qual_stmt.get('hash', '') if qual_stmt else ''
 
@@ -657,7 +663,11 @@ class PageParser():
             # qualifiers were removed
             for qual_pid, qual_stmts in prev_qualifiers.items():
                 for qual_stmt in qual_stmts:
-                    qual_value, qual_datatype, _ = PageParser.parse_datavalue_json(qual_stmt['datavalue']['value'], qual_stmt['datavalue']['type'])
+
+                    stmt_value = qual_stmt.get('datavalue', None)
+                    if not stmt_value:
+                        continue
+                    qual_value, qual_datatype, _ = PageParser.parse_datavalue_json(stmt_value['value'], stmt_value['type'])
 
                     old_hash = qual_stmt.get('hash', '') if qual_stmt else ''
 
@@ -684,17 +694,30 @@ class PageParser():
                 prev_qual_stmts = prev_qualifiers.get(qual_pid, []) # only have a hash, there's no id for qualifiers
                 curr_qual_stmts = curr_qualifiers.get(qual_pid, []) 
 
-                prev_values = [PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0] for qs in prev_qual_stmts]
-                curr_values = [PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0] for qs in curr_qual_stmts]
+                prev_values = [
+                    PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0]
+                    for qs in prev_qual_stmts
+                    if qs.get('datavalue') is not None
+                ]
 
+                curr_values = [
+                    PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0]
+                    for qs in curr_qual_stmts
+                    if qs.get('datavalue') is not None
+                ]
                 # TODO: refactor thos
                 # Some qualifier value was removed 
                 if len(curr_values) < len(prev_values):
                     removed_values = set(prev_values) - set(curr_values)
                     for removed_value in removed_values:
                         # Find the corresponding previous statement for the value to get datatype and hash
-                        prev_stmt = next(qs for qs in prev_qual_stmts if PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0] == removed_value)
-                        prev_qual_value, prev_qual_datatype, _ = PageParser.parse_datavalue_json(prev_stmt['datavalue']['value'], prev_stmt['datavalue']['type'])
+                        prev_stmt = next(qs for qs in prev_qual_stmts if qs.get('datavalue', None) and PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0] == removed_value)
+                        
+                        stmt_value = prev_stmt.get('datavalue', None)
+                        if not stmt_value:
+                            continue
+                        
+                        prev_qual_value, prev_qual_datatype, _ = PageParser.parse_datavalue_json(stmt_value['value'], stmt_value['type'])
 
                         prev_qual_hash = prev_stmt.get('hash', '') if prev_stmt else ''
 
@@ -715,8 +738,12 @@ class PageParser():
                     addedd_values = set(curr_values) - set(prev_values)
                     for added_value in addedd_values:
                         # Find the corresponding current statement for the value to get datatype and hash
-                        curr_stmt = next(qs for qs in curr_qual_stmts if PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0] == added_value)
-                        curr_qual_value, curr_qual_datatype, _ = PageParser.parse_datavalue_json(curr_stmt['datavalue']['value'], curr_stmt['datavalue']['type'])
+                        curr_stmt = next(qs for qs in curr_qual_stmts if qs.get('datavalue', None) and PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0] == added_value)
+
+                        stmt_value = curr_stmt.get('datavalue', None)
+                        if not stmt_value:
+                            continue
+                        curr_qual_value, curr_qual_datatype, _ = PageParser.parse_datavalue_json(stmt_value['value'], stmt_value['type'])
                         
                         curr_qual_hash = curr_stmt.get('hash', '') if curr_stmt else None
 
