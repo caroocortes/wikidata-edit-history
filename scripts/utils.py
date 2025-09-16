@@ -265,27 +265,36 @@ def fetch_entity_types():
             print("No more results.")
             break
         
-        entity_class = []
-        query = """
-            INSERT INTO entity_types (entity_id, class_id, class_label, rank)
-            VALUES (%s, %s, %s, %s)
-        """
+        entity_types_data = []
+        class_data = []
 
         for result in results:
             entity_id = result["entity"]["value"].split("/")[-1]
             class_id = result["class"]["value"].split("/")[-1]
             class_label = result["classLabel"]["value"]
-            
+
             rank_wd = result["rank"]["value"].split("/")[-1]
-            rank = "normal" # by default all statements have normal rank
+            rank = "normal"  # default
             if rank_wd == "PreferredRank":
                 rank = "preferred"
-            elif rank_wd == "DeprecatedRank":   
+            elif rank_wd == "DeprecatedRank":
                 rank = "deprecated"
 
-            entity_class.append((entity_id, class_id, class_label, rank))
-        
-        cur.executemany(query, entity_class)
+            entity_types_data.append((entity_id, class_id))
+            class_data.append((class_id, class_label, rank))
+
+        query_entity_types = """
+            INSERT INTO entity_types (entity_id, class_id)
+            VALUES (%s, %s)
+        """
+        cur.executemany(query_entity_types, entity_types_data)
+
+        query_class = """
+            INSERT INTO class (class_id, class_label, rank)
+            VALUES (%s, %s, %s)
+        """
+        cur.executemany(query_class, class_data)
+
         conn.commit()
 
         time.sleep(10) 
