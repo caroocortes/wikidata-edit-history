@@ -213,8 +213,6 @@ class PageParser():
             # complex datatypes - time, quantity, globecoordinate, monolingualtext
             # we consider entity as a simple type
             if datatype == 'globecoordinate':
-                print('EL VALUE JSON')
-                print(value_json)
                 value = {
                     "longitude": value_json['longitude'],
                     "latitude": value_json['latitude']
