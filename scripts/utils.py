@@ -293,6 +293,7 @@ def fetch_entity_types():
         query_entity_types = """
             INSERT INTO entity_type (entity_id, class_id)
             VALUES (%s, %s)
+            ON CONFLICT (entity_id, class_id) DO NOTHING
         """
         cur.executemany(query_entity_types, entity_types_data)
 
