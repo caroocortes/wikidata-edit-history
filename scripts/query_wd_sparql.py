@@ -33,7 +33,7 @@ def fetch_wikidata_properties():
         Stores them in the table change 
     """
 
-    print("[fetch_entity_types] Started")
+    print("[fetch_wikidata_properties] Started")
 
     conn = psycopg2.connect(
         dbname=DB_NAME,
@@ -140,7 +140,7 @@ def fetch_entity_types():
         Obtains class_id, class_label, rank from wikidata's SPARQL query service and inserts into the DB (entity_type and class tables).
     """
 
-    print("[fetch_wikidata_properties] Started")
+    print("[fetch_entity_types] Started")
 
     conn = psycopg2.connect(
         dbname=DB_NAME,
