@@ -51,6 +51,8 @@ def fetch_wikidata_properties():
     cur.execute(query_get_prop_ids)
     property_ids = list(cur.fetchall())
 
+    print(f"Found {len(property_ids)} properties without label")
+
     query = """
     SELECT ?pid ?propertyLabel
     WHERE {
@@ -109,7 +111,7 @@ def fetch_wikidata_properties():
                 conn.rollback()
                 print(f'Error when saving properties to DB: {e}')
         else:
-            print(f"No results for batch {i} - {i + batch_size}")
+            print(f"Properties - No results for batch {i} - {i + batch_size}")
 
         now = time.time()
         if now - last_print >= interval:
@@ -227,7 +229,7 @@ def fetch_entity_types():
 
         now = time.time()
         if now - last_print >= interval:
-            print(f"Progress at iteration {i}")
+            print(f"Entity types - Progress at iteration {i}")
             last_print = now
 
     # close db connection
