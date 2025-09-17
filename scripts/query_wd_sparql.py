@@ -73,7 +73,7 @@ def fetch_wikidata_properties():
         SELECT ?property ?propertyLabel
         WHERE {{
             VALUES ?property {{ {values_str} }}
-            ?class rdfs:label ?propertyLabel.
+            ?property rdfs:label ?propertyLabel.
             FILTER(LANG(?propertyLabel) = "en")
         }}
         """
@@ -86,9 +86,6 @@ def fetch_wikidata_properties():
             break
 
         results = response.json()["results"]["bindings"]
-        if not results:
-            print("No more results.")
-            break
         
         query = """
             UPDATE change
