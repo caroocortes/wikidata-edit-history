@@ -41,8 +41,7 @@ Therefore, the system where the main.py is run needs to support at least *files_
 ### Fetch entity types and property labels
 
 From root run: 
-- `python3 -c "from scripts.utils import fetch_entity_types; fetch_entity_types()"`
-- `python3 -c "from scripts.utils import fetch_wikidata_properties; fetch_wikidata_properties()"`
+- `nohup python3 -m scripts.query_wd_sparql >> fetch_class_property.log 2>&1 &`
 
 or create a "__main__" inside utils.py and run `python3 -m main`
 
