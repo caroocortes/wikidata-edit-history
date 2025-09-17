@@ -97,9 +97,6 @@ def fetch_wikidata_properties():
 
         results = response.json()["results"]["bindings"]
 
-        print('PROPERTIES!!!!!')
-        print(response.json())
-
         if len(results) > 0:
             print('Properties - There are results !!')
             query = """
