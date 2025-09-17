@@ -46,7 +46,7 @@ def fetch_wikidata_properties():
     query_get_prop_ids = """
         SELECT DISTINCT property_id 
         FROM change
-        WHERE property_label IS NOT NULL 
+        WHERE property_label IS NULL 
     """  # only properties without label yet
     cur.execute(query_get_prop_ids)
     property_ids = list(cur.fetchall())
