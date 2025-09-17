@@ -5,7 +5,7 @@ import psycopg2
 import time
 from dotenv import load_dotenv
 from pathlib import Path
-from utils import id_to_int
+from scripts.utils import id_to_int
 
 
 dotenv_path = Path(__file__).resolve().parent.parent / ".env"
