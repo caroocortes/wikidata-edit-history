@@ -116,7 +116,7 @@ def fetch_wikidata_properties():
 
         now = time.time()
         if now - last_print >= interval:
-            print(f"Progress at iteration {i}")
+            print(f"Progress at iteration {i} - {i} - {i + batch_size}")
             last_print = now
 
         time.sleep(10)
@@ -147,6 +147,8 @@ def fetch_entity_types():
         WHERE et.entity_id IS NULL
     """) 
     entity_ids = cur.fetchall()
+
+    print(f"Found {len(entity_ids)} without class")
 
     batch_size = 50
 
@@ -230,7 +232,7 @@ def fetch_entity_types():
 
         now = time.time()
         if now - last_print >= interval:
-            print(f"Entity types - Progress at iteration {i}")
+            print(f"Entity types - Progress at iteration {i}: {i} - {i + batch_size}")
             last_print = now
 
     # close db connection
