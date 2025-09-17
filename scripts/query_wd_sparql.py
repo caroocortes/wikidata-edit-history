@@ -6,6 +6,7 @@ import time
 from dotenv import load_dotenv
 from pathlib import Path
 from scripts.utils import id_to_int
+import sys
 
 
 dotenv_path = Path(__file__).resolve().parent.parent / ".env"
@@ -97,6 +98,7 @@ def fetch_wikidata_properties():
         results = response.json()["results"]["bindings"]
 
         if len(results):
+            print('There are results')
             query = """
                 UPDATE change
                 SET property_label = %s
@@ -114,7 +116,7 @@ def fetch_wikidata_properties():
                 conn.commit()
             except Exception as e:
                 conn.rollback()
-                print(f'Error when saving properties to DB: {e}')
+                print(f'Error when saving properties to DB: {e}')     
         else:
             print(f"Properties - No results for batch {i} - {i + batch_size}")
 
@@ -122,6 +124,8 @@ def fetch_wikidata_properties():
         if now - last_print >= interval:
             print(f"Properties - Progress at iteration {i} - Fetched {count} properties so far.")
             last_print = now
+
+        sys.stdout.flush()
 
         time.sleep(10)
     
@@ -242,6 +246,8 @@ def fetch_entity_types():
         if now - last_print >= interval:
             print(f"Entity types - Progress at iteration {i} - Fetched {count} entities so far.")
             last_print = now
+
+        sys.stdout.flush()
 
     # close db connection
     conn.close()
