@@ -35,7 +35,6 @@ class DumpParser():
 
         # TODO: remove
         self.start_time = time.time()
-        self.last_queue_check = time.time()
         self.queue_size_history = deque(maxlen=50) # store last 50 queue sizes
 
         self.workers = []
@@ -121,6 +120,13 @@ class DumpParser():
             stats['avg_queue_size'] = 0
             
         return stats
+    
+    def _add_worker(self):
+        i = len(self.workers)
+        p = mp.Process(target=self._worker, args=(i,))
+        p.start()
+        self.workers.append(p)
+        print(f"Added worker {i} due to queue size, total workers: {len(self.workers)}")
 
     def _worker(self, worker_id):
         """
@@ -194,6 +200,10 @@ class DumpParser():
                 if queue_size > 15:  # Queue is getting full
                     print(f"Warning: Queue is {queue_size}/{QUEUE_SIZE} full - processing may be bottlenecked")
 
+                fullness = self.page_queue.qsize() / QUEUE_SIZE
+                if fullness > 0.7 and self.num_workers < 6: # go up to max 5 workers
+                    self._add_worker()
+
                 # Serialize the page element
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
                 self.page_queue.put(page_elem_str)
@@ -206,7 +216,7 @@ class DumpParser():
             # Periodic progress report
             if time.time() - last_report > 300:  # Every 30 seconds
                 rate = self.num_entities / (time.time() - self.start_time)
-                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/20")
+                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/{QUEUE_SIZE}")
                 sys.stdout.flush()
                 last_report = time.time()
 
