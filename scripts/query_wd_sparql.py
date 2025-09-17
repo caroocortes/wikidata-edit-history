@@ -77,8 +77,6 @@ def fetch_wikidata_properties():
         batch = property_ids[i:i + batch_size]
         values_str = " ".join(f"wd:P{pid[0]}" for pid in batch if pid[0] not in (-1, -2))
 
-        count += batch_size
-
         query = f"""
         SELECT ?property ?propertyLabel
         WHERE {{
@@ -100,6 +98,8 @@ def fetch_wikidata_properties():
         print(f'Property - Resutls lenght: {len(results)}')
 
         if len(results) > 0:
+
+            count += batch_size
             print('Properties - There are results !!')
             query = """
                 UPDATE change
@@ -121,6 +121,7 @@ def fetch_wikidata_properties():
                 print(f'Error when saving properties to DB: {e}')     
         else:
             print(f"Properties - No results for batch {i} - {i + batch_size}")
+            print(values_str)
 
         now = time.time()
         if now - last_print >= interval:
@@ -173,8 +174,6 @@ def fetch_entity_types():
     for i in range(0, len(entity_list), batch_size):
         batch = entity_list[i:i + batch_size]
         values_str = " ".join(f"wd:Q{eid[0]}" for eid in batch) # add base uri (wd:) to each entity id
-
-        count += batch_size
         
         query = f"""
         SELECT ?entity ?class ?classLabel ?rank
@@ -202,7 +201,7 @@ def fetch_entity_types():
         print(f'Entity types - Resutls lenght: {len(results)}')
 
         if len(results) > 0:
-
+            count += batch_size
             entity_types_data = []
             class_data = []
 
@@ -243,6 +242,7 @@ def fetch_entity_types():
 
         else:
             print(f"Entity types - No results for batch {i} - {i + batch_size}")
+            print(values_str)
 
         time.sleep(10) 
 
