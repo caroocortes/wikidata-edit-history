@@ -31,6 +31,8 @@ def fetch_wikidata_properties():
         Stores them in the table change 
     """
 
+    print("[fetch_entity_types] Started")
+
     conn = psycopg2.connect(
         dbname=DB_NAME,
         user=DB_USER,
@@ -86,25 +88,28 @@ def fetch_wikidata_properties():
             break
 
         results = response.json()["results"]["bindings"]
-        
-        query = """
-            UPDATE change
-            SET property_label = %s
-            WHERE property_id = %s
-        """
-        
-        properties = []
-        for result in results:
-            property_label = result["propertyLabel"]["value"]
-            property_id = result["property"]["value"].split("/")[-1]
-            properties.append((property_label, property_id))  # order matches %s
 
-        try:
-            cur.executemany(query, properties)
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            print(f'Error when saving properties to DB: {e}')
+        if len(results):
+            query = """
+                UPDATE change
+                SET property_label = %s
+                WHERE property_id = %s
+            """
+            
+            properties = []
+            for result in results:
+                property_label = result["propertyLabel"]["value"]
+                property_id = result["property"]["value"].split("/")[-1]
+                properties.append((property_label, property_id))  # order matches %s
+
+            try:
+                cur.executemany(query, properties)
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                print(f'Error when saving properties to DB: {e}')
+        else:
+            print(f"No results for batch {i} - {i + batch_size}")
 
         now = time.time()
         if now - last_print >= interval:
@@ -120,6 +125,8 @@ def fetch_entity_types():
     """ 
         Obtains class_id, class_label, rank from wikidata's SPARQL query service and inserts into the DB (entity_type and class tables).
     """
+
+    print("[fetch_wikidata_properties] Started")
 
     conn = psycopg2.connect(
         dbname=DB_NAME,
@@ -172,47 +179,49 @@ def fetch_entity_types():
             break
 
         results = response.json()["results"]["bindings"]
-        if not results:
-            print("No more results.")
-            break
-        
-        entity_types_data = []
-        class_data = []
 
-        for result in results:
-            entity_id = result["entity"]["value"].split("/")[-1]
-            class_id = result["class"]["value"].split("/")[-1]
-            class_label = result["classLabel"]["value"]
+        if len(results):
 
-            rank_wd = result["rank"]["value"].split("/")[-1]
-            rank = "normal"  # default
-            if rank_wd == "PreferredRank":
-                rank = "preferred"
-            elif rank_wd == "DeprecatedRank":
-                rank = "deprecated"
+            entity_types_data = []
+            class_data = []
 
-            entity_types_data.append((entity_id, class_id))
-            class_data.append((class_id, class_label, rank))
+            for result in results:
+                entity_id = result["entity"]["value"].split("/")[-1]
+                class_id = result["class"]["value"].split("/")[-1]
+                class_label = result["classLabel"]["value"]
 
-        query_class = """
-            INSERT INTO class (class_id, class_label, rank)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (class_id) DO NOTHING
-        """
-        cur.executemany(query_class, class_data)
+                rank_wd = result["rank"]["value"].split("/")[-1]
+                rank = "normal"  # default
+                if rank_wd == "PreferredRank":
+                    rank = "preferred"
+                elif rank_wd == "DeprecatedRank":
+                    rank = "deprecated"
 
-        query_entity_types = """
-            INSERT INTO entity_type (entity_id, class_id)
-            VALUES (%s, %s)
-            ON CONFLICT (entity_id, class_id) DO NOTHING
-        """
+                entity_types_data.append((entity_id, class_id))
+                class_data.append((class_id, class_label, rank))
 
-        try:
-            cur.executemany(query_entity_types, entity_types_data)
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            print(f'Error when saving entity types to DB: {e}')
+            query_class = """
+                INSERT INTO class (class_id, class_label, rank)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (class_id) DO NOTHING
+            """
+            cur.executemany(query_class, class_data)
+
+            query_entity_types = """
+                INSERT INTO entity_type (entity_id, class_id)
+                VALUES (%s, %s)
+                ON CONFLICT (entity_id, class_id) DO NOTHING
+            """
+
+            try:
+                cur.executemany(query_entity_types, entity_types_data)
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                print(f'Error when saving entity types to DB: {e}')
+
+        else:
+            print(f"No results for batch {i} - {i + batch_size}")
 
         time.sleep(10) 
 
