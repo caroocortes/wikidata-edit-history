@@ -97,8 +97,8 @@ def fetch_wikidata_properties():
 
         results = response.json()["results"]["bindings"]
 
-        if len(results):
-            print('There are results')
+        if len(results) > 0:
+            print('Properties - There are results !!')
             query = """
                 UPDATE change
                 SET property_label = %s
@@ -197,7 +197,7 @@ def fetch_entity_types():
 
         results = response.json()["results"]["bindings"]
 
-        if len(results):
+        if len(results) > 0:
 
             entity_types_data = []
             class_data = []
@@ -238,7 +238,7 @@ def fetch_entity_types():
                 print(f'Error when saving entity types to DB: {e}')
 
         else:
-            print(f"No results for batch {i} - {i + batch_size}")
+            print(f"Entity - No results for batch {i} - {i + batch_size}")
 
         time.sleep(10) 
 
