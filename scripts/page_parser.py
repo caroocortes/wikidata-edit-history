@@ -628,16 +628,16 @@ class PageParser():
             Handles only addition/deletion of qualifiers
             TODO: update of qualifier values (there's no id to identify qualifier values between revisions)
         """
-
         change_detected = False
 
         prev_qualifiers = prev_stmt.get('qualifiers', {}) if prev_stmt else {}
         curr_qualifiers = curr_stmt.get('qualifiers', {}) if curr_stmt else {}
 
         if not prev_qualifiers and curr_qualifiers:
-            change_detected = True
+            change_detected = True 
             # qualifiers were added
             for qual_pid, qual_stmts in curr_qualifiers.items():
+                count = len(qual_stmts)
                 for qual_stmt in qual_stmts:
 
                     stmt_value = qual_stmt.get('datavalue', None)
@@ -650,7 +650,7 @@ class PageParser():
                     # only qualifier "value" change is recorded, not change_target changes
                     self.save_changes(
                         property_id=id_to_int(pid),
-                        value_id=value_id,
+                        value_id=f"{value_id}-{count}" , # qualifiers can have multiple values but i dont have a value_id, so i have to add something manually, if not there are duplicate rows
                         old_value=None,
                         new_value=qual_value,
                         datatype=qual_datatype,
@@ -660,11 +660,13 @@ class PageParser():
                         old_hash=None,
                         new_hash=new_hash
                     )
+                    count -= 1
 
         elif prev_qualifiers and not curr_qualifiers:
             change_detected = True
             # qualifiers were removed
             for qual_pid, qual_stmts in prev_qualifiers.items():
+                count = len(qual_stmts)
                 for qual_stmt in qual_stmts:
 
                     stmt_value = qual_stmt.get('datavalue', None)
@@ -677,7 +679,7 @@ class PageParser():
                     # only qualifier "value" change is recorded, not datatype_metadata changes
                     self.save_changes(
                         property_id=id_to_int(pid),
-                        value_id=value_id,
+                        value_id=f"{value_id}-{count}",  # qualifiers can have multiple values but i dont have a value_id, so i have to add something manually, if not there are duplicate rows
                         old_value=qual_value,
                         new_value=None,
                         datatype=qual_datatype,
@@ -687,6 +689,7 @@ class PageParser():
                         old_hash=old_hash,
                         new_hash=None
                     )
+                    count -= 1
 
         elif prev_qualifiers and curr_qualifiers:
 
@@ -717,6 +720,7 @@ class PageParser():
                 if len(curr_values) < len(prev_values):
                     change_detected = True
                     removed_values = set(prev_values) - set(curr_values)
+                    count = len(removed_values)
                     for removed_value in removed_values:
                         # Find the corresponding previous statement for the value to get datatype and hash
                         prev_stmt = next(qs for qs in prev_qual_stmts if qs.get('datavalue', None) and normalize_json(PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0]) == removed_value)
@@ -731,7 +735,7 @@ class PageParser():
 
                         self.save_changes(
                             property_id=id_to_int(pid),
-                            value_id=value_id,
+                            value_id=f"{value_id}-{count}",  # qualifiers can have multiple values but i dont have a value_id, so i have to add something manually, if not there are duplicate rows
                             old_value=prev_qual_value,
                             new_value=None,
                             datatype=prev_qual_datatype,
@@ -741,11 +745,13 @@ class PageParser():
                             old_hash=prev_qual_hash,
                             new_hash=None
                         )
+                        count -= 1
 
                 # A qualifier value was added
                 elif len(curr_values) > len(prev_values):
                     change_detected = True
                     addedd_values = set(curr_values) - set(prev_values)
+                    count = len(addedd_values)
                     for added_value in addedd_values:
                         # Find the corresponding current statement for the value to get datatype and hash
                         curr_stmt = next(qs for qs in curr_qual_stmts if qs.get('datavalue', None) and normalize_json(PageParser.parse_datavalue_json(qs['datavalue']['value'], qs['datavalue']['type'])[0]) == added_value)
@@ -759,7 +765,7 @@ class PageParser():
 
                         self.save_changes(
                             property_id=id_to_int(pid),
-                            value_id=value_id,
+                            value_id=f"{value_id}-{count}",  # qualifiers can have multiple values but i dont have a value_id, so i have to add something manually, if not there are duplicate rows
                             old_value=None,
                             new_value=curr_qual_value,
                             datatype=curr_qual_datatype,
@@ -769,6 +775,7 @@ class PageParser():
                             old_hash=None,
                             new_hash=curr_qual_hash
                         )
+                        count -= 1
 
         return change_detected
 
