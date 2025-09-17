@@ -5,6 +5,7 @@ import psycopg2
 import time
 from dotenv import load_dotenv
 from pathlib import Path
+from utils import id_to_int
 
 
 dotenv_path = Path(__file__).resolve().parent.parent / ".env"
@@ -101,7 +102,7 @@ def fetch_wikidata_properties():
             properties = []
             for result in results:
                 property_label = result["propertyLabel"]["value"]
-                property_id = result["property"]["value"].split("/")[-1]
+                property_id = id_to_int(result["property"]["value"].split("/")[-1]) # remove the P
                 properties.append((property_label, property_id))  # order matches %s
 
             try:
@@ -188,8 +189,8 @@ def fetch_entity_types():
             class_data = []
 
             for result in results:
-                entity_id = result["entity"]["value"].split("/")[-1]
-                class_id = result["class"]["value"].split("/")[-1]
+                entity_id = id_to_int(result["entity"]["value"].split("/")[-1])
+                class_id = id_to_int(result["class"]["value"].split("/")[-1])
                 class_label = result["classLabel"]["value"]
 
                 rank_wd = result["rank"]["value"].split("/")[-1]
