@@ -70,9 +70,13 @@ def fetch_wikidata_properties():
     last_print = 0
     interval = 500 # seconds
 
+    count = 0
+
     for i in range(0, len(property_ids), batch_size):
         batch = property_ids[i:i + batch_size]
         values_str = " ".join(f"wd:P{pid[0]}" for pid in batch if pid[0] not in (-1, -2))
+
+        count += batch_size
 
         query = f"""
         SELECT ?property ?propertyLabel
@@ -116,7 +120,7 @@ def fetch_wikidata_properties():
 
         now = time.time()
         if now - last_print >= interval:
-            print(f"Progress at iteration {i} - {i} - {i + batch_size}")
+            print(f"Properties - Progress at iteration {i} - Fetched {count} properties so far.")
             last_print = now
 
         time.sleep(10)
@@ -158,9 +162,13 @@ def fetch_entity_types():
 
     entity_list = list(entity_ids)
 
+    count = 0
+
     for i in range(0, len(entity_list), batch_size):
         batch = entity_list[i:i + batch_size]
         values_str = " ".join(f"wd:Q{eid[0]}" for eid in batch) # add base uri (wd:) to each entity id
+
+        count += batch_size
         
         query = f"""
         SELECT ?entity ?class ?classLabel ?rank
@@ -232,7 +240,7 @@ def fetch_entity_types():
 
         now = time.time()
         if now - last_print >= interval:
-            print(f"Entity types - Progress at iteration {i}: {i} - {i + batch_size}")
+            print(f"Entity types - Progress at iteration {i} - Fetched {count} entities so far.")
             last_print = now
 
     # close db connection
