@@ -141,6 +141,10 @@ def fetch_wikidata_properties():
 
     batch_size = 50
     
+    # for printing progress
+    last_print = 0
+    interval = 500 # seconds
+
     url = "https://query.wikidata.org/sparql"
     headers = {
         "Accept": "application/sparql-results+json",
@@ -184,9 +188,18 @@ def fetch_wikidata_properties():
             property_id = result["property"]["value"].split("/")[-1]
             properties.append((property_label, property_id))  # order matches %s
 
-        cur.executemany(query, properties)
-        conn.commit()
-        
+        try:
+            cur.executemany(query, properties)
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(f'Error when saving properties to DB: {e}')
+
+        now = time.time()
+        if now - last_print >= interval:
+            print(f"Progress at iteration {i}")
+            last_print = now
+
         time.sleep(10)
     
     conn.close()
@@ -230,6 +243,11 @@ def fetch_entity_types():
     }
 
     batch_size = 50
+
+    # for printing progress
+    last_print = 0
+    interval = 500 # seconds
+
     entity_list = list(entity_ids)
 
     for i in range(0, len(entity_list), batch_size):
@@ -292,12 +310,20 @@ def fetch_entity_types():
             VALUES (%s, %s)
             ON CONFLICT (entity_id, class_id) DO NOTHING
         """
-        cur.executemany(query_entity_types, entity_types_data)
 
-        conn.commit()
+        try:
+            cur.executemany(query_entity_types, entity_types_data)
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(f'Error when saving entity types to DB: {e}')
 
         time.sleep(10) 
-        
+
+        now = time.time()
+        if now - last_print >= interval:
+            print(f"Progress at iteration {i}")
+            last_print = now
 
     # close db connection
     conn.close()

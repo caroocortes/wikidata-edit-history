@@ -71,16 +71,24 @@ class PageParser():
         """
             Returns the text of a revision as a json
         """
-        json_text = html.unescape(revision_text.strip())
-        
-        # normalize to regular quotes & remove control characters so json parsing doesnt break
-        json_text = json_text.replace('“', '"').replace('”', '"').replace('„', '"').replace('‟', '"')
-        json_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', json_text)
-        
+
         try:
+            # Most of the revisions are HTML escaped, but some aren't, that's why there's a second try/except
+            json_text = html.unescape(revision_text.strip())
+            
+            # normalize to regular quotes & remove control characters so json parsing doesnt break
+            json_text = json_text.replace('“', '"').replace('”', '"').replace('„', '"').replace('‟', '"')
+            json_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', json_text)
+        
             current_revision = json.loads(json_text)
             return current_revision
         except json.JSONDecodeError as e:
+            pass
+
+        try:
+            return json.loads(revision_text.strip())
+        except json.JSONDecodeError:
+
             print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}: {e}. Revision skipped. See error_revision_text.txt for details.')
             
             with open("error_revision_text.txt", "a") as f:
@@ -93,8 +101,9 @@ class PageParser():
                 )
                 f.write(revision_xml_str + "\n")
                 f.write(f"-------------------------------------------\n")
-
             return None
+
+        
     
     @staticmethod
     def generate_unique_hash(counter):
