@@ -3,7 +3,7 @@
 DOWNLOAD_DIR="/san2/data/wikidata-history-dumps"
 # DOWNLOAD_DIR="data/wikidata_dumps_20250601"
 URL_LIST="xml_download_links.txt"
-LOG_FILE="download.log"
+LOG_FILE="logs/download.log"
 
 mkdir -p "$DOWNLOAD_DIR"
 

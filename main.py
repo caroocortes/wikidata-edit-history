@@ -9,12 +9,14 @@ import sys
 
 from scripts.utils import human_readable_size, create_db_schema, print_exception_details
 from scripts.dump_parser import DumpParser
+from scripts.const import PROCESSED_FILES_PATH, PARSER_LOG_FILES_PATH
+
     
 def log_file_process(process_time, num_entities, file_path, size):
     if not isinstance(file_path, Path):
         file_path = Path(file_path) 
     print(f"Finished processing {file_path} ({size}, {num_entities} entities) in {process_time} seconds") 
-    with open('processed_files.txt', "a") as f: 
+    with open(PROCESSED_FILES_PATH, "a") as f: 
         f.write(f"{file_path.resolve()}\n") 
 
 def process_file(file_path, config):
@@ -45,11 +47,10 @@ def process_file(file_path, config):
     print(f"Processed {input_bz2} in {process_time:.2f} seconds, {human_readable_size(size)}, {parser.num_entities} entities")
     sys.stdout.flush()
     
-    parser_log_files = "parser_log_files.json"
-    if not os.path.exists(parser_log_files):
-        with open(parser_log_files, "w") as f:
+    if not os.path.exists(PARSER_LOG_FILES_PATH):
+        with open(PARSER_LOG_FILES_PATH, "w") as f:
             pass  
-    with open(parser_log_files, "a", encoding="utf-8") as f:
+    with open(PARSER_LOG_FILES_PATH, "a", encoding="utf-8") as f:
         json_line = {
             "file": input_bz2,
             "size": size_hr,
@@ -75,7 +76,7 @@ if  __name__ == "__main__":
         print("The dump directory doesn't exist")
         raise SystemExit(1)
     
-    processed_log = Path("processed_files.txt")
+    processed_log = Path(PROCESSED_FILES_PATH)
 
     # Read already processed files
     processed_files = set()

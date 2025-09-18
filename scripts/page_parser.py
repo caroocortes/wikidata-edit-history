@@ -89,9 +89,9 @@ class PageParser():
             return json.loads(revision_text.strip())
         except json.JSONDecodeError:
 
-            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}: {e}. Revision skipped. See error_revision_text.txt for details.')
+            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}: {e}. Revision skipped. See {ERROR_REVISION_TEXT_PATH} for details.')
             
-            with open("error_revision_text.txt", "a") as f:
+            with open(ERROR_REVISION_TEXT_PATH, "a") as f:
                 f.write(f"-------------------------------------------\n")
                 f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
                 revision_xml_str = etree.tostring(
