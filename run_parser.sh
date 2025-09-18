@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG="parser_output.log"
+LOG="logs/parser_output.log"
 echo "Starting a new batch of files at $(date)" >> $LOG
 
 # Run in background
