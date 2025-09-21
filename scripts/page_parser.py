@@ -608,6 +608,20 @@ class PageParser():
 
                 if s.get('qualifiers', None):
                     self._handle_qualifiers_changes(new_pid, value_id, None, s)
+
+                # rank
+                curr_rank = s.get('rank') if s else None
+                self.save_changes(
+                    property_id=id_to_int(new_pid),
+                    value_id=value_id,
+                    old_value=None,
+                    new_value=curr_rank,
+                    datatype=new_datatype,
+                    change_target='rank',
+                    change_type=CREATE_PROPERTY,
+                    old_hash=None,
+                    new_hash=new_hash
+                )
     
     def _handle_removed_pids(self, removed_pids, prev_claims):
         """
@@ -631,6 +645,71 @@ class PageParser():
 
                 if s.get('qualifiers', None):
                     self._handle_qualifiers_changes(removed_pid, value_id, s, None)
+
+                # rank
+                prev_rank = s.get('rank') if s else None
+                self.save_changes(
+                    property_id=id_to_int(removed_pid),
+                    value_id=value_id,
+                    old_value=prev_rank,
+                    new_value=None,
+                    datatype=None,
+                    change_target='rank',
+                    change_type=DELETE_PROPERTY,
+                    old_hash=old_hash,
+                    new_hash=None
+                )
+
+    def _handle_rank_changes(self, prev_stmt, curr_stmt, pid, sid):
+        prev_rank = prev_stmt.get('rank') if prev_stmt else None
+        curr_rank = curr_stmt.get('rank') if curr_stmt else None
+
+        old_hash = PageParser._get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
+        new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
+
+        _, new_datatype, _ = PageParser._parse_datavalue(curr_stmt)
+
+        change_detected = False
+        if not prev_stmt:
+            change_detected = True
+            self.save_changes(
+                property_id=id_to_int(pid),
+                value_id=sid,
+                old_value=None,
+                new_value=curr_rank,
+                datatype=new_datatype,
+                change_target='rank',
+                change_type=CREATE_PROPERTY_VALUE,
+                old_hash=None,
+                new_hash=new_hash
+            )
+        elif not curr_stmt:
+            change_detected = True
+            self.save_changes(
+                property_id=id_to_int(pid),
+                value_id=sid,
+                old_value=prev_rank,
+                new_value=None,
+                datatype=None,
+                change_target='rank',
+                change_type=DELETE_PROPERTY_VALUE,
+                old_hash=old_hash,
+                new_hash=None
+            )
+        elif prev_stmt and curr_stmt and prev_rank != curr_rank:
+            change_detected = True
+            self.save_changes(
+                property_id=id_to_int(pid),
+                value_id=sid,
+                old_value=prev_rank,
+                new_value=curr_rank,
+                datatype=new_datatype,
+                change_target='rank',
+                change_type=UPDATE_RANK,
+                old_hash=old_hash,
+                new_hash=new_hash
+            )
+        return change_detected
 
     def _handle_qualifiers_changes(self, pid, value_id, prev_stmt, curr_stmt):
         """
@@ -856,28 +935,15 @@ class PageParser():
                         self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, new_datatype, pid, UPDATE_PROPERTY_DATATYPE_METADATA, old_hash, new_hash)
 
                 # rank changes
-                prev_rank = prev_stmt.get('rank') if prev_stmt else None
-                curr_rank = curr_stmt.get('rank') if curr_stmt else None
-                if prev_rank != curr_rank:
-                    change_detected = True
-                    self.save_changes(
-                        property_id=id_to_int(pid),
-                        value_id=sid,
-                        old_value=prev_rank,
-                        new_value=curr_rank,
-                        datatype='string',
-                        change_target='rank',
-                        change_type=UPDATE_RANK,
-                        old_hash=old_hash,
-                        new_hash=new_hash
-                    )
+                rank_change_detected = self._handle_rank_changes(prev_stmt, curr_stmt, pid, sid)
 
                 # qualifiers changes
                 qualifier_change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt, curr_stmt)
 
-                change_detected = change_detected or qualifier_change_detected
                 # references changes
-                # TODO: implement references changes
+                # TODO: implement references changes (?)
+
+                change_detected = change_detected or qualifier_change_detected or rank_change_detected
 
         return change_detected
     
