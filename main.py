@@ -107,12 +107,7 @@ if  __name__ == "__main__":
         files_sorted = sorted(all_files, key=lambda f: f.stat().st_mtime)
 
         # Only keep files that haven't been processed
-        files_to_parse = [f for f in files_sorted if f.name not in processed_files]
-
-        print('PROCESSED!!!!', next(iter(processed_files)))
-   
-        print('SORTED!!!!', next(iter(files_sorted)))
-
+        files_to_parse = [f for f in files_sorted if str(f) not in processed_files]
 
         max_workers = config.get('files_in_parallel', 5)
         max_files = config.get('max_files', 5)
