@@ -83,6 +83,7 @@ if  __name__ == "__main__":
     if processed_log.exists():
         with processed_log.open() as f:
             processed_files = set(line.strip() for line in f)
+        print(f'Found {len(processed_files)} files that have already been processed')
 
     # create tables if they don't exist
     create_db_schema()
