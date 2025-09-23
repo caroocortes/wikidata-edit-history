@@ -182,7 +182,7 @@ class DumpParser():
 
         context = etree.iterparse(file_obj, events=("end",), tag=page_tag)
         
-        last_report = time.time()
+        # last_report = time.time()
 
         for event, page_elem in context:
             keep = False
@@ -196,9 +196,6 @@ class DumpParser():
                     keep = True
 
             if keep:
-                queue_size = self.page_queue.qsize()
-                if queue_size > 15:  # Queue is getting full
-                    print(f"Warning: Queue is {queue_size}/{QUEUE_SIZE} full - processing may be bottlenecked")
 
                 fullness = self.page_queue.qsize() / QUEUE_SIZE
                 if fullness > 0.7 and self.num_workers < 6: # go up to max 5 workers
@@ -209,16 +206,12 @@ class DumpParser():
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
 
-                print(f"Keeping entity {entity_id}, queue size: {self.page_queue.qsize()}/{QUEUE_SIZE} -  total entities read: {self.num_entities + 1}", end='\r')
-                sys.stdout.flush()
-            
-
             # Periodic progress report
-            if time.time() - last_report > 300:  # Every 30 seconds
-                rate = self.num_entities / (time.time() - self.start_time)
-                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/{QUEUE_SIZE}")
-                sys.stdout.flush()
-                last_report = time.time()
+            # if time.time() - last_report > 300:  # Every 30 seconds
+            #     rate = self.num_entities / (time.time() - self.start_time)
+            #     print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/{QUEUE_SIZE}")
+            #     sys.stdout.flush()
+            #     last_report = time.time()
 
             # Clear page element to free memory
             page_elem.clear()
@@ -247,10 +240,10 @@ class DumpParser():
         print(f"Workers used: {final_stats['num_workers']}")
         
         sys.stdout.flush()
-        # Simple recommendations
-        if final_stats['avg_queue_size'] < 10:
-            print("Consider reducing workers or increasing files_in_parallel")
-        elif final_stats['avg_queue_size'] > 80:
-            print("Consider increasing workers (pages_in_parallel)")
-        else:
-            print("Worker configuration seems well balanced")
+        # # Simple recommendations
+        # if final_stats['avg_queue_size'] < 10:
+        #     print("Consider reducing workers or increasing files_in_parallel")
+        # elif final_stats['avg_queue_size'] > 80:
+        #     print("Consider increasing workers (pages_in_parallel)")
+        # else:
+        #     print("Worker configuration seems well balanced")
