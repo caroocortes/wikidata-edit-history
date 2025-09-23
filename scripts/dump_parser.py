@@ -126,7 +126,7 @@ class DumpParser():
 
         context = etree.iterparse(file_obj, events=("end",), tag=page_tag)
         
-        # last_report = time.time()
+        last_report = time.time()
 
         for event, page_elem in context:
             keep = False
