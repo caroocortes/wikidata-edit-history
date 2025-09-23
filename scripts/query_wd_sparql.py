@@ -256,6 +256,133 @@ def fetch_entity_types():
     # close db connection
     conn.close()
 
+def fetch_wikidata_entity_labels():
+    """
+        Querys Wikidata to obtain english labels for entities in the change table.
+        Stores them in the table change 
+    """
+
+    print("[fetch_wikidata_entity_labels] Started")
+
+    conn = psycopg2.connect(
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASS, 
+        host=DB_HOST,
+        port=DB_PORT
+    )
+
+    cur = conn.cursor()
+
+    # # First update with existing ewntity labels in the revision table
+    # query_get_ent_ids_revision = """
+    #     ALTER TABLE change
+    #     ADD COLUMN IF NOT EXISTS new_value_label VARCHAR DEFAULT '',
+    #     ADD COLUMN IF NOT EXISTS old_value_label VARCHAR DEFAULT '';
+
+    #     -- Update old_value_label
+    #     UPDATE change c
+    #     SET old_value_label = r.entity_label
+    #     FROM revision r
+    #     WHERE 
+    #     old_value IS NOT NULL AND 
+    #     old_value->>0 LIKE 'Q%' AND
+    #     c.datatype = 'wikibase-entityid' AND 
+    #     CAST(substring(c.old_value->>0 FROM 2) AS bigint) = r.entity_id;
+
+    #     -- Update new_value_label
+    #     UPDATE change c
+    #     SET new_value_label = r.entity_label
+    #     FROM revision r
+    #     WHERE 
+    #         new_value IS NOT NULL AND 
+    #         new_value->>0 LIKE 'Q%' AND
+    #         c.datatype = 'wikibase-entityid' AND
+    #         CAST(substring(c.new_value->>0 FROM 2) AS bigint) = r.entity_id;
+    # """
+    # cur.execute(query_get_ent_ids_revision)
+
+    # for the remaining entities, fetch from wikidata
+    query_get_entity_values = """
+        SELECT DISTINCT old_value, new_value
+        FROM change
+        WHERE datatype IN (
+            'wikibase-item', 'wikibase-property', 'wikibase-entityid', 'wikibase-lexeme', 
+            'wikibase-sense', 'wikibase-form', 'entity-schema'
+        )
+        AND (old_value_label = '' OR new_value_label = '')
+    
+    """ 
+    cur.execute(query_get_entity_values)
+    rows = cur.fetchall()
+
+    entity_ids = set()
+    for old_val, new_val in rows:
+        if old_val:
+            entity_ids.add(old_val)
+        if new_val:
+            entity_ids.add(new_val)
+
+    entity_ids = list(entity_ids)
+    batch_size = 50
+    count = 0
+    last_print = 0
+    interval = 500  # seconds
+
+    for i in range(0, len(entity_ids), batch_size):
+        batch = entity_ids[i:i + batch_size]
+        values_str = " ".join(f"wd:{eid}" for eid in batch if eid and not eid.startswith("-"))
+
+        query = f"""
+            SELECT ?entity ?entityLabel
+            WHERE {{
+                VALUES ?entity {{ {values_str} }}
+                SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
+            }}
+        """
+
+        try:
+            response = requests.get(url, params={'query': query, 'format': 'json'}, headers=headers)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to fetch entities on batch {i}-{i+batch_size}: {e}")
+            break
+
+        results = response.json()["results"]["bindings"]
+
+        entities = []
+        for res in results:
+            eid = res["entity"]["value"].split("/")[-1]
+            label = res["entityLabel"]["value"]
+            entities.append((label, eid))
+
+        if entities:
+            try:
+                # Update both old_value_label and new_value_label
+                for label, eid in entities:
+                    cur.execute("""
+                        UPDATE change
+                        SET old_value_label = CASE WHEN old_value->>0 = %s THEN %s ELSE old_value_label END,
+                            new_value_label = CASE WHEN new_value->>0 = %s THEN %s ELSE new_value_label END
+                        WHERE old_value->>0 = %s OR new_value->>0 = %s
+                    """, (eid, label, eid, label, eid, eid))
+                conn.commit()
+                count += len(entities)
+            except Exception as e:
+                conn.rollback()
+                print(f"Error updating batch {i}-{i+batch_size}: {e}")
+
+        now = time.time()
+        if now - last_print >= interval:
+            print(f"Progress at batch {i}: {count} labels updated so far.")
+            last_print = now
+
+        sys.stdout.flush()
+        time.sleep(10)  # avoid overloading S
+
+        time.sleep(10)
+    
+    conn.close()
 
 if __name__ == "__main__":
     p1 = mp.Process(target=fetch_entity_types)
