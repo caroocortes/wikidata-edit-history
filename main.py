@@ -109,9 +109,9 @@ if  __name__ == "__main__":
         # Only keep files that haven't been processed
         files_to_parse = [f for f in files_sorted if f.name not in processed_files]
 
-        print('PROCESSED!!!!', processed_files[0])
+        print('PROCESSED!!!!', next(iter(processed_files)))
    
-        print('SORTED!!!!', files_sorted[0])
+        print('SORTED!!!!', next(iter(files_sorted)))
 
 
         max_workers = config.get('files_in_parallel', 5)
