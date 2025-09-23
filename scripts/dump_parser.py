@@ -29,13 +29,13 @@ class DumpParser():
         self.file_path = file_path
         self.num_entities = 0  
         
-        self.num_workers = config.get('pages_in_parallel', 2) # processes that process pages in parallel
+        self.num_workers = config.get('pages_in_parallel', 3) # processes that process pages in parallel
         self.page_queue = mp.Queue(maxsize=QUEUE_SIZE) # queue that stores pages as they are read
         self.stop_event = mp.Event()
 
         # TODO: remove
         self.start_time = time.time()
-        self.queue_size_history = deque(maxlen=50) # store last 50 queue sizes
+        # self.queue_size_history = deque(maxlen=50) # store last 50 queue sizes
 
         self.workers = []
         for i in range(self.num_workers):
@@ -48,61 +48,6 @@ class DumpParser():
         # self.monitor_thread = threading.Thread(target=self._simple_monitor, daemon=True)
         # self.monitor_thread.start()
 
-    def _simple_monitor(self):
-        last_report_time = time.time()
-        
-        while not self.stop_event.is_set():
-            time.sleep(300)  # Check every 5 minutess
-            
-            current_time = time.time()
-            queue_size = self.page_queue.qsize()
-            self.queue_size_history.append(queue_size)
-            
-            # Simple report every 5 minutes
-            if current_time - last_report_time > 300:
-                elapsed = current_time - self.start_time
-                
-                # Calculate average queue size
-                avg_queue_size = sum(self.queue_size_history) / len(self.queue_size_history) if self.queue_size_history else 0
-                
-                print(f"\n=== STATUS REPORT ===")
-                print(f"Runtime: {elapsed:.1f}s")
-                print(f"Pages added to queue: {self.num_entities}")
-                print(f"Current queue size: {queue_size}")
-                print(f"Average queue size: {avg_queue_size:.1f}")
-
-                sys.stdout.flush()
-                
-                # Simple resource check
-                try:
-                    cpu_percent = psutil.cpu_percent(interval=1)
-                    memory = psutil.virtual_memory()
-                    print(f"System CPU: {cpu_percent:.1f}% | System Memory: {memory.percent:.1f}%")
-                except:
-                    pass
-                
-                # Check resources used by the parse_dump process
-                current_process = psutil.Process()
-                process_memory = current_process.memory_info().rss / 1024**2  # MB
-                process_cpu = current_process.cpu_percent()
-
-                # Check resources of child processes (workers)
-                children = current_process.children(recursive=True)
-                total_worker_memory = sum(child.memory_info().rss for child in children) / 1024**2  # MB
-                
-                print(f"Parser process: {process_cpu:.1f}% CPU, {process_memory:.1f} MB RAM")
-                print(f"All worker processes: {total_worker_memory:.1f} MB RAM")
-                print(f"Total project memory: {(process_memory + total_worker_memory):.1f} MB")
-                
-                # Simple recommendations
-                if avg_queue_size < 5:
-                    print("Queue size is low - workers might be idle")
-                elif avg_queue_size > 15:
-                    print("Queue is nearly full - consider more workers")
-                
-                print("=" * 30)
-                last_report_time = current_time
-
     def get_simple_stats(self):
         runtime = time.time() - self.start_time
         queue_size = self.page_queue.qsize()
@@ -110,14 +55,13 @@ class DumpParser():
         stats = {
             'runtime': runtime,
             'entities_processed': self.num_entities,
-            'current_queue_size': queue_size,
             'num_workers': self.num_workers,
         }
         
-        if self.queue_size_history:
-            stats['avg_queue_size'] = sum(self.queue_size_history) / len(self.queue_size_history)
-        else:
-            stats['avg_queue_size'] = 0
+        # if self.queue_size_history:
+        #     stats['avg_queue_size'] = sum(self.queue_size_history) / len(self.queue_size_history)
+        # else:
+        #     stats['avg_queue_size'] = 0
             
         return stats
     
@@ -207,11 +151,12 @@ class DumpParser():
                 self.num_entities += 1
 
             # Periodic progress report
-            # if time.time() - last_report > 300:  # Every 30 seconds
-            #     rate = self.num_entities / (time.time() - self.start_time)
-            #     print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/{QUEUE_SIZE}")
-            #     sys.stdout.flush()
-            #     last_report = time.time()
+            if time.time() - last_report > 600:  # Every 10 min
+                rate = self.num_entities / (time.time() - self.start_time)
+                queue_size = self.page_queue.qsize()
+                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/{QUEUE_SIZE}")
+                sys.stdout.flush()
+                last_report = time.time()
 
             # Clear page element to free memory
             page_elem.clear()
@@ -228,7 +173,7 @@ class DumpParser():
         # Wait for workers to finish
         for i, p in enumerate(self.workers):
             p.join()
-            print(f"Worker {i} finished")
+            # print(f"Worker {i} finished")
 
         self.stop_event.set()
 
