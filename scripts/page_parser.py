@@ -140,12 +140,14 @@ class PageParser():
             if datatype == 'time':
                 old_dict = get_time_dict(old_value)
                 new_dict = get_time_dict(new_value)
+                
+                if 'year' in new_dict and 'month' in new_dict and 'day' in new_dict and 'year' in old_dict and 'month' in old_dict and 'day' in old_dict: 
+                    new_julian = gregorian_to_julian(new_dict['year'], new_dict['month'], new_dict['day'])
+                    old_julian = gregorian_to_julian(old_dict['year'], old_dict['month'], old_dict['day'])
+                    return float(new_julian - old_julian) # distance in days
+                else:
+                    return 0
 
-                new_julian = gregorian_to_julian(new_dict['year'], new_dict['month'], new_dict['day'])
-                old_julian = gregorian_to_julian(old_dict['year'], old_dict['month'], old_dict['day'])
-
-                return float(new_julian - old_julian) # distance in days
-            
             # Calculate distande in km between 2 points
             if datatype == 'globecoordinate' and isinstance(old_value, dict) and isinstance(new_value, dict):
                 lat1, lon1 = float(old_value['latitude']), float(old_value['longitude'])
