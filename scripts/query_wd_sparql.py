@@ -384,6 +384,24 @@ def fetch_wikidata_entity_labels():
     
     conn.close()
 
+
+# # All classes and subclasses
+# SELECT ?class ?classLabel ?superclass ?superclassLabel
+# WHERE {
+#   ?class wdt:P279 ?superclass.      # subclass of
+#   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+# }
+# LIMIT 70
+
+
+# # All properties and subproperties
+# SELECT ?property ?propertyLabel ?superproperty ?superpropertyLabel
+# WHERE {
+#   ?property wdt:P1647 ?superproperty.  # subproperty of
+#   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+# }
+# LIMIT 70
+
 if __name__ == "__main__":
     p1 = mp.Process(target=fetch_entity_types)
     p2 = mp.Process(target=fetch_wikidata_properties)
