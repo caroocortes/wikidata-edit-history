@@ -146,7 +146,7 @@ class PageParser():
                     old_julian = gregorian_to_julian(old_dict['year'], old_dict['month'], old_dict['day'])
                     return float(new_julian - old_julian) # distance in days
                 else:
-                    return 0
+                    return float(0)
 
             # Calculate distande in km between 2 points
             if datatype == 'globecoordinate' and isinstance(old_value, dict) and isinstance(new_value, dict):

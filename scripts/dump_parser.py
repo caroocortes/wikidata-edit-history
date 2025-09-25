@@ -71,6 +71,7 @@ class DumpParser():
         p.start()
         self.workers.append(p)
         print(f"Added worker {i} due to queue size, total workers: {len(self.workers)}")
+        self.num_workers += 1
 
     def _worker(self, worker_id):
         """
