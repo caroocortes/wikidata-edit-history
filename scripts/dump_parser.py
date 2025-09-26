@@ -125,7 +125,7 @@ class DumpParser():
         page_tag = f"{{{ns}}}page"
         title_tag = f"{{{ns}}}title"
 
-        context = etree.iterparse(file_obj, events=("end",), tag=page_tag)
+        context = etree.iterparse(file_obj, events=("end",), tag=page_tag) # streams the file, doesn't load everything to memory
         
         last_report = time.time()
 
