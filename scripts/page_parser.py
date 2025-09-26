@@ -965,7 +965,6 @@ class PageParser():
 
             # free memory
             rev_elem.clear()
-            del rev_elem
         
         # Insert remaining changes + revision + changes_metadata in case the batch size was not reached
         if self.changes:
@@ -981,4 +980,3 @@ class PageParser():
         self.page_elem.clear()
         while self.page_elem.getprevious() is not None:
             del self.page_elem.getparent()[0]
-        del page_elem
