@@ -19,7 +19,7 @@ def batch_insert(conn, revision, changes, change_metadata):
     """Function to insert into DB in parallel."""
     
     try:
-        insert_rows(conn, 'revision', revision, ['revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path'])
+        insert_rows(conn, 'revision', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path'])
         insert_rows(conn, 'change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash'])
         insert_rows(conn, 'change_metadata', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
     except Exception as e:
@@ -797,6 +797,18 @@ class PageParser():
             if not curr_claims and not curr_label and not curr_desc:
                 # Skipped revision -> could be a deleted revision, not necessarily a deleted entity
                 print(f'Revision does not contain labels, descriptions, nor claims. Skipped revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}')
+
+                with open(REVISION_NO_CLAIMS_TEXT_PATH, "a") as f:
+                    f.write(f"-------------------------------------------\n")
+                    f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
+                    revision_xml_str = etree.tostring(
+                        current_revision,
+                        pretty_print=True,
+                        encoding="unicode" 
+                    )
+                    f.write(revision_xml_str + "\n")
+                    f.write(f"-------------------------------------------\n")
+                
                 return False
             
             # --- Labels and Description changes ---
@@ -843,6 +855,9 @@ class PageParser():
 
         previous_revision = None
 
+        last_non_deleted_revision_id = -1
+        prev_revision_deleted = False
+
         # Extract title = entity_id
         title_elem = self.page_elem.find(title_tag)
         if title_elem is not None:
@@ -864,6 +879,17 @@ class PageParser():
                     
                     # Extract text, id, timestamp, comment, username, user_id
                     contrib_elem = rev_elem.find(f'{{{NS}}}contributor')
+
+                    prev_revision_id = rev_elem.findtext(f'{{{NS}}}parentid', '').strip()
+                    if prev_revision_id and not prev_revision_deleted:
+                        prev_revision_id = int(prev_revision_id)
+                    elif prev_revision_deleted:
+                        prev_revision_id = last_non_deleted_revision_id
+                    else:
+                        prev_revision_id = None # initial revision
+
+                    if prev_revision_deleted:
+                        prev_revision_deleted = False
                 
                     if contrib_elem is not None:
                         username = (contrib_elem.findtext(f'{{{NS}}}username') or '').strip()
@@ -877,6 +903,7 @@ class PageParser():
                         'entity_id': entity_id,
                         'entity_label': entity_label,
                         'revision_id': revision_id,
+                        'prev_revision_id': prev_revision_id if prev_revision_id else '-1', # for the first revision (doesn't have a parentid)
                         'timestamp': rev_elem.findtext(f'{{{NS}}}timestamp', '').strip(),
                         'comment': rev_elem.findtext(f'{{{NS}}}comment', '').strip(),
                         'username': username,
@@ -903,6 +930,7 @@ class PageParser():
                     if change: # store revision if there was any change detected
 
                         self.revision.append((
+                            self.revision_meta['prev_revision_id'],
                             self.revision_meta['revision_id'],
                             self.revision_meta['entity_id'],
                             self.revision_meta['entity_label'],
@@ -912,6 +940,12 @@ class PageParser():
                             self.revision_meta['comment'],
                             self.revision_meta['file_path']
                         ))
+
+                        # for revisions that have been deleted
+                        # we store prev_revision_id as the last non deleted revision
+                        # NOTE: if there are no changes, we don't store revision information, therefore we 
+                        # have to update this here
+                        last_non_deleted_revision_id = revision_id
 
                     # if parse_revisions_text returns None then
                     # we only update previous_revision with an actual revision (that has a json in the revision <text></text>)
@@ -926,9 +960,12 @@ class PageParser():
                         self.changes = []
                         self.revision = []
                         self.changes_metadata = []
+                else: # revision was deleted
+                    prev_revision_deleted = True
 
             # free memory
             rev_elem.clear()
+            del rev_elem
         
         # Insert remaining changes + revision + changes_metadata in case the batch size was not reached
         if self.changes:
@@ -944,3 +981,4 @@ class PageParser():
         self.page_elem.clear()
         while self.page_elem.getprevious() is not None:
             del self.page_elem.getparent()[0]
+        del page_elem

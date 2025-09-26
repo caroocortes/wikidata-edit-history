@@ -11,10 +11,16 @@ temp_uncompressed = Path("../../../san2/data/wikidata-history-dumps/wikidatawiki
 def parse_from_bz2(file_path):
     start = time.time()
     count = 0
+    ns = "http://www.mediawiki.org/xml/export-0.11/"
+    page_tag = f"{{{ns}}}page"
+    title_tag = f"{{{ns}}}title"
     with bz2.open(file_path, 'rb') as f:
-        for event, elem in etree.iterparse(f, events=('end',)):
-            # You can count elements or just pass
-            count += 1
+        for event, elem in etree.iterparse(f, events=('end',), tag=page_tag):
+            title_elem = elem.find(title_tag)
+            if title_elem is not None:
+                entity_id = title_elem.text or ""
+                if entity_id.startswith("Q"):
+                    count += 1
             pass
     end = time.time()
     return end - start, count
@@ -30,10 +36,17 @@ def decompress_to_disk(file_path, target_path):
 def parse_from_disk(file_path):
     start = time.time()
     count = 0
+    ns = "http://www.mediawiki.org/xml/export-0.11/"
+    page_tag = f"{{{ns}}}page"
+    title_tag = f"{{{ns}}}title"
+
     with open(file_path, 'rb') as f:
-        for event, elem in etree.iterparse(f, events=('end',)):
-            # Count elements or just pass
-            count += 1
+        for event, elem in etree.iterparse(f, events=('end',), tag=page_tag):
+            title_elem = elem.find(title_tag)
+            if title_elem is not None:
+                entity_id = title_elem.text or ""
+                if entity_id.startswith("Q"):
+                    count += 1
             pass
     end = time.time()
     return end - start, count
