@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS revision (
+    prev_revision_id BIGINT,
     revision_id BIGINT,
     entity_id INT,
     entity_label TEXT,

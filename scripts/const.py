@@ -5,6 +5,7 @@ DOWNLOAD_LINKS_FILE_PATH = 'data/xml_download_links.txt'
 PROCESSED_FILES_PATH = 'logs/processed_files.txt'
 PARSER_LOG_FILES_PATH = 'logs/parser_log_files.json'
 ERROR_REVISION_TEXT_PATH = "logs/error_revision_text.txt"
+REVISION_NO_CLAIMS_TEXT_PATH = "logs/revision_no_claims.txt"
 
 CREATE_PROPERTY = "CREATE_PROPERTY"
 CREATE_PROPERTY_VALUE = "CREATE_PROPERTY_VALUE"
