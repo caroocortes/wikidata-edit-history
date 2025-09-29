@@ -41,6 +41,9 @@ class PageParser():
         self.label_hash = ''
         self.description_hash = ''
 
+        # TODO: remove
+        self.prev_revision_redirect = False
+
         self.revision_meta = {}
 
         self.file_path = file_path # file_path of XML where the page is stored
@@ -804,7 +807,18 @@ class PageParser():
                     f.write(json.dumps(current_revision) + "\n")
                     f.write(f"-------------------------------------------\n")
                 
+                if 'redirect' in (current_revision or {}):
+                    self.prev_revision_redirect = True
+                
                 return False
+
+            if self.prev_revision_redirect:
+                with open(REVISION_NO_CLAIMS_TEXT_PATH, "a") as f:
+                    f.write(f"-------------------------------------------\n")
+                    f.write(f"Next revision after redirect {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
+                    f.write(json.dumps(current_revision) + "\n")
+                    f.write(f"-------------------------------------------\n")
+                self.prev_revision_redirect = False
             
             # --- Labels and Description changes ---
             change_detected = self._handle_description_label_change(previous_revision, current_revision)
