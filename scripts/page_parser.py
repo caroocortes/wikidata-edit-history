@@ -35,12 +35,6 @@ class PageParser():
 
         self.config = config
 
-        self.label_hash_counter = 0
-        self.description_hash_counter = 0
-
-        self.label_hash = ''
-        self.description_hash = ''
-
         # TODO: remove
         self.current_revision_redirect = False
 
@@ -489,24 +483,6 @@ class PageParser():
                 old_value = None if change_type == CREATE_ENTITY else val
                 new_value = val if change_type == CREATE_ENTITY else None
 
-                # Label and description don't have hashes, so
-                # I manually create it
-                if pid == LABEL_PROP_ID:
-                    old_hash = None if change_type == CREATE_ENTITY else self.label_hash
-                    if change_type == CREATE_ENTITY:
-                        # generate hash for the label
-                        self.label_hash = PageParser.generate_unique_hash(self.label_hash_counter)
-                    
-                    new_hash = self.label_hash if change_type == CREATE_ENTITY else None
-  
-                if pid == DESCRIPTION_PROP_ID:
-                    old_hash = None if change_type == CREATE_ENTITY else self.description_hash
-                    if change_type == CREATE_ENTITY:
-                        # generate hash for the description
-                        self.description_hash = PageParser.generate_unique_hash(self.description_hash_counter)
-                    
-                    new_hash = self.description_hash if change_type == CREATE_ENTITY else None
-
                 self.save_changes(
                     pid, 
                     value_id=pid,
@@ -515,8 +491,8 @@ class PageParser():
                     datatype='string',
                     change_target=None,
                     change_type=change_type,
-                    old_hash=old_hash,
-                    new_hash=new_hash
+                    old_hash='',
+                    new_hash=''
                 )
      
     def _handle_description_label_change(self, previous_revision, current_revision):
@@ -540,11 +516,6 @@ class PageParser():
             old_value = prev_label if not isinstance(prev_label, dict) else None
             new_value = curr_label if not isinstance(curr_label, dict) else None
 
-            # Generate new hash for label
-            old_hash = self.label_hash
-            self.label_hash_counter += 1
-            self.label_hash = PageParser.generate_unique_hash(self.label_hash_counter)
-
             self.save_changes(
                 property_id=LABEL_PROP_ID,
                 value_id='label',
@@ -554,8 +525,8 @@ class PageParser():
                 change_target=None,
                 change_type=PageParser._description_label_change_type(prev_label, curr_label),
                 change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string'),
-                old_hash=old_hash,
-                new_hash=self.label_hash
+                old_hash='',
+                new_hash=''
             )
             
         # --- Description change ---
@@ -570,11 +541,6 @@ class PageParser():
             old_value = prev_desc if not isinstance(prev_desc, dict) else None
             new_value = curr_desc if not isinstance(curr_desc, dict) else None
 
-            # Generate new hash for description
-            old_hash = self.description_hash
-            self.description_hash_counter += 1
-            self.description_hash = PageParser.generate_unique_hash(self.description_hash_counter)
-
             self.save_changes(
                 property_id=DESCRIPTION_PROP_ID,
                 value_id='description',
@@ -584,8 +550,8 @@ class PageParser():
                 change_target=None,
                 change_type=PageParser._description_label_change_type(prev_desc, curr_desc),
                 change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string'),
-                old_hash=old_hash,
-                new_hash=self.description_hash
+                old_hash='',
+                new_hash=''
             )
 
         return change_detected
