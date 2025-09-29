@@ -485,7 +485,7 @@ class PageParser():
 
                 self.save_changes(
                     pid, 
-                    value_id=pid,
+                    value_id='label' if pid == LABEL_PROP_ID else 'description',
                     old_value=old_value if not isinstance(old_value, dict) else None,
                     new_value=new_value if not isinstance(new_value, dict) else None,
                     datatype='string',
@@ -765,8 +765,6 @@ class PageParser():
 
             if not curr_claims and not curr_label and not curr_desc:
                 # Skipped revision -> could be a deleted revision, not necessarily a deleted entity
-                print(f'Revision does not contain labels, descriptions, nor claims. Skipped revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}')
-
                 with open(REVISION_NO_CLAIMS_TEXT_PATH, "a") as f:
                     f.write(f"-------------------------------------------\n")
                     f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
