@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS revision (
     user_id TEXT,
     username TEXT,
     comment TEXT,
+    redirect BOOLEAN,
     PRIMARY KEY (revision_id)
 );
 

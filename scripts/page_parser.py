@@ -19,7 +19,7 @@ def batch_insert(conn, revision, changes, change_metadata):
     """Function to insert into DB in parallel."""
     
     try:
-        insert_rows(conn, 'revision', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path'])
+        insert_rows(conn, 'revision', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'redirect'])
         insert_rows(conn, 'change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash'])
         insert_rows(conn, 'change_metadata', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
     except Exception as e:
@@ -42,7 +42,7 @@ class PageParser():
         self.description_hash = ''
 
         # TODO: remove
-        self.prev_revision_redirect = False
+        self.current_revision_redirect = False
 
         self.revision_meta = {}
 
@@ -807,18 +807,11 @@ class PageParser():
                     f.write(json.dumps(current_revision) + "\n")
                     f.write(f"-------------------------------------------\n")
                 
-                if 'redirect' in (current_revision or {}):
-                    self.prev_revision_redirect = True
-                
                 return False
-
-            if self.prev_revision_redirect:
-                with open(REVISION_NO_CLAIMS_TEXT_PATH, "a") as f:
-                    f.write(f"-------------------------------------------\n")
-                    f.write(f"Next revision after redirect {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
-                    f.write(json.dumps(current_revision) + "\n")
-                    f.write(f"-------------------------------------------\n")
-                self.prev_revision_redirect = False
+            
+            if 'redirect' in current_revision:
+                self.current_revision_redirect = True
+                return True
             
             # --- Labels and Description changes ---
             change_detected = self._handle_description_label_change(previous_revision, current_revision)
@@ -954,8 +947,12 @@ class PageParser():
                             self.revision_meta['user_id'],
                             self.revision_meta['username'],
                             self.revision_meta['comment'],
-                            self.revision_meta['file_path']
+                            self.revision_meta['file_path'],
+                            self.current_revision_redirect
                         ))
+
+                        if self.current_revision_redirect:
+                            self.current_revision_redirect = False
 
                         # for revisions that have been deleted
                         # we store prev_revision_id as the last non deleted revision
