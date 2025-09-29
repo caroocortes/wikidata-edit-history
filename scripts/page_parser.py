@@ -801,12 +801,7 @@ class PageParser():
                 with open(REVISION_NO_CLAIMS_TEXT_PATH, "a") as f:
                     f.write(f"-------------------------------------------\n")
                     f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
-                    revision_xml_str = etree.tostring(
-                        current_revision,
-                        pretty_print=True,
-                        encoding="unicode" 
-                    )
-                    f.write(revision_xml_str + "\n")
+                    f.write(json.dumps(current_revision) + "\n")
                     f.write(f"-------------------------------------------\n")
                 
                 return False
@@ -928,9 +923,16 @@ class PageParser():
                         change = self.get_changes_from_revisions(current_revision, previous_revision)
 
                     if change: # store revision if there was any change detected
+                        
+                        # Because revisions that modify aliases/sitelinks are not stored. Therefore, we store the 
+                        # prev_revision_id as the last non deleted revision id that we actually stored in the DB.
+                        if last_non_deleted_revision_id != self.revision_meta['prev_revision_id']:
+                            prev_rev_id = last_non_deleted_revision_id
+                        else:
+                            prev_rev_id = self.revision_meta['prev_revision_id']
 
                         self.revision.append((
-                            self.revision_meta['prev_revision_id'],
+                            prev_rev_id,
                             self.revision_meta['revision_id'],
                             self.revision_meta['entity_id'],
                             self.revision_meta['entity_label'],
