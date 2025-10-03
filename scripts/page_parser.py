@@ -519,9 +519,8 @@ class PageParser():
 
             if len(deleted) > 0:
                 change_detected = True
-
-            # there are duplicated references
-
+            print('deleted!!!')
+            print(deleted)
             for val in deleted:
                 prev_stmt_match = prev_values_map[val]
                 
@@ -552,7 +551,8 @@ class PageParser():
             added = set(set_curr - unchanged)
             if len(added) > 0:
                 change_detected = True
-        
+            print('aded!!!')
+            print(added)
             for val in added:
                 curr_stmt_match = curr_values_map[val]
 
