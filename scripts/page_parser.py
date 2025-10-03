@@ -450,7 +450,6 @@ class PageParser():
         """
 
         change_detected = False
-        possible_update = 0
 
         prev = prev_stmt.get(type_, {}) if prev_stmt else {}
         curr = curr_stmt.get(type_, {}) if curr_stmt else {}
@@ -485,7 +484,6 @@ class PageParser():
 
             # --- Deleted values ---
             for h in deleted:
-                possible_update +=1
                 change_detected = True
                 prev_stmt_match = prev_map[h]
 
@@ -511,7 +509,6 @@ class PageParser():
 
             # --- Added values ---
             for h in added:
-                possible_update +=1
                 change_detected = True
                 curr_stmt_match = curr_map[h]
 
@@ -534,18 +531,6 @@ class PageParser():
                     old_hash=None,
                     new_hash=h
                 )
-
-            possible_update +=1
-            if possible_update  == 2:
-                def jaccard_similarity(set_a, set_b):
-                    return len(set_a & set_b) / len(set_a | set_b) if (set_a | set_b) else 1.0
-                if jaccard_similarity(set_curr, set_prev) > 0.5:
-                    with open(f'{type_}_updates.txt', "a") as f:
-                        f.write(f"-------------------------------------------\n")
-                        f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
-                        f.write(json.dumps(prev_stmt) + "\n")
-                        f.write(json.dumps(curr_stmt) + "\n") 
-                        f.write(f"-------------------------------------------\n")
 
         return change_detected
             
