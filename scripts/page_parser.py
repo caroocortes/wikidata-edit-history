@@ -603,10 +603,7 @@ class PageParser():
 
         if prev and curr and prev.get('hash') == curr.get('hash'):
             # there was no change
-            print(f'no {type_} changes')
             return False
-        else: 
-            print(f'some {type_} changes !!!')
 
         def normalize_json(val):
             if isinstance(val, dict):
@@ -639,6 +636,9 @@ class PageParser():
         all_pids = set(prev.keys()).union(curr.keys())
 
         possible_update = 0
+
+        if len(all_pids):
+            print(f'there is some {type_} change')
 
         for pid in all_pids:
             prev_stmts = prev_snaks.get(pid, [])
