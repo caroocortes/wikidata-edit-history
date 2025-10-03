@@ -442,151 +442,6 @@ class PageParser():
             new_hash=new_hash
         )
 
-    # def _handle_qualifiers_changes(self, pid, value_id, prev_stmt, curr_stmt):
-    #     """
-    #     Handles addition, deletion, and updates of qualifier values.
-    #     Uses a simple CREATE/DELETE logic and maintains stable value_id mapping.
-    #     Updates can be tagged after CREATE/DELETE.
-    #     """
-    #     change_detected = False
-
-    #     prev_qualifiers = prev_stmt.get('qualifiers', {}) if prev_stmt else {}
-    #     curr_qualifiers = curr_stmt.get('qualifiers', {}) if curr_stmt else {}
-
-    #     if prev_qualifiers and curr_qualifiers and prev_qualifiers.get('hash') == curr_qualifiers.get('hash'):
-    #         # there was no change
-    #         return False
-
-    #     def normalize_json(val):
-    #         if isinstance(val, dict):
-    #             return json.dumps(val, sort_keys=True)
-    #         return val
-
-    #     def get_value_id(qual_pid, val_hash):
-    #         return self.statement_qualifier_map.get(pid, {}).get(value_id).get(qual_pid, {}).get(val_hash) 
-
-    #     def store_new_value_id(qual_pid, val_hash):
-    #         val = self.value_id_counter_qual
-    #         self.value_id_counter_qual += 1
-    #         self.statement_qualifier_map.setdefault(pid, {}).setdefault(value_id, {}).setdefault(qual_pid, {})[val_hash] = val
-    #         return val
-
-    #     def store_deleted_value_id(qual_pid, val_hash, val_id):
-    #         self.deleted_qualifier_map.setdefault(pid, {}).setdefault(value_id, {}).setdefault(qual_pid, {})[val_hash] = val_id
-    #         return val
-        
-    #     prev_qualifiers = prev_qualifiers.get('snaks', {})
-    #     curr_qualifiers = curr_qualifiers.get('snaks', {})
-        
-    #     all_qual_pids = set(prev_qualifiers.keys()).union(curr_qualifiers.keys())
-
-    #     possible_update = 0
-
-    #     for qual_pid in all_qual_pids:
-    #         prev_stmts = prev_qualifiers.get(qual_pid, [])
-    #         curr_stmts = curr_qualifiers.get(qual_pid, [])
-
-    #         # Normalized values for comparison
-    #         prev_values_map = {}
-    #         for qs in prev_stmts:
-    #             dv = qs.get('datavalue')
-    #             if dv:
-    #                 val_norm = normalize_json(PageParser.parse_datavalue_json(dv['value'], dv['type'])[0])
-    #                 prev_values_map[val_norm] = qs # stores {value: statement}
-
-    #         curr_values_map = {}
-    #         for qs in curr_stmts:
-    #             dv = qs.get('datavalue')
-    #             if dv:
-    #                 val_norm = normalize_json(PageParser.parse_datavalue_json(dv['value'], dv['type'])[0])
-    #                 curr_values_map[val_norm] = qs # stores {value: statement}
-
-    #         set_prev = set(prev_values_map.keys())
-    #         set_curr = set(curr_values_map.keys())
-
-    #         # --- Unchanged values ---
-    #         unchanged = set_prev.intersection(set_curr)
-
-    #         # --- Deleted values ---
-    #         deleted = set_prev - unchanged
-    #         for val in deleted:
-    #             change_detected = True
-    #             prev_stmt_match = prev_values_map[val]
-
-    #             dv = prev_stmt_match['datavalue']
-                
-    #             prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
-    #             prev_hash = prev_stmt_match.get('hash', '')
-    #             val_id = get_value_id(qual_pid, prev_hash)
-                
-    #             store_deleted_value_id(qual_pid, prev_hash, val_id)
-
-    #             del self.statement_qualifier_map[pid][value_id][qual_pid][prev_hash]
-
-    #             self.save_changes(
-    #                 property_id=id_to_int(pid),
-    #                 value_id=val_id,
-    #                 old_value=prev_val,
-    #                 new_value=None,
-    #                 datatype=prev_dtype,
-    #                 change_target=id_to_int(qual_pid),
-    #                 change_type=DELETE_QUALIFIER_VALUE,
-    #                 change_magnitude=None,
-    #                 old_hash=prev_hash,
-    #                 new_hash=None
-    #             )
-    #             possible_update +=1
-
-    #         # --- Added values ---
-    #         added = set_curr - unchanged
-    #         for val in added:
-    #             change_detected = True
-    #             curr_stmt_match = curr_values_map[val]
-
-    #             dv = curr_stmt_match['datavalue']
-    #             curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
-    #             curr_hash = curr_stmt_match.get('hash', '')
-
-    #             # Check if value was previously deleted (restored)
-    #             restored_val_id = None
-    #             for h, vid in self.deleted_value_map.get(pid, {}).get(value_id, {}).get(qual_pid, {}).items():
-    #                 if h == curr_hash:
-    #                     restored_val_id = vid
-    #                     break
-
-    #             if restored_val_id:
-    #                 val_id = store_new_value_id(qual_pid, curr_hash, restored_val_id)
-    #                 del self.deleted_qualifier_map[pid][value_id][qual_pid][prev_hash]
-    #             else:
-    #                 val_id = store_new_value_id(qual_pid, curr_hash, val_id)
-
-    #             self.save_changes(
-    #                 property_id=id_to_int(pid),
-    #                 value_id=val_id,
-    #                 old_value=None,
-    #                 new_value=curr_val,
-    #                 datatype=curr_dtype,
-    #                 change_target=id_to_int(qual_pid),
-    #                 change_type=CREATE_QUALIFIER_VALUE,
-    #                 change_magnitude=None,
-    #                 old_hash=None,
-    #                 new_hash=curr_hash
-    #             )
-            
-    #             possible_update +=1
-    #             if possible_update  == 2:
-    #                 def jaccard_similarity(set_a, set_b):
-    #                     return len(set_a & set_b) / len(set_a | set_b) if (set_a | set_b) else 1.0
-    #                 if jaccard_similarity(set_curr, set_prev) > 0.5:
-    #                     with open('qualifier_updates.txt', "a") as f:
-    #                         f.write(f"-------------------------------------------\n")
-    #                         f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
-    #                         f.write(json.dumps(prev_stmt) + "\n")
-    #                         f.write(json.dumps(curr_stmt) + "\n") 
-    #                         f.write(f"-------------------------------------------\n")
-
-    #     return change_detected
-    
 
     def _handle_reference_qualifier_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt, type_):
         """
@@ -657,15 +512,20 @@ class PageParser():
             # Normalized values for comparison
             prev_values_map = {}
             for s in prev_stmts:
-                val_norm = normalize_json(PageParser._parse_datavalue(s)[0])
-                print('val_norm prev:', val_norm)
+                # doesnt follow the snaktype structure from property values
+                value_json = s.get('datavalue', {}).get("value", None)
+                datatype = s.get('datavalue', {}).get("type", None)
+                val_norm = normalize_json(PageParser.parse_datavalue_json(value_json, datatype)[0])
                 prev_values_map[val_norm] = s # stores {value: statement}
 
             print(prev_values_map)
 
             curr_values_map = {}
             for s in curr_stmts:
-                val_norm = normalize_json(PageParser._parse_datavalue(s)[0])
+                # doesnt follow the snaktype structure from property values
+                value_json = s.get('datavalue', {}).get("value", None)
+                datatype = s.get('datavalue', {}).get("type", None)
+                val_norm = normalize_json(PageParser.parse_datavalue_json(value_json, datatype)[0])
                 curr_values_map[val_norm] = s # stores {value: statement}
                 print('val_norm curr:',val_norm)
 
