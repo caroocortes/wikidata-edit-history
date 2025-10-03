@@ -496,7 +496,7 @@ class PageParser():
 
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
-                    value_id=h,
+                    value_id=f"{h}-{stmt_value_id}",
                     old_value=prev_val,
                     new_value=None,
                     datatype=prev_dtype,
@@ -521,7 +521,7 @@ class PageParser():
 
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
-                    value_id=h,
+                    value_id=f"{h}-{stmt_value_id}",
                     old_value=None,
                     new_value=curr_val,
                     datatype=curr_dtype,
