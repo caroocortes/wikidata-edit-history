@@ -472,7 +472,10 @@ class PageParser():
             return val
 
         def get_value_id(pid, val_hash):
-            return self.statement_reference_map.get(stmt_pid, {}).get(stmt_value_id).get(pid, {}).get(val_hash) 
+            if type_ == 'qualifiers':
+                return self.statement_qualifier_map.get(stmt_pid, {}).get(stmt_value_id).get(pid, {}).get(val_hash) 
+            else:
+                return self.statement_reference_map.get(stmt_pid, {}).get(stmt_value_id).get(pid, {}).get(val_hash) 
 
         def store_new_value_id(pid, val_hash):
             if type_ == 'qualifiers':
