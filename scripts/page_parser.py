@@ -643,9 +643,6 @@ class PageParser():
 
         possible_update = 0
 
-        if len(all_pids):
-            print(f'there is some {type_} change')
-
         for pid in all_pids:
             prev_stmts = prev_snaks.get(pid, [])
             curr_stmts = curr_snaks.get(pid, [])
@@ -673,8 +670,12 @@ class PageParser():
 
             # --- Deleted values ---
             deleted = set_prev - unchanged
-            for val in deleted:
+
+            if len(deleted) > 0:
+                print('some qualifier was deleted')
                 change_detected = True
+
+            for val in deleted:
                 prev_stmt_match = prev_values_map[val]
 
                 dv = prev_stmt_match['datavalue']
@@ -706,8 +707,12 @@ class PageParser():
 
             # --- Added values ---
             added = set_curr - unchanged
-            for val in added:
+
+            if len(added) > 0:
                 change_detected = True
+                print('some qualifier was created')
+            
+            for val in added:
                 curr_stmt_match = curr_values_map[val]
 
                 dv = curr_stmt_match['datavalue']
@@ -760,7 +765,7 @@ class PageParser():
                             f.write(json.dumps(prev_stmt) + "\n")
                             f.write(json.dumps(curr_stmt) + "\n") 
                             f.write(f"-------------------------------------------\n")
-
+        print(f'THE CHANGE DETECTED THAT IS RETURNED {change_detected}')
         return change_detected
     
     def _changes_created_entity(self, revision):
