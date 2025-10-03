@@ -641,6 +641,9 @@ class PageParser():
         
         all_pids = set(prev.keys()).union(curr.keys())
 
+        if len(all_pids) > 0:
+            print('there are some qualifiers/references!!!!!!!!')
+
         possible_update = 0
 
         for pid in all_pids:
