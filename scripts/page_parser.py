@@ -446,115 +446,74 @@ class PageParser():
     def _handle_reference_qualifier_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt, type_):
         """
         Handles addition, deletion of references/qualifiers values.
-        Uses a simple CREATE/DELETE logic and maintains stable value_id mapping.
-        Updates can be tagged after CREATE/DELETE.
-
-        type_ is "references" or "qualifiers"
+        Uses a simple CREATE/DELETE logic based on snak hashes.
         """
+
         change_detected = False
+        possible_update = 0
 
         prev = prev_stmt.get(type_, {}) if prev_stmt else {}
         curr = curr_stmt.get(type_, {}) if curr_stmt else {}
 
         if isinstance(prev, list):
             prev = {}
-
         if isinstance(curr, list):
             curr = {}
 
         if prev and curr and prev.get('hash') == curr.get('hash') or (not prev and not curr):
-            # there was no change
-            return False
+            return False  # no change
+        
+        prev_snaks = prev.get('snaks', prev)
+        curr_snaks = curr.get('snaks', curr)
 
-        def normalize_json(val):
-            if isinstance(val, dict):
-                return json.dumps(val, sort_keys=True)
-            return val
-
-        # Some dumps don't have this structure but the 
-        # WD documentation does have this structure...
-        if 'snaks' in prev:
-            prev_snaks = prev.get('snaks', {})
-        else:
-            prev_snaks = prev
-
-        if 'snaks' in curr:
-            curr_snaks = curr.get('snaks', {})
-        else:
-            curr_snaks = curr
-            
         all_pids = set(prev_snaks.keys()).union(curr_snaks.keys())
-
-        possible_update = 0
 
         for pid in all_pids:
             prev_stmts = prev_snaks.get(pid, [])
             curr_stmts = curr_snaks.get(pid, [])
 
-            # Normalized values for comparison
-            prev_values_map = {}
-            for s in prev_stmts:
-                # doesnt follow the snaktype structure from property values
-                value_json = s.get('datavalue', {}).get("value", None)
-                datatype = s.get('datavalue', {}).get("type", None)
-                val_norm = normalize_json(PageParser.parse_datavalue_json(value_json, datatype)[0])
-                prev_values_map[val_norm] = s # stores {value: statement}
+            # map by hash : stmt
+            prev_map = {s.get('hash', ''): s for s in prev_stmts}
+            curr_map = {s.get('hash', ''): s for s in curr_stmts}
 
-            curr_values_map = {}
-            for s in curr_stmts:
-                # doesnt follow the snaktype structure from property values
-                value_json = s.get('datavalue', {}).get("value", None)
-                datatype = s.get('datavalue', {}).get("type", None)
-                val_norm = normalize_json(PageParser.parse_datavalue_json(value_json, datatype)[0])
-                curr_values_map[val_norm] = s # stores {value: statement}
+            prev_hashes = set(prev_map.keys())
+            curr_hashes = set(curr_map.keys())
 
-            set_prev = set(prev_values_map.keys())
-            set_curr = set(curr_values_map.keys())
-
-            # --- Unchanged values ---
-            unchanged = set_prev.intersection(set_curr)
+            unchanged = prev_hashes & curr_hashes
+            deleted = prev_hashes - unchanged
+            added = curr_hashes - unchanged
 
             # --- Deleted values ---
-            deleted = set(set_prev - unchanged)
-
-            if len(deleted) > 0:
+            for h in deleted:
+                possible_update +=1
                 change_detected = True
-            print('deleted!!!')
-            print(deleted)
-            for val in deleted:
-                prev_stmt_match = prev_values_map[val]
-                
+                prev_stmt_match = prev_map[h]
+
                 snaktype = prev_stmt_match['snaktype']
                 if snaktype in ('novalue', 'somevalue'):
                     prev_val, prev_dtype = (snaktype, 'string')
                 else:
                     dv = prev_stmt_match['datavalue']
                     prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
-                
-                prev_hash = prev_stmt_match.get('hash', '')
 
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
-                    value_id=prev_hash,
+                    value_id=h,
                     old_value=prev_val,
                     new_value=None,
                     datatype=prev_dtype,
                     change_target=id_to_int(pid),
                     change_type=DELETE_REFERENCE_VALUE if type_ == 'references' else DELETE_QUALIFIER_VALUE,
                     change_magnitude=None,
-                    old_hash=prev_hash,
+                    old_hash=h,
                     new_hash=None
                 )
-                possible_update +=1
 
             # --- Added values ---
-            added = set(set_curr - unchanged)
-            if len(added) > 0:
+            for h in added:
+                possible_update +=1
                 change_detected = True
-            print('aded!!!')
-            print(added)
-            for val in added:
-                curr_stmt_match = curr_values_map[val]
+                curr_stmt_match = curr_map[h]
 
                 snaktype = curr_stmt_match['snaktype']
                 if snaktype in ('novalue', 'somevalue'):
@@ -563,11 +522,9 @@ class PageParser():
                     dv = curr_stmt_match['datavalue']
                     curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                curr_hash = curr_stmt_match.get('hash', '')
-
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
-                    value_id=curr_hash,
+                    value_id=h,
                     old_value=None,
                     new_value=curr_val,
                     datatype=curr_dtype,
@@ -575,23 +532,24 @@ class PageParser():
                     change_type=CREATE_QUALIFIER_VALUE if type_ == 'qualifiers' else CREATE_REFERENCE_VALUE,
                     change_magnitude=None,
                     old_hash=None,
-                    new_hash=curr_hash
+                    new_hash=h
                 )
-            
-                possible_update +=1
-                if possible_update  == 2:
-                    def jaccard_similarity(set_a, set_b):
-                        return len(set_a & set_b) / len(set_a | set_b) if (set_a | set_b) else 1.0
-                    if jaccard_similarity(set_curr, set_prev) > 0.5:
-                        with open(f'{type_}_updates.txt', "a") as f:
-                            f.write(f"-------------------------------------------\n")
-                            f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
-                            f.write(json.dumps(prev_stmt) + "\n")
-                            f.write(json.dumps(curr_stmt) + "\n") 
-                            f.write(f"-------------------------------------------\n")
+
+            possible_update +=1
+            if possible_update  == 2:
+                def jaccard_similarity(set_a, set_b):
+                    return len(set_a & set_b) / len(set_a | set_b) if (set_a | set_b) else 1.0
+                if jaccard_similarity(set_curr, set_prev) > 0.5:
+                    with open(f'{type_}_updates.txt', "a") as f:
+                        f.write(f"-------------------------------------------\n")
+                        f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
+                        f.write(json.dumps(prev_stmt) + "\n")
+                        f.write(json.dumps(curr_stmt) + "\n") 
+                        f.write(f"-------------------------------------------\n")
 
         return change_detected
-    
+            
+
     def _changes_created_entity(self, revision):
 
         # Process claims
