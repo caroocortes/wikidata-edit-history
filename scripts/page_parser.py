@@ -636,22 +636,23 @@ class PageParser():
             else:
                 self.deleted_reference_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[val_hash] = val_id
         
-        prev_snaks = prev.get('snaks', {})
-        curr_snaks = curr.get('snaks', {})
+        if 'snaks' in prev:
+            prev_snaks = prev.get('snaks', {})
+        else:
+            prev_snaks = prev
 
-        print('prev: \n', prev)
-        print('curr: \n', curr)
-        
+        if 'snaks' in curr:
+            curr_snaks = curr.get('snaks', {})
+        else:
+            curr_snaks = curr
+            
         all_pids = set(prev_snaks.keys()).union(curr_snaks.keys())
-        print(all_pids)
 
         possible_update = 0
 
         for pid in all_pids:
             prev_stmts = prev_snaks.get(pid, [])
-            print(prev_stmts)
             curr_stmts = curr_snaks.get(pid, [])
-            print(curr_stmts)
 
             # Normalized values for comparison
             prev_values_map = {}
