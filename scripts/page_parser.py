@@ -446,6 +446,10 @@ class PageParser():
         prev_qualifiers = prev_stmt.get('qualifiers', {}) if prev_stmt else {}
         curr_qualifiers = curr_stmt.get('qualifiers', {}) if curr_stmt else {}
 
+        if prev_qualifiers and curr_qualifiers and prev_qualifiers.get('hash') == curr_qualifiers.get('hash'):
+            # there was no change
+            return False
+
         def normalize_json(val):
             if isinstance(val, dict):
                 return json.dumps(val, sort_keys=True)
@@ -463,7 +467,10 @@ class PageParser():
         def store_deleted_value_id(qual_pid, val_hash, val_id):
             self.deleted_qualifier_map.setdefault(pid, {}).setdefault(value_id, {}).setdefault(qual_pid, {})[val_hash] = val_id
             return val
-
+        
+        prev_qualifiers = prev_qualifiers.get('snaks', {})
+        curr_qualifiers = curr_qualifiers.get('snaks', {})
+        
         all_qual_pids = set(prev_qualifiers.keys()).union(curr_qualifiers.keys())
 
         possible_update = 0
@@ -561,17 +568,19 @@ class PageParser():
             
                 possible_update +=1
                 if possible_update  == 2:
-
-                    with open('qualifier_updates.txt', "a") as f:
-                        f.write(f"-------------------------------------------\n")
-                        f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
-                        f.write(json.dumps(prev_stmt) + "\n")
-                        f.write(json.dumps(curr_stmt) + "\n") 
-                        f.write(f"-------------------------------------------\n")
+                    def jaccard_similarity(set_a, set_b):
+                        return len(set_a & set_b) / len(set_a | set_b) if (set_a | set_b) else 1.0
+                    if jaccard_similarity(set_curr, set_prev) > 0.5:
+                        with open('qualifier_updates.txt', "a") as f:
+                            f.write(f"-------------------------------------------\n")
+                            f.write(f"Revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}:\n")
+                            f.write(json.dumps(prev_stmt) + "\n")
+                            f.write(json.dumps(curr_stmt) + "\n") 
+                            f.write(f"-------------------------------------------\n")
 
         return change_detected
     
-    def _changes_deleted_created_entity(self, revision, change_type):
+    def _changes_created_entity(self, revision):
 
         # Process claims
         claims = PageParser._safe_get_nested(revision, 'claims')
@@ -583,8 +592,8 @@ class PageParser():
                 new_hash = PageParser._get_property_mainsnak(stmt, 'hash') if stmt else None
                 value_id = stmt.get('id', None)
                 
-                old_value = None if change_type == CREATE_ENTITY else value
-                new_value = value if change_type == CREATE_ENTITY else None
+                old_value = None
+                new_value = value
                 
                 self.save_changes(
                     id_to_int(property_id), 
@@ -593,15 +602,15 @@ class PageParser():
                     new_value=new_value,
                     datatype=datatype,
                     change_target=None,
-                    change_type=change_type,
-                    old_hash=None if change_type == CREATE_ENTITY else new_hash,
-                    new_hash=new_hash if change_type == CREATE_ENTITY else None
+                    change_type=CREATE_ENTITY,
+                    old_hash=None,
+                    new_hash=new_hash
                 )
 
                 if datatype_metadata:
                     for k, v in datatype_metadata.items():
-                        old_value = None if change_type == CREATE_ENTITY else v
-                        new_value = v if change_type == CREATE_ENTITY else None
+                        old_value = None
+                        new_value = v
                         
                         self.save_changes(
                             id_to_int(property_id),
@@ -610,10 +619,13 @@ class PageParser():
                             new_value=new_value,
                             datatype=datatype,
                             change_target=k,
-                            change_type=change_type,
-                            old_hash=None if change_type == CREATE_ENTITY else new_hash,
-                            new_hash=new_hash if change_type == CREATE_ENTITY else None
+                            change_type=CREATE_ENTITY,
+                            old_hash=None,
+                            new_hash=new_hash
                         )
+
+                # qualifier changes
+                self._handle_qualifiers_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
         # If there's no description or label, the revisions shows them as []
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
@@ -623,8 +635,8 @@ class PageParser():
         # Process labels and descriptions (non-claim properties)
         for pid, val in [(LABEL_PROP_ID, labels), (DESCRIPTION_PROP_ID, descriptions)]:
             if val:
-                old_value = None if change_type == CREATE_ENTITY else val
-                new_value = val if change_type == CREATE_ENTITY else None
+                old_value = None
+                new_value = val
 
                 self.save_changes(
                     pid, 
@@ -633,7 +645,7 @@ class PageParser():
                     new_value=new_value if not isinstance(new_value, dict) else None,
                     datatype='string',
                     change_target=None,
-                    change_type=change_type,
+                    change_type=CREATE_ENTITY,
                     old_hash='',
                     new_hash=''
                 )
@@ -730,6 +742,9 @@ class PageParser():
                     old_hash=None,
                     new_hash=new_hash
                 )
+
+                # qualifier changes
+                self._handle_qualifiers_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
     
     def _handle_removed_pids(self, removed_pids, prev_claims):
         """
@@ -764,6 +779,9 @@ class PageParser():
                     old_hash=old_hash,
                     new_hash=None
                 )
+
+                # qualifier changes
+                self._handle_qualifiers_changes(removed_pid, value_id, prev_stmt=None, curr_stmt=s)
 
     def _handle_rank_changes(self, prev_stmt, curr_stmt, pid, sid):
         prev_rank = prev_stmt.get('rank') if prev_stmt else None
@@ -886,7 +904,10 @@ class PageParser():
                 # rank changes
                 rank_change_detected = self._handle_rank_changes(prev_stmt, curr_stmt, pid, sid)
 
-                change_detected = change_detected or rank_change_detected
+                # qualifier change detected
+                qualifier_change_detected = self._handle_qualifiers_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
+
+                change_detected = change_detected or rank_change_detected or qualifier_change_detected
 
         return change_detected
     
@@ -897,8 +918,8 @@ class PageParser():
         """
         change_detected = False # Returns True if there were any changes detected
         if previous_revision is None:
-            # Entity was created again or for the first time
-            self._changes_deleted_created_entity(current_revision, CREATE_ENTITY)
+            # Entity was created 
+            self._changes_created_entity(current_revision)
             return True
         else:
             
