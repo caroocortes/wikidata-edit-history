@@ -518,8 +518,6 @@ class PageParser():
                 val_norm = normalize_json(PageParser.parse_datavalue_json(value_json, datatype)[0])
                 prev_values_map[val_norm] = s # stores {value: statement}
 
-            print(prev_values_map)
-
             curr_values_map = {}
             for s in curr_stmts:
                 # doesnt follow the snaktype structure from property values
@@ -527,13 +525,6 @@ class PageParser():
                 datatype = s.get('datavalue', {}).get("type", None)
                 val_norm = normalize_json(PageParser.parse_datavalue_json(value_json, datatype)[0])
                 curr_values_map[val_norm] = s # stores {value: statement}
-                print('val_norm curr:',val_norm)
-
-            print(curr_values_map)
-
-            print(f'There are {prev_values_map} prevuious values')
-
-            print(f'There are {curr_values_map} current values')
 
             set_prev = set(prev_values_map.keys())
             set_curr = set(curr_values_map.keys())
@@ -545,7 +536,6 @@ class PageParser():
             deleted = set_prev - unchanged
 
             if len(deleted) > 0:
-                print('some qualifier was deleted')
                 change_detected = True
 
             for val in deleted:
@@ -578,14 +568,10 @@ class PageParser():
                 )
                 possible_update +=1
 
-            print(f'there are {len(set_curr)} current values')
-            print(f'there are {len(unchanged)} unchanged values')
             # --- Added values ---
             added = set_curr - unchanged
-            print(f'there are {len(added)} added values')
             if len(added) > 0:
                 change_detected = True
-                print('some qualifier was created')
         
             for val in added:
                 curr_stmt_match = curr_values_map[val]
@@ -614,7 +600,7 @@ class PageParser():
                     else:
                         del self.deleted_reference_map[stmt_pid][stmt_value_id][pid][prev_hash]
                 else:
-                    val_id = store_new_value_id(pid, curr_hash, val_id)
+                    val_id = store_new_value_id(pid, curr_hash)
 
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
@@ -640,7 +626,7 @@ class PageParser():
                             f.write(json.dumps(prev_stmt) + "\n")
                             f.write(json.dumps(curr_stmt) + "\n") 
                             f.write(f"-------------------------------------------\n")
-        print(f'THE CHANGE DETECTED THAT IS RETURNED {change_detected}')
+
         return change_detected
     
     def _changes_created_entity(self, revision):
