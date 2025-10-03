@@ -550,6 +550,8 @@ class PageParser():
             for val in added:
                 curr_stmt_match = curr_values_map[val]
 
+                print('curr stmt macth: ', curr_stmt_match)
+
                 dv = curr_stmt_match['datavalue']
                 curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
                 curr_hash = curr_stmt_match.get('hash', '')
