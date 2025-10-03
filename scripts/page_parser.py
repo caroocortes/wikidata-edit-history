@@ -646,7 +646,9 @@ class PageParser():
 
         for pid in all_pids:
             prev_stmts = prev_snaks.get(pid, [])
+            print(prev_stmts)
             curr_stmts = curr_snaks.get(pid, [])
+            print(curr_stmts)
 
             # Normalized values for comparison
             prev_values_map = {}
