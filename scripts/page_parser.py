@@ -665,6 +665,10 @@ class PageParser():
                     val_norm = normalize_json(PageParser.parse_datavalue_json(dv['value'], dv['type'])[0])
                     curr_values_map[val_norm] = qs # stores {value: statement}
 
+            print(f'There are {prev_values_map} prevuious values')
+
+            print(f'There are {curr_values_map} current values')
+
             set_prev = set(prev_values_map.keys())
             set_curr = set(curr_values_map.keys())
 
@@ -708,13 +712,15 @@ class PageParser():
                 )
                 possible_update +=1
 
+            print(f'there are {len(set_curr)} current values')
+            print(f'there are {len(unchanged)} unchanged values')
             # --- Added values ---
             added = set_curr - unchanged
-
+            print(f'there are {len(added)} added values')
             if len(added) > 0:
                 change_detected = True
                 print('some qualifier was created')
-            
+        
             for val in added:
                 curr_stmt_match = curr_values_map[val]
 
