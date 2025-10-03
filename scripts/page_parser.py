@@ -522,10 +522,14 @@ class PageParser():
 
             for val in deleted:
                 prev_stmt_match = prev_values_map[val]
-
-                dv = prev_stmt_match['datavalue']
                 
-                prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+                snaktype = prev_stmt_match['snaktype']
+                if snaktype in ('novalue', 'somevalue'):
+                    prev_val, prev_dtype = (snaktype, 'string')
+                else:
+                    dv = prev_stmt_match['datavalue']
+                    prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+                
                 prev_hash = prev_stmt_match.get('hash', '')
 
                 self.save_changes(
@@ -550,10 +554,13 @@ class PageParser():
             for val in added:
                 curr_stmt_match = curr_values_map[val]
 
-                print('curr stmt macth: ', curr_stmt_match)
+                snaktype = curr_stmt_match['snaktype']
+                if snaktype in ('novalue', 'somevalue'):
+                    curr_val, curr_dtype = (snaktype, 'string')
+                else:
+                    dv = curr_stmt_match['datavalue']
+                    curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                dv = curr_stmt_match['datavalue']
-                curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
                 curr_hash = curr_stmt_match.get('hash', '')
 
                 self.save_changes(
