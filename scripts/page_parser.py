@@ -515,10 +515,12 @@ class PageParser():
             unchanged = set_prev.intersection(set_curr)
 
             # --- Deleted values ---
-            deleted = set_prev - unchanged
+            deleted = set(set_prev - unchanged)
 
             if len(deleted) > 0:
                 change_detected = True
+
+            # there are duplicated references
 
             for val in deleted:
                 prev_stmt_match = prev_values_map[val]
@@ -547,7 +549,7 @@ class PageParser():
                 possible_update +=1
 
             # --- Added values ---
-            added = set_curr - unchanged
+            added = set(set_curr - unchanged)
             if len(added) > 0:
                 change_detected = True
         
