@@ -597,11 +597,12 @@ class PageParser():
                             break
 
                 if restored_val_id:
-                    val_id = store_new_value_id(pid, curr_hash, restored_val_id)
                     if type_ == 'qualifiers':
-                        del self.deleted_qualifier_map[stmt_pid][stmt_value_id][pid][prev_hash]
+                        del self.deleted_qualifier_map[stmt_pid][stmt_value_id][pid][curr_hash]
+                        self.statement_qualifier_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[curr_hash] = restored_val_id
                     else:
-                        del self.deleted_reference_map[stmt_pid][stmt_value_id][pid][prev_hash]
+                        del self.deleted_reference_map[stmt_pid][stmt_value_id][pid][curr_hash]
+                        self.statement_reference_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[curr_hash] = restored_val_id
                 else:
                     val_id = store_new_value_id(pid, curr_hash)
 
