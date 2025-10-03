@@ -638,8 +638,11 @@ class PageParser():
         
         prev_snaks = prev.get('snaks', {})
         curr_snaks = curr.get('snaks', {})
+
+        print('prev: \n', prev)
+        print('curr: \n', curr)
         
-        all_pids = set(prev.keys()).union(curr.keys())
+        all_pids = set(prev_snaks.keys()).union(curr_snaks.keys())
         print(all_pids)
 
         possible_update = 0
