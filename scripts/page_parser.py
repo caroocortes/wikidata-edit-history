@@ -471,29 +471,8 @@ class PageParser():
                 return json.dumps(val, sort_keys=True)
             return val
 
-        def get_value_id(pid, val_hash):
-            if type_ == 'qualifiers':
-                return self.statement_qualifier_map.get(stmt_pid, {}).get(stmt_value_id).get(pid, {}).get(val_hash) 
-            else:
-                return self.statement_reference_map.get(stmt_pid, {}).get(stmt_value_id).get(pid, {}).get(val_hash) 
-
-        def store_new_value_id(pid, val_hash):
-            if type_ == 'qualifiers':
-                val = self.value_id_counter_qual
-                self.value_id_counter_qual += 1
-                self.statement_qualifier_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[val_hash] = val
-            else:
-                val = self.value_id_counter_ref
-                self.value_id_counter_ref += 1
-                self.statement_reference_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[val_hash] = val
-            return val
-
-        def store_deleted_value_id(pid, val_hash, val_id):
-            if type_ == 'qualifiers':
-                self.deleted_qualifier_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[val_hash] = val_id
-            else:
-                self.deleted_reference_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[val_hash] = val_id
-        
+        # Some dumps don't have this structure but the 
+        # WD documentation does have this structure...
         if 'snaks' in prev:
             prev_snaks = prev.get('snaks', {})
         else:
@@ -548,18 +527,10 @@ class PageParser():
                 
                 prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
                 prev_hash = prev_stmt_match.get('hash', '')
-                val_id = get_value_id(pid, prev_hash)
-                
-                store_deleted_value_id(pid, prev_hash, val_id)
-
-                if type_ == 'qualifiers':
-                    del self.statement_qualifier_map[stmt_pid][stmt_value_id][pid][prev_hash]
-                else:
-                    del self.statement_reference_map[stmt_pid][stmt_value_id][pid][prev_hash]
 
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
-                    value_id=val_id,
+                    value_id=prev_hash,
                     old_value=prev_val,
                     new_value=None,
                     datatype=prev_dtype,
@@ -583,32 +554,9 @@ class PageParser():
                 curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
                 curr_hash = curr_stmt_match.get('hash', '')
 
-                # Check if value was previously deleted (restored)
-                restored_val_id = None
-                if type_ == 'qualifiers':
-                    for h, vid in self.deleted_qualifier_map.get(stmt_pid, {}).get(stmt_value_id, {}).get(pid, {}).items():
-                        if h == curr_hash:
-                            restored_val_id = vid
-                            break
-                else:
-                    for h, vid in self.deleted_reference_map.get(stmt_pid, {}).get(stmt_value_id, {}).get(pid, {}).items():
-                        if h == curr_hash:
-                            restored_val_id = vid
-                            break
-
-                if restored_val_id:
-                    if type_ == 'qualifiers':
-                        del self.deleted_qualifier_map[stmt_pid][stmt_value_id][pid][curr_hash]
-                        self.statement_qualifier_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[curr_hash] = restored_val_id
-                    else:
-                        del self.deleted_reference_map[stmt_pid][stmt_value_id][pid][curr_hash]
-                        self.statement_reference_map.setdefault(stmt_pid, {}).setdefault(stmt_value_id, {}).setdefault(pid, {})[curr_hash] = restored_val_id
-                else:
-                    val_id = store_new_value_id(pid, curr_hash)
-
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
-                    value_id=val_id,
+                    value_id=curr_hash,
                     old_value=None,
                     new_value=curr_val,
                     datatype=curr_dtype,
