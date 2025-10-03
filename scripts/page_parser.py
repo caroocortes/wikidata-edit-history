@@ -601,7 +601,13 @@ class PageParser():
         prev = prev_stmt.get(type_, {}) if prev_stmt else {}
         curr = curr_stmt.get(type_, {}) if curr_stmt else {}
 
-        if prev and curr and prev.get('hash') == curr.get('hash'):
+        if isinstance(prev, list):
+            prev = {}
+
+        if isinstance(curr, list):
+            curr = {}
+
+        if prev and curr and prev.get('hash') == curr.get('hash') or (not prev and not curr):
             # there was no change
             return False
 
