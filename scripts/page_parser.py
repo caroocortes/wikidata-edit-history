@@ -640,6 +640,7 @@ class PageParser():
         curr_snaks = curr.get('snaks', {})
         
         all_pids = set(prev.keys()).union(curr.keys())
+        print(all_pids)
 
         possible_update = 0
 
@@ -649,18 +650,20 @@ class PageParser():
 
             # Normalized values for comparison
             prev_values_map = {}
-            for qs in prev_stmts:
-                dv = qs.get('datavalue')
-                if dv:
-                    val_norm = normalize_json(PageParser.parse_datavalue_json(dv['value'], dv['type'])[0])
-                    prev_values_map[val_norm] = qs # stores {value: statement}
+            for s in prev_stmts:
+                val_norm = normalize_json(PageParser._parse_datavalue(s)[0])
+                print('val_norm prev:', val_norm)
+                prev_values_map[val_norm] = s # stores {value: statement}
+
+            print(prev_values_map)
 
             curr_values_map = {}
-            for qs in curr_stmts:
-                dv = qs.get('datavalue')
-                if dv:
-                    val_norm = normalize_json(PageParser.parse_datavalue_json(dv['value'], dv['type'])[0])
-                    curr_values_map[val_norm] = qs # stores {value: statement}
+            for s in curr_stmts:
+                val_norm = normalize_json(PageParser._parse_datavalue(s)[0])
+                curr_values_map[val_norm] = s # stores {value: statement}
+                print('val_norm curr:',val_norm)
+
+            print(curr_values_map)
 
             print(f'There are {prev_values_map} prevuious values')
 
