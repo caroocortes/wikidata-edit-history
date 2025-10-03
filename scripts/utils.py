@@ -8,6 +8,8 @@ import psycopg2
 from dotenv import load_dotenv
 from math import radians, cos, sin, asin, sqrt
 from bs4 import BeautifulSoup
+import json
+import hashlib
 from urllib.parse import urljoin
 from scripts.const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
  
@@ -277,3 +279,10 @@ def id_to_int(wd_id):
     """
     return int(wd_id[1:])
 
+def make_sah1_value_id(value_json):
+    # creates a sha1 hash from the json representation of the value
+    # to uniquely identify it
+
+    # sha1 always returns the same hash for the same input
+    norm = json.dumps(value_json, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha1(norm.encode('utf-8')).hexdigest()
