@@ -362,8 +362,6 @@ class PageParser():
                             new_hash=None
                         )
                 else:
-                    if self.revision_meta['revision_id'] == 564334745:
-                        print('saving ref/qual changes in handle_datatype metnada for delete')
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -394,8 +392,6 @@ class PageParser():
                             new_hash=new_hash
                         )
                 else:
-                    if self.revision_meta['revision_id'] == 564334745:
-                        print('saving ref/qual changes in handle_datatype metnada for create')
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -436,9 +432,6 @@ class PageParser():
                             new_hash=new_hash
                         )
                     else: # value == 'reference_qualifier'
-
-                        if self.revision_meta['revision_id'] == 564334745:
-                            print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
                         self.save_reference_qualifier_changes(
                             id_to_int(property_id),
                             value_id=value_id,
@@ -499,8 +492,6 @@ class PageParser():
                         new_hash=new_hash
                     )
                 else: # value == 'reference_qualifier'
-                    if self.revision_meta['revision_id'] == 564334745:
-                        print('saving ref/qual changes in handle_datatype metnada for same datatypes')
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -536,8 +527,6 @@ class PageParser():
                         new_hash=new_hash
                     )
                 else: # value == 'reference_qualifier'
-                    if self.revision_meta['revision_id'] == 564334745:
-                        print('saving ref/qual changes in handle_datatype metnada for same remaining keys')
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -612,8 +601,6 @@ class PageParser():
             else:
                 dv = prop_value['datavalue']
                 prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
-            if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
-                print('callinf save change for removed reference')
 
             self.save_reference_qualifier_changes(
                 property_id=id_to_int(stmt_pid),
@@ -628,8 +615,6 @@ class PageParser():
             )
 
             if old_datatype_metadata:
-                if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save dt metada change for removed reference')
    
                 self._handle_datatype_metadata_changes(
                     old_datatype_metadata=old_datatype_metadata,
@@ -654,8 +639,6 @@ class PageParser():
             else:
                 dv = prop_value['datavalue']
                 curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
-            if self.revision_meta['revision_id'] == 564334745:
-                print('callinf save change for created reference')
 
             self.save_reference_qualifier_changes(
                 property_id=id_to_int(stmt_pid),
@@ -670,8 +653,6 @@ class PageParser():
             )
 
             if new_datatype_metadata:
-                if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save dt metada change for created reference')
            
                 self._handle_datatype_metadata_changes(
                     old_datatype_metadata=None,
@@ -859,9 +840,6 @@ class PageParser():
                 _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
                 # references changes
-                if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save ref change in created enntity')
-                    sys.stdout.flush()
                 _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
         # If there's no description or label, the revisions shows them as []
@@ -984,9 +962,6 @@ class PageParser():
                 _ = self._handle_qualifier_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
 
                 # reference changes
-                if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save ref change in new pids')
-                    sys.stdout.flush()
                 _ = self._handle_reference_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
     
     def _handle_removed_pids(self, removed_pids, prev_claims):
@@ -1027,9 +1002,6 @@ class PageParser():
                 _ = self._handle_qualifier_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
                 # references changes
-                if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save ref change in removed pids')
-                    sys.stdout.flush()
                 _ = self._handle_reference_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
     def _handle_rank_changes(self, prev_stmt, curr_stmt, pid, sid):
@@ -1157,9 +1129,6 @@ class PageParser():
                 qualifier_change_detected = self._handle_qualifier_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
                 # reference changes
-                if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save ref change in remaining pids')
-                    sys.stdout.flush()
                 reference_change_detected = self._handle_reference_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
                 change_detected = change_detected or rank_change_detected or qualifier_change_detected or reference_change_detected
