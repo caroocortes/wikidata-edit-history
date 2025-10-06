@@ -8,21 +8,21 @@ import sys
 from dotenv import load_dotenv
 from pathlib import Path
 from lxml import etree
-import hashlib
 import re
-import difflib
 
-from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label, id_to_int, make_sah1_value_id
+from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label, id_to_int
 from scripts.const import *
 
-def batch_insert(conn, revision, changes, change_metadata):
+def batch_insert(conn, revision, changes, change_metadata, reference_qualifier_changes):
     # NOTE: copy may be faster
     """Function to insert into DB in parallel."""
     
     try:
         insert_rows(conn, 'revision', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'redirect'])
-        insert_rows(conn, 'change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash'])
-        insert_rows(conn, 'change_metadata', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
+        insert_rows(conn, 'value_change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash'])
+        insert_rows(conn, 'value_change_metadata', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
+        insert_rows(conn, 'reference_qualifier_change', reference_qualifier_changes, ['revision_id', 'property_id', 'value_id', 'rq_property_id', 'value_hash', 'old_value', 'new_value', 'datatype', 'change_target', 'action', 'target'])
+    
     except Exception as e:
         print(f'There was an error when batch inserting revisions and changes: {e}')
         sys.stdout.flush()
@@ -33,6 +33,7 @@ class PageParser():
         self.changes = []
         self.revision = []
         self.changes_metadata = []
+        self.reference_qualifier_changes = []
 
         self.config = config
 
@@ -101,15 +102,6 @@ class PageParser():
                 f.write(revision_xml_str + "\n")
                 f.write(f"-------------------------------------------\n")
             return None
-
-        
-    
-    @staticmethod
-    def generate_unique_hash(counter):
-        """
-            Generates a unique hash from a counter
-        """
-        return hashlib.sha1(str(counter).encode()).hexdigest()
 
     @staticmethod
     def get_target_action_from_change_type(change_type):
@@ -284,7 +276,9 @@ class PageParser():
             return UPDATE_PROPERTY_VALUE
 
     def save_changes(self, property_id, value_id, old_value, new_value, datatype, change_target, change_type, change_magnitude=None, old_hash=None, new_hash=None):
-        
+        """
+            Store value + datatype metadata (of property value) + rank changes
+        """
         old_value = json.dumps(str(old_value)) if old_value else None
         new_value = json.dumps(str(new_value)) if new_value else None
 
@@ -318,7 +312,32 @@ class PageParser():
             )
             self.changes_metadata.append(change_metadata)
         
-    def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash, new_hash):
+    def save_reference_qualifier_changes(self, property_id, value_id, rq_property_id, value_hash, old_value, new_value, datatype, change_target, change_type):
+        """
+            Store reference/qualifier changes
+        """
+        old_value = json.dumps(str(old_value)) if old_value else None
+        new_value = json.dumps(str(new_value)) if new_value else None
+
+        action, target = PageParser.get_target_action_from_change_type(change_type)
+
+        change = (
+            self.revision_meta['revision_id'],
+            property_id,
+            value_id,
+            rq_property_id,
+            value_hash,
+            old_value,
+            new_value,
+            datatype,
+            change_target if change_target else '', # can't be None since change_target is part of the key of the table
+            action,
+            target
+        )
+
+        self.reference_qualifier_changes.append(change)
+
+    def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash=None, new_hash=None, type_='value', rq_property_id=None, value_hash=None):
         
         if old_datatype == new_datatype:
         
@@ -332,19 +351,32 @@ class PageParser():
                     change_magnitude = None
 
                 if old_meta != new_meta: # save only what changed
-
-                    self.save_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        old_value=old_meta,
-                        new_value=new_meta,
-                        datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type, 
-                        change_magnitude=change_magnitude,
-                        old_hash=old_hash,
-                        new_hash=new_hash
-                    )
+                    
+                    if type_ == 'value':
+                        self.save_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=old_meta,
+                            new_value=new_meta,
+                            datatype=new_datatype,
+                            change_target=key,
+                            change_type=change_type, 
+                            change_magnitude=change_magnitude,
+                            old_hash=old_hash,
+                            new_hash=new_hash
+                        )
+                    else: # value == 'reference_qualifier'
+                        self.save_reference_qualifier_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            rq_property_id=rq_property_id,
+                            value_hash=value_hash,
+                            old_value=old_meta,
+                            new_value=new_meta,
+                            datatype=new_datatype,
+                            change_target=key,
+                            change_type=change_type
+                        )
 
         else: # different datatypes
 
@@ -381,17 +413,30 @@ class PageParser():
                     if new_meta_key is not None:
                         keys_to_skip.add(new_meta_key)
                 
-                self.save_changes(
-                    id_to_int(property_id),
-                    value_id=value_id,
-                    old_value=old_meta,
-                    new_value=new_meta,
-                    datatype=new_datatype,
-                    change_target=key,
-                    change_type=change_type,
-                    old_hash=old_hash,
-                    new_hash=new_hash
-                )
+                if type_ == 'value':
+                    self.save_changes(
+                        id_to_int(property_id),
+                        value_id=value_id,
+                        old_value=old_meta,
+                        new_value=new_meta,
+                        datatype=new_datatype,
+                        change_target=key,
+                        change_type=change_type,
+                        old_hash=old_hash,
+                        new_hash=new_hash
+                    )
+                else: # value == 'reference_qualifier'
+                    self.save_reference_qualifier_changes(
+                        id_to_int(property_id),
+                        value_id=value_id,
+                        rq_property_id=rq_property_id,
+                        value_hash=value_hash,
+                        old_value=old_meta,
+                        new_value=new_meta,
+                        datatype=new_datatype,
+                        change_target=key,
+                        change_type=change_type
+                    )
             
             remaining_keys = big_set - keys_to_skip
             for key in remaining_keys:
@@ -403,17 +448,30 @@ class PageParser():
                     new_meta = (new_datatype_metadata or {}).get(key, None)
                     old_meta = None
                 
-                self.save_changes(
-                    id_to_int(property_id),
-                    value_id=value_id,
-                    old_value=old_meta,
-                    new_value=new_meta,
-                    datatype=new_datatype,
-                    change_target=key,
-                    change_type=change_type,
-                    old_hash=old_hash,
-                    new_hash=new_hash
-                )
+                if type_ == 'value':
+                    self.save_changes(
+                        id_to_int(property_id),
+                        value_id=value_id,
+                        old_value=old_meta,
+                        new_value=new_meta,
+                        datatype=new_datatype,
+                        change_target=key,
+                        change_type=change_type,
+                        old_hash=old_hash,
+                        new_hash=new_hash
+                    )
+                else: # value == 'reference_qualifier'
+                    self.save_reference_qualifier_changes(
+                        id_to_int(property_id),
+                        value_id=value_id,
+                        rq_property_id=rq_property_id,
+                        value_hash=value_hash,
+                        old_value=old_meta,
+                        new_value=new_meta,
+                        datatype=new_datatype,
+                        change_target=key,
+                        change_type=change_type
+                    )
     
     def _handle_value_changes(self, new_datatype, new_value, old_value, value_id, property_id, change_type, old_hash, new_hash, change_magnitude=None):
 
@@ -432,104 +490,117 @@ class PageParser():
 
     def _handle_reference_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt):
         """
-        Handles addition, deletion of references values.
-        Uses a simple CREATE/DELETE logic based on hashes.
+        Handles addition/deletion of references.
+        Each reference is compared using its high level hash ('references': [ { 'hash': '', 'snaks': [...] }, { 'hash': '', 'snaks': [...] }])
+        If a hash dissapears -> delete/create
+        If hashes stay the same -> nothing changed
         """
 
         change_detected = False
 
-        prev = prev_stmt.get('references', {}) if prev_stmt else {}
-        curr = curr_stmt.get('references', {}) if curr_stmt else {}
+        prev_refs = prev_stmt.get('references', []) if prev_stmt else []
+        curr_refs = curr_stmt.get('references', []) if curr_stmt else []
 
-        # if there are no references, there's no 'references' in the mainsnak of the statement
-        if not prev and not curr:
+        # no references
+        if not prev_refs and not curr_refs:
             return False
 
-        if prev and curr and prev.get('hash') == curr.get('hash'):
-            return False  # no change
-            
-        # different from qualifier changes - there's no snaks in qualifiers
-        prev_snaks = prev.get('snaks', {})
-        curr_snaks = curr.get('snaks', {})
+        # map hash (high-level): snaks
+        prev_map = {ref['hash']: ['snaks'] for ref in prev_refs}
+        curr_map = {ref['hash']: ref['snaks'] for ref in curr_refs}
 
-        all_pids = set(prev_snaks.keys()).union(curr_snaks.keys())
+        prev_hashes = set(prev_map.keys())
+        curr_hashes = set(curr_map.keys())
 
-        for pid in all_pids:
-            prev_stmts = prev_snaks.get(pid, [])
-            curr_stmts = curr_snaks.get(pid, [])
+        unchanged = prev_hashes & curr_hashes
+        deleted = prev_hashes - unchanged
+        added = curr_hashes - unchanged
 
-            # map by hash : stmt
-            # we compare hashes because they are created from the actual values, so if the hashes are different, something changed
-            prev_map = {s.get('hash', ''): s for s in prev_stmts}
-            curr_map = {s.get('hash', ''): s for s in curr_stmts}
-            
-            # hashes are created from the actial values, so if there are different hashes something changed
-            prev_hashes = set(prev_map.keys())
-            curr_hashes = set(curr_map.keys())
+        # --- Deleted references
+        for h in deleted:
+            change_detected = True
+            prev_ref = prev_map[h] # snaks
 
-            unchanged = prev_hashes & curr_hashes
-            deleted = prev_hashes - unchanged
-            added = curr_hashes - unchanged
+            # Save all snaks in this reference
+            for pid, snaks in prev_ref.items():
+                for snak in snaks: # P-id : [] of values (can have more than one)
+                    snaktype = snak['snaktype']
+                    if snaktype in ('novalue', 'somevalue'):
+                        prev_val, prev_dtype, old_datatype_metadata = (snaktype, 'string', None)
+                    else:
+                        dv = snak['datavalue']
+                        prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-            # --- Deleted values ---
-            for h in deleted:
-                change_detected = True
-                prev_stmt_match = prev_map[h]
+                    value_hash = snak['hash'] # value hash. It's different from the high-level hash
 
-                snaktype = prev_stmt_match['snaktype']
-                if snaktype in ('novalue', 'somevalue'):
-                    prev_val, prev_dtype = (snaktype, 'string')
-                else:
-                    dv = prev_stmt_match['datavalue']
-                    prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+                    self.save_reference_qualifier_changes(
+                        property_id=id_to_int(stmt_pid),
+                        value_id=stmt_value_id,
+                        rq_property_id=id_to_int(pid),
+                        value_hash=value_hash, # we add the hash of the value itself, because one P-id can have multiple values
+                        old_value=prev_val,
+                        new_value=None,
+                        datatype=prev_dtype,
+                        change_target='',
+                        change_type=DELETE_REFERENCE
+                    )
 
-                if not curr:
-                    change_type = DELETE_REFERENCE
-                elif len(prev_stmts) > len(curr_stmts):
-                    change_type = DELETE_REFERENCE_VALUE
-                
-                self.save_changes(
-                    property_id=id_to_int(stmt_pid),
-                    value_id=f"{h}-{stmt_value_id}",
-                    old_value=prev_val,
-                    new_value=None,
-                    datatype=prev_dtype,
-                    change_target=id_to_int(pid),
-                    change_type=change_type,
-                    change_magnitude=None,
-                    old_hash=h,
-                    new_hash=None
-                )
+                    if old_datatype_metadata:
+                        self._handle_datatype_metadata_changes(
+                            old_datatype_metadata=old_datatype_metadata, 
+                            new_datatype_metadata=None, 
+                            value_id=stmt_value_id, 
+                            old_datatype=prev_dtype, 
+                            new_datatype=None, 
+                            property_id=stmt_pid, 
+                            change_type=DELETE_REFERENCE, 
+                            type_='reference_qualifier', 
+                            rq_property_id=pid, 
+                            value_hash=value_hash
+                        )
 
-            # --- Added values ---
-            for h in added:
-                change_detected = True
-                curr_stmt_match = curr_map[h]
+        # --- Added references ---
+        for h in added:
+            change_detected = True
+            curr_ref = curr_map[h]
 
-                snaktype = curr_stmt_match['snaktype']
-                if snaktype in ('novalue', 'somevalue'):
-                    curr_val, curr_dtype = (snaktype, 'string')
-                else:
-                    dv = curr_stmt_match['datavalue']
-                    curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+            for pid, snaks in curr_ref.get('snaks', {}).items():
+                for snak in snaks:
+                    snaktype = snak['snaktype']
+                    if snaktype in ('novalue', 'somevalue'):
+                        curr_val, curr_dtype, new_datatype_metadata = (snaktype, 'string', None)
+                    else:
+                        dv = snak['datavalue']
+                        curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                if not prev: # there was nor eference/qualifier in previous statement
-                    change_type = CREATE_REFERENCE
-                elif len(prev_stmts) < len(curr_stmts):
-                    change_type = CREATE_REFERENCE_VALUE
+                    value_hash = snak['hash'] # value hash. It's different from the high-level hash
 
-                self.save_changes(
-                    property_id=id_to_int(stmt_pid),
-                    value_id=f"{h}-{stmt_value_id}",
-                    old_value=None,
-                    new_value=curr_val,
-                    datatype=curr_dtype,
-                    change_target=id_to_int(pid),
-                    change_type=change_type,
-                    change_magnitude=None,
-                    old_hash=None,
-                    new_hash=h
-                )
+                    self.save_reference_qualifier_changes(
+                        property_id=id_to_int(stmt_pid),
+                        value_id=stmt_value_id,
+                        rq_property_id=id_to_int(pid),
+                        value_hash=value_hash,
+                        old_value=None,
+                        new_value=curr_val,
+                        datatype=curr_dtype,
+                        change_target='',
+                        change_type=CREATE_REFERENCE
+                    )
+
+                    if new_datatype_metadata:
+                        self._handle_datatype_metadata_changes(
+                            old_datatype_metadata=None, 
+                            new_datatype_metadata=new_datatype_metadata, 
+                            value_id=stmt_value_id, 
+                            old_datatype=None, 
+                            new_datatype=curr_dtype, 
+                            property_id=stmt_pid, 
+                            change_type=CREATE_REFERENCE, 
+                            type_='reference_qualifier', 
+                            rq_property_id=pid, 
+                            value_hash=value_hash
+                        )
+
 
         return change_detected
 
@@ -574,28 +645,38 @@ class PageParser():
 
                 snaktype = prev_stmt_match['snaktype']
                 if snaktype in ('novalue', 'somevalue'):
-                    prev_val, prev_dtype = (snaktype, 'string')
+                    prev_val, prev_dtype, old_datatype_metadata = (snaktype, 'string', None)
                 else:
                     dv = prev_stmt_match['datavalue']
-                    prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+                    prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                if not curr:
-                    change_type = DELETE_QUALIFIER
-                elif len(prev_stmts) > len(curr_stmts):
-                    change_type = DELETE_QUALIFIER_VALUE
+                value_hash = curr_stmt_match['hash']
                 
-                self.save_changes(
+                self.save_reference_qualifier_changes(
                     property_id=id_to_int(stmt_pid),
-                    value_id=f"{h}-{stmt_value_id}",
+                    value_id=stmt_value_id,
+                    rq_property_id=pid,
+                    value_hash=value_hash,
                     old_value=prev_val,
                     new_value=None,
                     datatype=prev_dtype,
-                    change_target=id_to_int(pid),
-                    change_type=change_type,
-                    change_magnitude=None,
-                    old_hash=h,
-                    new_hash=None
+                    change_target='',
+                    change_type=DELETE_QUALIFIER
                 )
+
+                if old_datatype_metadata:
+                    self._handle_datatype_metadata_changes(
+                        old_datatype_metadata=old_datatype_metadata, 
+                        new_datatype_metadata=None, 
+                        value_id=stmt_value_id, 
+                        old_datatype=prev_dtype, 
+                        new_datatype=None, 
+                        property_id=stmt_pid, 
+                        change_type=DELETE_QUALIFIER, 
+                        type_='reference_qualifier', 
+                        rq_property_id=pid, 
+                        value_hash=value_hash
+                    )
 
             # --- Added values ---
             for h in added:
@@ -604,32 +685,41 @@ class PageParser():
 
                 snaktype = curr_stmt_match['snaktype']
                 if snaktype in ('novalue', 'somevalue'):
-                    curr_val, curr_dtype = (snaktype, 'string')
+                    curr_val, curr_dtype, new_datatype_metadata = (snaktype, 'string', None)
                 else:
                     dv = curr_stmt_match['datavalue']
-                    curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+                    curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                if not prev: # there was no qualifier in previous statement
-                    change_type = CREATE_QUALIFIER
-                elif len(prev_stmts) < len(curr_stmts):
-                    change_type = CREATE_QUALIFIER_VALUE
+                value_hash = curr_stmt_match['hash']
 
-                self.save_changes(
+                self.save_reference_qualifier_changes(
                     property_id=id_to_int(stmt_pid),
-                    value_id=f"{h}-{stmt_value_id}",
+                    value_id=stmt_value_id,
+                    rq_property_id=pid,
+                    value_hash=value_hash,
                     old_value=None,
                     new_value=curr_val,
                     datatype=curr_dtype,
-                    change_target=id_to_int(pid),
-                    change_type=change_type,
-                    change_magnitude=None,
-                    old_hash=None,
-                    new_hash=h
+                    change_target='',
+                    change_type=CREATE_QUALIFIER
                 )
+
+                if new_datatype_metadata:
+                    self._handle_datatype_metadata_changes(
+                        old_datatype_metadata=None, 
+                        new_datatype_metadata=new_datatype_metadata, 
+                        value_id=stmt_value_id, 
+                        old_datatype=None, 
+                        new_datatype=curr_dtype, 
+                        property_id=stmt_pid, 
+                        change_type=CREATE_QUALIFIER, 
+                        type_='reference_qualifier', 
+                        rq_property_id=pid, 
+                        value_hash=value_hash
+                    )
 
         return change_detected
             
-
     def _changes_created_entity(self, revision):
 
         # Process claims
@@ -1154,11 +1244,12 @@ class PageParser():
                     # Batch insert (changes >= revision because one revision can have multiple changes)
                     
                     if len(self.changes) >= self.batch_size:
-                        self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata)
+                        self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata, self.reference_qualifier_changes)
                         # remove already stored changes + revisions to avoid duplicates
                         self.changes = []
                         self.revision = []
                         self.changes_metadata = []
+                        self.reference_qualifier_changes = []
                 else: # revision was deleted
                     prev_revision_deleted = True
 
@@ -1167,10 +1258,11 @@ class PageParser():
         
         # Insert remaining changes + revision + changes_metadata in case the batch size was not reached
         if self.changes:
-            batch_insert(self.conn, self.revision, self.changes, self.changes_metadata)
+            batch_insert(self.conn, self.revision, self.changes, self.changes_metadata, self.reference_qualifier_changes)
             self.changes = []
             self.revision = []
             self.changes_metadata = []
+            self.reference_qualifier_changes = []
 
         # Update entity label with last existing label
         update_entity_label(self.conn, entity_id, entity_label)
