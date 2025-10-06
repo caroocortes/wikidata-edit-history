@@ -337,6 +337,10 @@ class PageParser():
             target
         )
 
+        if self.revision_meta['revision_id'] == 564334745:
+            print('SAVING: ', property_id, value_id, rq_property_id, value_hash, old_value, new_value, datatype, change_target, action, target)
+        
+
         self.reference_qualifier_changes.append(change)
 
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash=None, new_hash=None, type_='value', rq_property_id=None, value_hash=None):
@@ -358,6 +362,8 @@ class PageParser():
                             new_hash=None
                         )
                 else:
+                    if self.revision_meta['revision_id'] == 564334745:
+                        print('saving ref/qual changes in handle_datatype metnada for delete')
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -388,6 +394,8 @@ class PageParser():
                             new_hash=new_hash
                         )
                 else:
+                    if self.revision_meta['revision_id'] == 564334745:
+                        print('saving ref/qual changes in handle_datatype metnada for create')
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -492,7 +500,7 @@ class PageParser():
                     )
                 else: # value == 'reference_qualifier'
                     if self.revision_meta['revision_id'] == 564334745:
-                        print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
+                        print('saving ref/qual changes in handle_datatype metnada for same datatypes')
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -529,7 +537,7 @@ class PageParser():
                     )
                 else: # value == 'reference_qualifier'
                     if self.revision_meta['revision_id'] == 564334745:
-                        print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
+                        print('saving ref/qual changes in handle_datatype metnada for same remaining keys')
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -592,22 +600,6 @@ class PageParser():
         # remains the same, just because at least one changed
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys
-        if self.revision_meta['revision_id'] == 564334745:
-            print(f'----------------------- Revision id: {self.revision_meta["revision_id"]} ----------------------------')
-            print('Previous refs')
-            print(prev_refs)
-            print('Current refs')
-            print(curr_refs)
-            
-            print('Prev map keys')
-            print(prev_hash_map.keys())
-            print('Curr map keys')
-            print(curr_hash_map.keys())
-
-            print('Las deleted:')
-            print(deleted)
-            print('Las created:')
-            print(created)
             
 
         # deletions
