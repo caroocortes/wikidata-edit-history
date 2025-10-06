@@ -524,6 +524,12 @@ class PageParser():
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys
         if self.revision_meta['revision_id'] == 564334745:
+            print('LAS REFSS1!!!!!')
+            print(curr_refs)
+            print(prev_refs)
+            print('LOS MAPS!!!!!!!!!')
+            print(prev_hash_map)
+            print(curr_hash_map)
             print(f'----------------------- Revision id: {self.revision_meta["revision_id"]} ----------------------------')
             print('Las deleted:')
             print(deleted)
