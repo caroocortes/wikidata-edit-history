@@ -36,7 +36,6 @@ class PageParser():
 
         self.config = config
 
-        # TODO: remove
         self.current_revision_redirect = False
 
         self.revision_meta = {}
@@ -45,6 +44,8 @@ class PageParser():
         self.page_elem = etree.fromstring(page_elem_str) # XML page for the entity
 
         self.db_executor = ThreadPoolExecutor(max_workers=1)  # db executor thread for DB inserts, so the parser can keep working
+
+        self.batch_size = int(self.config.get('batch_changes_store', 10000))
 
         dotenv_path = Path(__file__).resolve().parent.parent / ".env"
         load_dotenv(dotenv_path)
@@ -63,19 +64,6 @@ class PageParser():
             host=DB_HOST,
             port=DB_PORT
         )
-
-        # Global mappings
-        self.statement_qualifier_map = {}    # key -> p-id, val-id, qual-p-id, hash -> counter (value_id) for the qualifier
-        self.deleted_qualifier_map = {}  # key -> p-id, val-id, qual-p-id, hash -> counter (value_id) for the qualifier
-
-        self.value_id_counter_qual = 0
-
-        # References mappigns
-        # the key is the same as for qualifiers
-        self.statement_reference_map = {}    
-        self.deleted_reference_map = {}  
-
-        self.value_id_counter_ref = 0
 
     def _parse_json_revision(self, revision_elem, revision_text):
         # TODO: remove revision_elem from args - only for debugging
@@ -913,11 +901,12 @@ class PageParser():
 
             if 'redirect' in current_revision:
                 self.current_revision_redirect = True
+                print(f'The revision {self.revision_meta['revision_id']} of entity {self.revision_meta['entity_id']} is a redirect')
                 return True
 
             if not curr_claims and not curr_label and not curr_desc:
                 # skip revision 
-                # Reasons: can be an initial reivsion that only has sitelinks
+                # Reasons: can be an initial reivsion that only has sitelinks/aliases
                 return False
             
             # --- Labels and Description changes ---
@@ -1073,8 +1062,8 @@ class PageParser():
                         previous_revision = current_revision
                     
                     # Batch insert (changes >= revision because one revision can have multiple changes)
-                    batch_size = int(self.config.get('batch_changes_store', 10000))
-                    if len(self.changes) >= batch_size:
+                    
+                    if len(self.changes) >= self.batch_size:
                         self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata)
                         # remove already stored changes + revisions to avoid duplicates
                         self.changes = []
