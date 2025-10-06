@@ -462,6 +462,10 @@ class PageParser():
         if prev and curr and prev.get('hash') == curr.get('hash') or (not prev and not curr):
             return False  # no change
         
+        if type_ == 'references':
+            print('A REFERENCE CHANGE!!!')
+        
+        # different from properyt changes (there it's mainsnak)
         prev_snaks = prev.get('snaks', prev)
         curr_snaks = curr.get('snaks', curr)
 
@@ -472,9 +476,11 @@ class PageParser():
             curr_stmts = curr_snaks.get(pid, [])
 
             # map by hash : stmt
+            # we compare hashes because they are created from the actual values, so if the hashes are different, something changed
             prev_map = {s.get('hash', ''): s for s in prev_stmts}
             curr_map = {s.get('hash', ''): s for s in curr_stmts}
-
+            
+            # hashes are created from the actial values, so if there are different hashes something changed
             prev_hashes = set(prev_map.keys())
             curr_hashes = set(curr_map.keys())
 
@@ -494,6 +500,11 @@ class PageParser():
                     dv = prev_stmt_match['datavalue']
                     prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
+                if not curr:
+                    change_type = DELETE_QUALIFIER if type_ == 'qualifiers' else DELETE_REFERENCE
+                elif len(prev_stmts) > len(curr_stmts):
+                    change_type = DELETE_QUALIFIER_VALUE if type_ == 'qualifiers' else DELETE_REFERENCE_VALUE
+                
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
                     value_id=f"{h}-{stmt_value_id}",
@@ -501,7 +512,7 @@ class PageParser():
                     new_value=None,
                     datatype=prev_dtype,
                     change_target=id_to_int(pid),
-                    change_type=DELETE_REFERENCE_VALUE if type_ == 'references' else DELETE_QUALIFIER_VALUE,
+                    change_type=change_type,
                     change_magnitude=None,
                     old_hash=h,
                     new_hash=None
@@ -519,6 +530,11 @@ class PageParser():
                     dv = curr_stmt_match['datavalue']
                     curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
+                if not prev: # there was nor eference/qualifier in previous statement
+                    change_type = CREATE_QUALIFIER if type_ == 'qualifiers' else CREATE_REFERENCE
+                elif len(prev_stmts) < len(curr_stmts):
+                    change_type = CREATE_QUALIFIER_VALUE if type_ == 'qualifiers' else CREATE_REFERENCE_VALUE
+
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
                     value_id=f"{h}-{stmt_value_id}",
@@ -526,7 +542,7 @@ class PageParser():
                     new_value=curr_val,
                     datatype=curr_dtype,
                     change_target=id_to_int(pid),
-                    change_type=CREATE_QUALIFIER_VALUE if type_ == 'qualifiers' else CREATE_REFERENCE_VALUE,
+                    change_type=change_type,
                     change_magnitude=None,
                     old_hash=None,
                     new_hash=h
@@ -704,7 +720,7 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_reference_qualifier_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s, type_='qualifiers')
 
-                # qualifier changes
+                # reference changes
                 _ = self._handle_reference_qualifier_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s, type_='references')
     
     def _handle_removed_pids(self, removed_pids, prev_claims):
@@ -744,7 +760,7 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_reference_qualifier_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None, type_='qualifiers')
 
-                # qualifier changes
+                # references changes
                 _ = self._handle_reference_qualifier_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None, type_='references')
 
     def _handle_rank_changes(self, prev_stmt, curr_stmt, pid, sid):
