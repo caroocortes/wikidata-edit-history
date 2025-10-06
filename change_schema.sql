@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS reference_qualifier_change (
     change_target TEXT, -- will be '' or datatype metadata name
     action TEXT, -- Will only be CREATE/DELETE, never UPDATE
     target TEXT,
-    PRIMARY KEY (revision_id, property_id, value_id, rq_property_id, value_hash, change_target),
+    PRIMARY KEY (revision_id, property_id, value_id, rq_property_id, value_hash, change_target, target),
     FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
     -- NOTE: revision_id, property_id, value_id does not necessarily exist in value_change since a revision could involve only reference/qualifier changes
 );
