@@ -533,14 +533,18 @@ class PageParser():
         # remains the same, just because at least one changed
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys
-        if self.revision_meta['revision_id'] == 564334745:
+        if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
             print(f'----------------------- Revision id: {self.revision_meta["revision_id"]} ----------------------------')
-            print('LAS REFSS1!!!!!')
-            print(curr_refs)
+            print('Previous refs')
             print(prev_refs)
-            print('LOS MAPS!!!!!!!!!')
-            print(prev_hash_map)
-            print(curr_hash_map)
+            print('Current refs')
+            print(curr_refs)
+            
+            print('Prev map keys')
+            print(prev_hash_map.keys())
+            print('Curr map keys')
+            print(curr_hash_map.keys())
+            
             print('Las deleted:')
             print(deleted)
             print('Las created:')
@@ -556,7 +560,8 @@ class PageParser():
             else:
                 dv = prop_value['datavalue']
                 prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
-
+            if self.revision_meta['revision_id'] == 564334745:
+                print('callinf save change for removed reference')
             self.save_reference_qualifier_changes(
                 property_id=id_to_int(stmt_pid),
                 value_id=stmt_value_id,
@@ -570,6 +575,8 @@ class PageParser():
             )
 
             if old_datatype_metadata:
+                if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
+                    print('callinf save dt metada change for removed reference')
                 self._handle_datatype_metadata_changes(
                     old_datatype_metadata=old_datatype_metadata,
                     new_datatype_metadata=None,
@@ -593,7 +600,8 @@ class PageParser():
             else:
                 dv = prop_value['datavalue']
                 curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
-
+            if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
+                print('callinf save change for created reference')
             self.save_reference_qualifier_changes(
                 property_id=id_to_int(stmt_pid),
                 value_id=stmt_value_id,
@@ -607,6 +615,8 @@ class PageParser():
             )
 
             if new_datatype_metadata:
+                if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
+                    print('callinf save dt metada change for created reference')
                 self._handle_datatype_metadata_changes(
                     old_datatype_metadata=None,
                     new_datatype_metadata=new_datatype_metadata,
