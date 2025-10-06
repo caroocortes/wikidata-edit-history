@@ -528,6 +528,13 @@ class PageParser():
             print(curr_stmt)
             print('--------------------------------------------------')
 
+            print('El prev map:')
+            print(prev_map)
+            print('El curr map:')
+            print(curr_map)
+            print('LOS HASHHES!!!!!!')
+            print(added, deleted, unchanged)
+
             
 
         # --- Deleted references
