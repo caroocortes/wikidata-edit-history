@@ -334,7 +334,8 @@ class PageParser():
             action,
             target
         )
-
+        if self.revision_meta['revision_id'] == 158483185:
+            print('Saved reference/qualifier change:', change)
         self.reference_qualifier_changes.append(change)
 
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash=None, new_hash=None, type_='value', rq_property_id=None, value_hash=None):
@@ -791,6 +792,8 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
+                if self.revision_meta['revision_id'] == 158483185:
+                    print('Calling reference changes in creating entity')
                 # references changes
                 _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
@@ -913,6 +916,8 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_qualifier_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
 
+                if self.revision_meta['revision_id'] == 158483185:
+                    print('Calling reference changes in new pids')
                 # reference changes
                 _ = self._handle_reference_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
     
@@ -953,6 +958,8 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_qualifier_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
+                if self.revision_meta['revision_id'] == 158483185:
+                    print('Calling reference changes in removed pids')
                 # references changes
                 _ = self._handle_reference_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
@@ -1080,7 +1087,9 @@ class PageParser():
                 # qualifier changes
                 qualifier_change_detected = self._handle_qualifier_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
-                # qualifier changes
+                # reference changes
+                if self.revision_meta['revision_id'] == 158483185:
+                    print('Calling reference changes in remaining pids')
                 reference_change_detected = self._handle_reference_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
                 change_detected = change_detected or rank_change_detected or qualifier_change_detected or reference_change_detected
