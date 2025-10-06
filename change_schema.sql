@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS value_change_metadata (
     change_metadata TEXT,
     value DOUBLE PRECISION,
     PRIMARY KEY (revision_id, property_id, value_id, change_target, change_metadata),
-    FOREIGN KEY (revision_id, property_id, value_id, change_target) REFERENCES change(revision_id, property_id, value_id, change_target)
+    FOREIGN KEY (revision_id, property_id, value_id, change_target) REFERENCES value_change(revision_id, property_id, value_id, change_target)
 );
 
 CREATE TABLE IF NOT EXISTS reference_qualifier_change (
