@@ -544,19 +544,19 @@ class PageParser():
                         change_type=DELETE_REFERENCE
                     )
 
-                    if old_datatype_metadata:
-                        self._handle_datatype_metadata_changes(
-                            old_datatype_metadata=old_datatype_metadata, 
-                            new_datatype_metadata=None, 
-                            value_id=stmt_value_id, 
-                            old_datatype=prev_dtype, 
-                            new_datatype=None, 
-                            property_id=stmt_pid, 
-                            change_type=DELETE_REFERENCE, 
-                            type_='reference_qualifier', 
-                            rq_property_id=pid, 
-                            value_hash=value_hash
-                        )
+                    # if old_datatype_metadata:
+                    #     self._handle_datatype_metadata_changes(
+                    #         old_datatype_metadata=old_datatype_metadata, 
+                    #         new_datatype_metadata=None, 
+                    #         value_id=stmt_value_id, 
+                    #         old_datatype=prev_dtype, 
+                    #         new_datatype=None, 
+                    #         property_id=stmt_pid, 
+                    #         change_type=DELETE_REFERENCE, 
+                    #         type_='reference_qualifier', 
+                    #         rq_property_id=pid, 
+                    #         value_hash=value_hash
+                    #     )
 
         # --- Added references ---
         for h in added:
@@ -586,19 +586,19 @@ class PageParser():
                         change_type=CREATE_REFERENCE
                     )
 
-                    if new_datatype_metadata:
-                        self._handle_datatype_metadata_changes(
-                            old_datatype_metadata=None, 
-                            new_datatype_metadata=new_datatype_metadata, 
-                            value_id=stmt_value_id, 
-                            old_datatype=None, 
-                            new_datatype=curr_dtype, 
-                            property_id=stmt_pid, 
-                            change_type=CREATE_REFERENCE, 
-                            type_='reference_qualifier', 
-                            rq_property_id=pid, 
-                            value_hash=value_hash
-                        )
+                    # if new_datatype_metadata:
+                    #     self._handle_datatype_metadata_changes(
+                    #         old_datatype_metadata=None, 
+                    #         new_datatype_metadata=new_datatype_metadata, 
+                    #         value_id=stmt_value_id, 
+                    #         old_datatype=None, 
+                    #         new_datatype=curr_dtype, 
+                    #         property_id=stmt_pid, 
+                    #         change_type=CREATE_REFERENCE, 
+                    #         type_='reference_qualifier', 
+                    #         rq_property_id=pid, 
+                    #         value_hash=value_hash
+                    #     )
 
 
         return change_detected
@@ -663,19 +663,19 @@ class PageParser():
                     change_type=DELETE_QUALIFIER
                 )
 
-                if old_datatype_metadata:
-                    self._handle_datatype_metadata_changes(
-                        old_datatype_metadata=old_datatype_metadata, 
-                        new_datatype_metadata=None, 
-                        value_id=stmt_value_id, 
-                        old_datatype=prev_dtype, 
-                        new_datatype=None, 
-                        property_id=stmt_pid, 
-                        change_type=DELETE_QUALIFIER, 
-                        type_='reference_qualifier', 
-                        rq_property_id=pid, 
-                        value_hash=value_hash
-                    )
+                # if old_datatype_metadata:
+                #     self._handle_datatype_metadata_changes(
+                #         old_datatype_metadata=old_datatype_metadata, 
+                #         new_datatype_metadata=None, 
+                #         value_id=stmt_value_id, 
+                #         old_datatype=prev_dtype, 
+                #         new_datatype=None, 
+                #         property_id=stmt_pid, 
+                #         change_type=DELETE_QUALIFIER, 
+                #         type_='reference_qualifier', 
+                #         rq_property_id=pid, 
+                #         value_hash=value_hash
+                #     )
 
             # --- Added values ---
             for h in added:
@@ -703,19 +703,19 @@ class PageParser():
                     change_type=CREATE_QUALIFIER
                 )
 
-                if new_datatype_metadata:
-                    self._handle_datatype_metadata_changes(
-                        old_datatype_metadata=None, 
-                        new_datatype_metadata=new_datatype_metadata, 
-                        value_id=stmt_value_id, 
-                        old_datatype=None, 
-                        new_datatype=curr_dtype, 
-                        property_id=stmt_pid, 
-                        change_type=CREATE_QUALIFIER, 
-                        type_='reference_qualifier', 
-                        rq_property_id=pid, 
-                        value_hash=value_hash
-                    )
+                # if new_datatype_metadata:
+                #     self._handle_datatype_metadata_changes(
+                #         old_datatype_metadata=None, 
+                #         new_datatype_metadata=new_datatype_metadata, 
+                #         value_id=stmt_value_id, 
+                #         old_datatype=None, 
+                #         new_datatype=curr_dtype, 
+                #         property_id=stmt_pid, 
+                #         change_type=CREATE_QUALIFIER, 
+                #         type_='reference_qualifier', 
+                #         rq_property_id=pid, 
+                #         value_hash=value_hash
+                #     )
 
         return change_detected
             
