@@ -565,13 +565,27 @@ class PageParser():
         if not prev_refs and not curr_refs:
             return False
         
+        def canonical_hash(data):
+            import hashlib
+            # remove nulls & sort keys recursively
+            def clean(obj):
+                if isinstance(obj, dict):
+                    return {k: clean(obj[k]) for k in sorted(obj) if obj[k] is not None}
+                if isinstance(obj, list):
+                    return [clean(i) for i in obj]
+                return obj
+            return hashlib.sha1(json.dumps(clean(data), separators=(',', ':')).encode('utf-8')).hexdigest()
+                
         # map of (pid, hash): value 
         def build_hash_map(refs):
             hash_map = {}
             for ref in refs: # refs is a list of { 'hash': '', 'snaks': {}}
                 for pid, vals in ref['snaks'].items(): # snaks contains P-id: [{}] -> list of value
                     for val in vals:
-                        value_hash = val['hash']
+                        # don't use the hash provided by WD since it's not stable
+                        # the same value appeared with != hashes and that implies a create/delete even though there
+                        # was no change
+                        value_hash = canonical_hash(val) 
                         hash_map[(pid, value_hash)] = val # need to keep the p-id in case the value repeats for different pids (same value, same hash)
             return hash_map
 
@@ -585,8 +599,7 @@ class PageParser():
         # because the high-level hash can change between revisions, but some of the inner values 
         # remains the same, just because at least one changed
         deleted = prev_keys - curr_keys
-        created = curr_keys - prev_keys
-            
+        created = curr_keys - prev_keys    
 
         # deletions
         for pid, value_hash in deleted:
