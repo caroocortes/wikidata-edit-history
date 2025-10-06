@@ -505,7 +505,8 @@ class PageParser():
         if not prev_refs and not curr_refs:
             return False
 
-        # map hash (high-level): snaks
+        # deduplicate references by high-level hash
+        # map by hash : snaks
         prev_map = {ref['hash']: ref['snaks'] for ref in prev_refs}
         curr_map = {ref['hash']: ref['snaks'] for ref in curr_refs}
 
@@ -524,11 +525,7 @@ class PageParser():
             for pid, snaks in prev_ref.items():
                 
                 # deduplicate values for a property - because we are using hashes, if 2 values are = , the hash is too
-                unique_snaks = {}
-                for snak in snaks:
-                    h = snak.get('hash', '')
-                    if h not in unique_snaks:
-                        unique_snaks[h] = snak
+                unique_snaks = {snak['hash']: snak for snak in snaks}
 
                 for snak in unique_snaks.values(): # P-id : [] of values (can have more than one)
                     snaktype = snak['snaktype']
@@ -572,11 +569,8 @@ class PageParser():
             curr_ref = curr_map[h]
 
             for pid, snaks in curr_ref.items():
-                unique_snaks = {}
-                for snak in snaks:
-                    h = snak.get('hash', '')
-                    if h not in unique_snaks:
-                        unique_snaks[h] = snak
+                # deduplicate values for a property - because we are using hashes, if 2 values are = , the hash is too
+                unique_snaks = {snak['hash']: snak for snak in snaks}
 
                 for snak in unique_snaks.values():
                     snaktype = snak['snaktype']
@@ -643,20 +637,10 @@ class PageParser():
             
             # Because we are using hashes to identify values, if there are duplicate values we will have duplicate rows inserted
             # deduplicate prev_stmts by hash
-            unique_prev = {}
-            for s in prev_stmts:
-                h = s.get('hash', '')
-                if h not in unique_prev:
-                    unique_prev[h] = s
-            prev_map = unique_prev  # {hash: snak}
+            prev_map = {s['hash']: s for s in prev_stmts}  # {hash: snak}
 
             # deduplicate curr_stmts by hash
-            unique_curr = {}
-            for s in curr_stmts:
-                h = s.get('hash', '')
-                if h not in unique_curr:
-                    unique_curr[h] = s
-            curr_map = unique_curr  # {hash: snak}
+            curr_map = {s['hash']: s for s in curr_stmts}
             
             # hashes are created from the actial values, so if there are different hashes something changed
             prev_hashes = set(prev_map.keys())
