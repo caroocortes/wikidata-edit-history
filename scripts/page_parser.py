@@ -522,7 +522,15 @@ class PageParser():
             prev_ref = prev_map[h] # snaks
 
             for pid, snaks in prev_ref.items():
-                for snak in snaks: # P-id : [] of values (can have more than one)
+                
+                # deduplicate values for a property - because we are using hashes, if 2 values are = , the hash is too
+                unique_snaks = {}
+                for snak in snaks:
+                    h = snak.get('hash', '')
+                    if h not in unique_snaks:
+                        unique_snaks[h] = snak
+
+                for snak in unique_snaks.values(): # P-id : [] of values (can have more than one)
                     snaktype = snak['snaktype']
                     if snaktype in ('novalue', 'somevalue'):
                         prev_val, prev_dtype, old_datatype_metadata = (snaktype, 'string', None)
@@ -544,27 +552,33 @@ class PageParser():
                         change_type=DELETE_REFERENCE
                     )
 
-                    # if old_datatype_metadata:
-                    #     self._handle_datatype_metadata_changes(
-                    #         old_datatype_metadata=old_datatype_metadata, 
-                    #         new_datatype_metadata=None, 
-                    #         value_id=stmt_value_id, 
-                    #         old_datatype=prev_dtype, 
-                    #         new_datatype=None, 
-                    #         property_id=stmt_pid, 
-                    #         change_type=DELETE_REFERENCE, 
-                    #         type_='reference_qualifier', 
-                    #         rq_property_id=pid, 
-                    #         value_hash=value_hash
-                    #     )
+                    if old_datatype_metadata:
+                        self._handle_datatype_metadata_changes(
+                            old_datatype_metadata=old_datatype_metadata, 
+                            new_datatype_metadata=None, 
+                            value_id=stmt_value_id, 
+                            old_datatype=prev_dtype, 
+                            new_datatype=None, 
+                            property_id=stmt_pid, 
+                            change_type=DELETE_REFERENCE, 
+                            type_='reference_qualifier', 
+                            rq_property_id=pid, 
+                            value_hash=value_hash
+                        )
 
         # --- Added references ---
         for h in added:
             change_detected = True
             curr_ref = curr_map[h]
 
-            for pid, snaks in curr_ref.get('snaks', {}).items():
+            for pid, snaks in curr_ref.items():
+                unique_snaks = {}
                 for snak in snaks:
+                    h = snak.get('hash', '')
+                    if h not in unique_snaks:
+                        unique_snaks[h] = snak
+
+                for snak in unique_snaks.values():
                     snaktype = snak['snaktype']
                     if snaktype in ('novalue', 'somevalue'):
                         curr_val, curr_dtype, new_datatype_metadata = (snaktype, 'string', None)
@@ -586,19 +600,19 @@ class PageParser():
                         change_type=CREATE_REFERENCE
                     )
 
-                    # if new_datatype_metadata:
-                    #     self._handle_datatype_metadata_changes(
-                    #         old_datatype_metadata=None, 
-                    #         new_datatype_metadata=new_datatype_metadata, 
-                    #         value_id=stmt_value_id, 
-                    #         old_datatype=None, 
-                    #         new_datatype=curr_dtype, 
-                    #         property_id=stmt_pid, 
-                    #         change_type=CREATE_REFERENCE, 
-                    #         type_='reference_qualifier', 
-                    #         rq_property_id=pid, 
-                    #         value_hash=value_hash
-                    #     )
+                    if new_datatype_metadata:
+                        self._handle_datatype_metadata_changes(
+                            old_datatype_metadata=None, 
+                            new_datatype_metadata=new_datatype_metadata, 
+                            value_id=stmt_value_id, 
+                            old_datatype=None, 
+                            new_datatype=curr_dtype, 
+                            property_id=stmt_pid, 
+                            change_type=CREATE_REFERENCE, 
+                            type_='reference_qualifier', 
+                            rq_property_id=pid, 
+                            value_hash=value_hash
+                        )
 
 
         return change_detected
@@ -626,8 +640,23 @@ class PageParser():
 
             # map by hash : stmt
             # we compare hashes because they are created from the actual values, so if the hashes are different, something changed
-            prev_map = {s.get('hash', ''): s for s in prev_stmts}
-            curr_map = {s.get('hash', ''): s for s in curr_stmts}
+            
+            # Because we are using hashes to identify values, if there are duplicate values we will have duplicate rows inserted
+            # deduplicate prev_stmts by hash
+            unique_prev = {}
+            for s in prev_stmts:
+                h = s.get('hash', '')
+                if h not in unique_prev:
+                    unique_prev[h] = s
+            prev_map = unique_prev  # {hash: snak}
+
+            # deduplicate curr_stmts by hash
+            unique_curr = {}
+            for s in curr_stmts:
+                h = s.get('hash', '')
+                if h not in unique_curr:
+                    unique_curr[h] = s
+            curr_map = unique_curr  # {hash: snak}
             
             # hashes are created from the actial values, so if there are different hashes something changed
             prev_hashes = set(prev_map.keys())
@@ -663,19 +692,19 @@ class PageParser():
                     change_type=DELETE_QUALIFIER
                 )
 
-                # if old_datatype_metadata:
-                #     self._handle_datatype_metadata_changes(
-                #         old_datatype_metadata=old_datatype_metadata, 
-                #         new_datatype_metadata=None, 
-                #         value_id=stmt_value_id, 
-                #         old_datatype=prev_dtype, 
-                #         new_datatype=None, 
-                #         property_id=stmt_pid, 
-                #         change_type=DELETE_QUALIFIER, 
-                #         type_='reference_qualifier', 
-                #         rq_property_id=pid, 
-                #         value_hash=value_hash
-                #     )
+                if old_datatype_metadata:
+                    self._handle_datatype_metadata_changes(
+                        old_datatype_metadata=old_datatype_metadata, 
+                        new_datatype_metadata=None, 
+                        value_id=stmt_value_id, 
+                        old_datatype=prev_dtype, 
+                        new_datatype=None, 
+                        property_id=stmt_pid, 
+                        change_type=DELETE_QUALIFIER, 
+                        type_='reference_qualifier', 
+                        rq_property_id=pid, 
+                        value_hash=value_hash
+                    )
 
             # --- Added values ---
             for h in added:
@@ -703,19 +732,19 @@ class PageParser():
                     change_type=CREATE_QUALIFIER
                 )
 
-                # if new_datatype_metadata:
-                #     self._handle_datatype_metadata_changes(
-                #         old_datatype_metadata=None, 
-                #         new_datatype_metadata=new_datatype_metadata, 
-                #         value_id=stmt_value_id, 
-                #         old_datatype=None, 
-                #         new_datatype=curr_dtype, 
-                #         property_id=stmt_pid, 
-                #         change_type=CREATE_QUALIFIER, 
-                #         type_='reference_qualifier', 
-                #         rq_property_id=pid, 
-                #         value_hash=value_hash
-                #     )
+                if new_datatype_metadata:
+                    self._handle_datatype_metadata_changes(
+                        old_datatype_metadata=None, 
+                        new_datatype_metadata=new_datatype_metadata, 
+                        value_id=stmt_value_id, 
+                        old_datatype=None, 
+                        new_datatype=curr_dtype, 
+                        property_id=stmt_pid, 
+                        change_type=CREATE_QUALIFIER, 
+                        type_='reference_qualifier', 
+                        rq_property_id=pid, 
+                        value_hash=value_hash
+                    )
 
         return change_detected
             
