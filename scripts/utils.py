@@ -176,12 +176,6 @@ def insert_rows(conn, table_name, rows, columns):
                     except Exception as select_err:
                         print(f"Error checking for existing row: {select_err}")
 
-        print("\nProblematic rows:")
-        for br, err in bad_rows:
-            print(f"{br} -> {err}")
-
-        print("\nOriginal batch insert error:")
-        print(e)
 
 def create_db_schema():
     base_dir = Path(__file__).resolve().parent.parent

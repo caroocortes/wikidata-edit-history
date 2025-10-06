@@ -517,15 +517,18 @@ class PageParser():
         deleted = prev_hashes - unchanged
         added = curr_hashes - unchanged
 
+        if self.revision_meta['revision_id'] == 214857392:
+            print(curr_refs)
+
+        if self.revision_meta['revision_id'] == 158483185:
+            print(curr_refs)
+
+            
+
         # --- Deleted references
         for h in deleted:
             change_detected = True
             prev_ref = prev_map[h] # snaks
-
-            if h in added:
-                print('the same hash was added and deleted !!!!!!!!!')
-                print(prev_map[h])
-                print(curr_map[h])
 
             for pid, snaks in prev_ref.items():
                 
@@ -572,11 +575,6 @@ class PageParser():
         for h in added:
             change_detected = True
             curr_ref = curr_map[h]
-
-            if h in deleted:
-                print('the same hash was added and deleted !!!!!!!!!')
-                print(prev_map[h])
-                print(curr_map[h])
 
             for pid, snaks in curr_ref.items():
                 # deduplicate values for a property - because we are using hashes, if 2 values are = , the hash is too
