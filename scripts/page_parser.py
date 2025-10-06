@@ -523,7 +523,7 @@ class PageParser():
         # remains the same, just because at least one changed
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys
-        if self.revision_meta[''] == 564334745:
+        if self.revision_meta['revision_id'] == 564334745:
             print(f'----------------------- Revision id: {self.revision_meta["revision_id"]} ----------------------------')
             print('Las deleted:')
             print(deleted)
