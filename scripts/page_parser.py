@@ -334,7 +334,7 @@ class PageParser():
             action,
             target
         )
-        
+
         self.reference_qualifier_changes.append(change)
 
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash=None, new_hash=None, type_='value', rq_property_id=None, value_hash=None):
@@ -523,6 +523,12 @@ class PageParser():
         # remains the same, just because at least one changed
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys
+        if self.revision_meta[''] == 564334745:
+            print(f'----------------------- Revision id: {self.revision_meta["revision_id"]} ----------------------------')
+            print('Las deleted:')
+            print(deleted)
+            print('Las created:')
+            print(created)
 
         # deletions
         for pid, value_hash in deleted:
