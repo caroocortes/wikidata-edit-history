@@ -868,7 +868,7 @@ class PageParser():
 
                 # references changes
                 if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save ref change in new pids')
+                    print('callinf save ref change in created enntity')
                     sys.stdout.flush()
                 _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
@@ -1036,7 +1036,7 @@ class PageParser():
 
                 # references changes
                 if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save ref change in new pids')
+                    print('callinf save ref change in removed pids')
                     sys.stdout.flush()
                 _ = self._handle_reference_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
@@ -1166,7 +1166,7 @@ class PageParser():
 
                 # reference changes
                 if self.revision_meta['revision_id'] == 564334745:
-                    print('callinf save ref change in new pids')
+                    print('callinf save ref change in remaining pids')
                     sys.stdout.flush()
                 reference_change_detected = self._handle_reference_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
