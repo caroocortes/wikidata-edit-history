@@ -334,8 +334,7 @@ class PageParser():
             action,
             target
         )
-        if self.revision_meta['revision_id'] == 158483185:
-            print('Saved reference/qualifier change:', change)
+        
         self.reference_qualifier_changes.append(change)
 
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash=None, new_hash=None, type_='value', rq_property_id=None, value_hash=None):
@@ -520,7 +519,8 @@ class PageParser():
         curr_keys = set(curr_hash_map.keys())
 
         # Have to compare at the low-level hash (value hash)
-        # because the high-level hash can change between revisions, but some of the inner values remains the same, just because at least one changed
+        # because the high-level hash can change between revisions, but some of the inner values 
+        # remains the same, just because at least one changed
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys
 
@@ -539,7 +539,7 @@ class PageParser():
                 property_id=id_to_int(stmt_pid),
                 value_id=stmt_value_id,
                 rq_property_id=id_to_int(pid),
-                value_hash=snak_hash,
+                value_hash=value_hash,
                 old_value=prev_val,
                 new_value=None,
                 datatype=prev_dtype,
@@ -558,13 +558,13 @@ class PageParser():
                     change_type=DELETE_REFERENCE,
                     type_='reference_qualifier',
                     rq_property_id=pid,
-                    value_hash=snak_hash
+                    value_hash=value_hash
                 )
 
         # creations
-        for pid, snak_hash in created:
+        for pid, value_hash in created:
             change_detected = True
-            prop_value = curr_hash_map[(pid, snak_hash)]
+            prop_value = curr_hash_map[(pid, value_hash)]
 
             if prop_value['snaktype'] in ('novalue', 'somevalue'):
                 curr_val, curr_dtype, new_datatype_metadata = (prop_value['snaktype'], 'string', None)
@@ -576,7 +576,7 @@ class PageParser():
                 property_id=id_to_int(stmt_pid),
                 value_id=stmt_value_id,
                 rq_property_id=id_to_int(pid),
-                value_hash=snak_hash,
+                value_hash=value_hash,
                 old_value=None,
                 new_value=curr_val,
                 datatype=curr_dtype,
@@ -595,7 +595,7 @@ class PageParser():
                     change_type=CREATE_REFERENCE,
                     type_='reference_qualifier',
                     rq_property_id=pid,
-                    value_hash=snak_hash
+                    value_hash=value_hash
                 )
 
         return change_detected
@@ -768,8 +768,6 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
-                if self.revision_meta['revision_id'] == 158483185:
-                    print('Calling reference changes in creating entity')
                 # references changes
                 _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
@@ -892,8 +890,6 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_qualifier_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
 
-                if self.revision_meta['revision_id'] == 158483185:
-                    print('Calling reference changes in new pids')
                 # reference changes
                 _ = self._handle_reference_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
     
@@ -934,8 +930,6 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_qualifier_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
-                if self.revision_meta['revision_id'] == 158483185:
-                    print('Calling reference changes in removed pids')
                 # references changes
                 _ = self._handle_reference_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
@@ -1064,8 +1058,6 @@ class PageParser():
                 qualifier_change_detected = self._handle_qualifier_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
                 # reference changes
-                if self.revision_meta['revision_id'] == 158483185:
-                    print('Calling reference changes in remaining pids')
                 reference_change_detected = self._handle_reference_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
                 change_detected = change_detected or rank_change_detected or qualifier_change_detected or reference_change_detected
