@@ -518,10 +518,14 @@ class PageParser():
         added = curr_hashes - unchanged
 
         if self.revision_meta['revision_id'] == 214857392:
-            print(curr_refs)
+            print('----------------------- Revision id: 214857392 ----------------------------')
+            print(curr_stmt)
+            print('--------------------------------------------------')
 
         if self.revision_meta['revision_id'] == 158483185:
-            print(curr_refs)
+            print('----------------------- Revision id: 158483185 ----------------------------')
+            print(curr_stmt)
+            print('--------------------------------------------------')
 
             
 
