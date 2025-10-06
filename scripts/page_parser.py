@@ -284,6 +284,9 @@ class PageParser():
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
 
+        if self.revision_meta['revision_id'] == 564334745:
+            print("DEBUG CHANGE", self.revision_meta['revision_id'], property_id, value_id, change_target, old_value, new_value, change_type)
+
         change = (
             self.revision_meta['revision_id'],
             property_id,
@@ -367,7 +370,7 @@ class PageParser():
                         )
                     else: # value == 'reference_qualifier'
 
-                        if self.revision_meta['revision_id'] == '564334745':
+                        if self.revision_meta['revision_id'] == 564334745:
                             print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
                         self.save_reference_qualifier_changes(
                             id_to_int(property_id),
@@ -429,7 +432,7 @@ class PageParser():
                         new_hash=new_hash
                     )
                 else: # value == 'reference_qualifier'
-                    if self.revision_meta['revision_id'] == '564334745':
+                    if self.revision_meta['revision_id'] == 564334745:
                         print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
@@ -466,7 +469,7 @@ class PageParser():
                         new_hash=new_hash
                     )
                 else: # value == 'reference_qualifier'
-                    if self.revision_meta['revision_id'] == '564334745':
+                    if self.revision_meta['revision_id'] == 564334745:
                         print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
@@ -538,7 +541,6 @@ class PageParser():
             print('LOS MAPS!!!!!!!!!')
             print(prev_hash_map)
             print(curr_hash_map)
-            
             print('Las deleted:')
             print(deleted)
             print('Las created:')
