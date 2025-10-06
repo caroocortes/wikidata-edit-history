@@ -491,10 +491,8 @@ class PageParser():
 
     def _handle_reference_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt):
         """
-        Handles addition/deletion of references.
-        Each reference is compared using its high level hash ('references': [ { 'hash': '', 'snaks': [...] }, { 'hash': '', 'snaks': [...] }])
-        If a hash dissapears -> delete/create
-        If hashes stay the same -> nothing changed
+        Handles addition/deletion of references by comparing snak value hashes.
+        Deduplicates snaks within references and avoids unnecessary CREATE/DELETE.
         """
 
         change_detected = False
@@ -502,135 +500,106 @@ class PageParser():
         prev_refs = prev_stmt.get('references', []) if prev_stmt else []
         curr_refs = curr_stmt.get('references', []) if curr_stmt else []
 
-        # no references
         if not prev_refs and not curr_refs:
             return False
+        
+        # map of (pid, hash): value 
+        def build_hash_map(refs):
+            hash_map = {}
+            for ref in refs: # refs is a list of { 'hash': '', 'snaks': {}}
+                for pid, vals in ref['snaks'].items(): # snaks contains P-id: [{}] -> list of value
+                    for val in vals:
+                        value_hash = val['hash']
+                        hash_map[(pid, value_hash)] = val # need to keep the p-id in case the value repeats for different pids (same value, same hash)
+            return hash_map
 
-        # deduplicate references by high-level hash
-        # map by hash : snaks
-        prev_map = {ref['hash']: ref['snaks'] for ref in prev_refs}
-        curr_map = {ref['hash']: ref['snaks'] for ref in curr_refs}
+        prev_hash_map = build_hash_map(prev_refs)
+        curr_hash_map = build_hash_map(curr_refs)
 
-        prev_hashes = set(prev_map.keys())
-        curr_hashes = set(curr_map.keys())
+        prev_keys = set(prev_hash_map.keys())
+        curr_keys = set(curr_hash_map.keys())
 
-        unchanged = prev_hashes.intersection(curr_hashes)
-        deleted = prev_hashes - unchanged
-        added = curr_hashes - unchanged
+        # Have to compare at the low-level hash (value hash)
+        # because the high-level hash can change between revisions, but some of the inner values remains the same, just because at least one changed
+        deleted = prev_keys - curr_keys
+        created = curr_keys - prev_keys
 
-        if self.revision_meta['revision_id'] == 214857392:
-            print('----------------------- Revision id: 214857392 ----------------------------')
-            print(curr_stmt)
-            print('--------------------------------------------------')
-
-        if self.revision_meta['revision_id'] == 158483185:
-            print('----------------------- Revision id: 158483185 ----------------------------')
-            print(curr_stmt)
-            print('--------------------------------------------------')
-
-            print('El prev map:')
-            print(prev_map)
-            print('El curr map:')
-            print(curr_map)
-            print('LOS HASHHES!!!!!!')
-            print(added, deleted, unchanged)
-
-            
-
-        # --- Deleted references
-        for h in deleted:
+        # deletions
+        for pid, value_hash in deleted:
             change_detected = True
-            prev_ref = prev_map[h] # snaks
+            prop_value = prev_hash_map[(pid, value_hash)]
 
-            for pid, snaks in prev_ref.items():
-                
-                # deduplicate values for a property - because we are using hashes, if 2 values are = , the hash is too
-                unique_snaks = {snak['hash']: snak for snak in snaks}
+            if prop_value['snaktype'] in ('novalue', 'somevalue'):
+                prev_val, prev_dtype, old_datatype_metadata = (prop_value['snaktype'], 'string', None)
+            else:
+                dv = prop_value['datavalue']
+                prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                for snak in unique_snaks.values(): # P-id : [] of values (can have more than one)
-                    snaktype = snak['snaktype']
-                    if snaktype in ('novalue', 'somevalue'):
-                        prev_val, prev_dtype, old_datatype_metadata = (snaktype, 'string', None)
-                    else:
-                        dv = snak['datavalue']
-                        prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+            self.save_reference_qualifier_changes(
+                property_id=id_to_int(stmt_pid),
+                value_id=stmt_value_id,
+                rq_property_id=id_to_int(pid),
+                value_hash=snak_hash,
+                old_value=prev_val,
+                new_value=None,
+                datatype=prev_dtype,
+                change_target='',
+                change_type=DELETE_REFERENCE
+            )
 
-                    value_hash = snak['hash'] # value hash. It's different from the high-level hash
+            if old_datatype_metadata:
+                self._handle_datatype_metadata_changes(
+                    old_datatype_metadata=old_datatype_metadata,
+                    new_datatype_metadata=None,
+                    value_id=stmt_value_id,
+                    old_datatype=prev_dtype,
+                    new_datatype=None,
+                    property_id=stmt_pid,
+                    change_type=DELETE_REFERENCE,
+                    type_='reference_qualifier',
+                    rq_property_id=pid,
+                    value_hash=snak_hash
+                )
 
-                    self.save_reference_qualifier_changes(
-                        property_id=id_to_int(stmt_pid),
-                        value_id=stmt_value_id,
-                        rq_property_id=id_to_int(pid),
-                        value_hash=value_hash, # we add the hash of the value itself, because one P-id can have multiple values
-                        old_value=prev_val,
-                        new_value=None,
-                        datatype=prev_dtype,
-                        change_target='',
-                        change_type=DELETE_REFERENCE
-                    )
-
-                    if old_datatype_metadata:
-                        self._handle_datatype_metadata_changes(
-                            old_datatype_metadata=old_datatype_metadata, 
-                            new_datatype_metadata=None, 
-                            value_id=stmt_value_id, 
-                            old_datatype=prev_dtype, 
-                            new_datatype=None, 
-                            property_id=stmt_pid, 
-                            change_type=DELETE_REFERENCE, 
-                            type_='reference_qualifier', 
-                            rq_property_id=pid, 
-                            value_hash=value_hash
-                        )
-
-        # --- Added references ---
-        for h in added:
+        # creations
+        for pid, snak_hash in created:
             change_detected = True
-            curr_ref = curr_map[h]
+            prop_value = curr_hash_map[(pid, snak_hash)]
 
-            for pid, snaks in curr_ref.items():
-                # deduplicate values for a property - because we are using hashes, if 2 values are = , the hash is too
-                unique_snaks = {snak['hash']: snak for snak in snaks}
+            if prop_value['snaktype'] in ('novalue', 'somevalue'):
+                curr_val, curr_dtype, new_datatype_metadata = (prop_value['snaktype'], 'string', None)
+            else:
+                dv = prop_value['datavalue']
+                curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                for snak in unique_snaks.values():
-                    snaktype = snak['snaktype']
-                    if snaktype in ('novalue', 'somevalue'):
-                        curr_val, curr_dtype, new_datatype_metadata = (snaktype, 'string', None)
-                    else:
-                        dv = snak['datavalue']
-                        curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+            self.save_reference_qualifier_changes(
+                property_id=id_to_int(stmt_pid),
+                value_id=stmt_value_id,
+                rq_property_id=id_to_int(pid),
+                value_hash=snak_hash,
+                old_value=None,
+                new_value=curr_val,
+                datatype=curr_dtype,
+                change_target='',
+                change_type=CREATE_REFERENCE
+            )
 
-                    value_hash = snak['hash'] # value hash. It's different from the high-level hash
-
-                    self.save_reference_qualifier_changes(
-                        property_id=id_to_int(stmt_pid),
-                        value_id=stmt_value_id,
-                        rq_property_id=id_to_int(pid),
-                        value_hash=value_hash,
-                        old_value=None,
-                        new_value=curr_val,
-                        datatype=curr_dtype,
-                        change_target='',
-                        change_type=CREATE_REFERENCE
-                    )
-
-                    if new_datatype_metadata:
-                        self._handle_datatype_metadata_changes(
-                            old_datatype_metadata=None, 
-                            new_datatype_metadata=new_datatype_metadata, 
-                            value_id=stmt_value_id, 
-                            old_datatype=None, 
-                            new_datatype=curr_dtype, 
-                            property_id=stmt_pid, 
-                            change_type=CREATE_REFERENCE, 
-                            type_='reference_qualifier', 
-                            rq_property_id=pid, 
-                            value_hash=value_hash
-                        )
-
+            if new_datatype_metadata:
+                self._handle_datatype_metadata_changes(
+                    old_datatype_metadata=None,
+                    new_datatype_metadata=new_datatype_metadata,
+                    value_id=stmt_value_id,
+                    old_datatype=None,
+                    new_datatype=curr_dtype,
+                    property_id=stmt_pid,
+                    change_type=CREATE_REFERENCE,
+                    type_='reference_qualifier',
+                    rq_property_id=pid,
+                    value_hash=snak_hash
+                )
 
         return change_detected
-
+    
     def _handle_qualifier_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt):
         """
         Handles addition, deletion of qualifiers values.
