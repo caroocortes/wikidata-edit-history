@@ -283,21 +283,18 @@ class PageParser():
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
 
-        if self.revision_meta['revision_id'] == 564334745:
-            print("DEBUG CHANGE", self.revision_meta['revision_id'], property_id, value_id, change_target, old_value, new_value, change_type)
-
         change = (
             self.revision_meta['revision_id'],
             property_id,
             value_id,
-            old_value,
-            new_value,
+            old_value if old_value else {},
+            new_value if new_value else {},
             datatype,
             change_target if change_target else '', # can't be None since change_target is part of the key of the table
             action,
             target,
-            old_hash,
-            new_hash
+            old_hash if old_hash else '',
+            new_hash if new_hash else ''
         )
 
         self.changes.append(change)
