@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS revision (
     PRIMARY KEY (revision_id)
 );
 
-CREATE TABLE IF NOT EXISTS change (
+CREATE TABLE IF NOT EXISTS value_change (
     revision_id BIGINT,
     property_id INT,
     property_label TEXT,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS change (
     FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
 );
 
-CREATE TABLE IF NOT EXISTS change_metadata (
+CREATE TABLE IF NOT EXISTS value_change_metadata (
     revision_id BIGINT,
     property_id INT,
     value_id TEXT,
@@ -38,6 +38,25 @@ CREATE TABLE IF NOT EXISTS change_metadata (
     value DOUBLE PRECISION,
     PRIMARY KEY (revision_id, property_id, value_id, change_target, change_metadata),
     FOREIGN KEY (revision_id, property_id, value_id, change_target) REFERENCES change(revision_id, property_id, value_id, change_target)
+);
+
+CREATE TABLE IF NOT EXISTS reference_qualifier_change (
+    revision_id BIGINT,
+    property_id INT, -- statement property id
+    property_label TEXT,
+    value_id TEXT, -- statement value id
+    rq_property_id INT, -- reference or qualifier property id
+    rq_property_id_label TEXT,
+    value_hash TEXT, -- hash of reference/qualifier value. This hash + rq_property_id identify each refference/qualifier value
+    old_value JSONB,
+    new_value JSONB,
+    datatype TEXT,
+    change_target TEXT, -- will be '' or datatype metadata name
+    action TEXT, -- Will only be CREATE/DELETE, never UPDATE
+    target TEXT,
+    PRIMARY KEY (revision_id, property_id, value_id, rq_property_id, value_hash, change_target),
+    FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
+    -- NOTE: revision_id, property_id, value_id does not necessarily exist in value_change since a revision could involve only reference/qualifier changes
 );
 
 CREATE TABLE IF NOT EXISTS class (
