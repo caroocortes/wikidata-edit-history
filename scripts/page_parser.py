@@ -366,6 +366,9 @@ class PageParser():
                             new_hash=new_hash
                         )
                     else: # value == 'reference_qualifier'
+
+                        if self.revision_meta['revision_id'] == '564334745':
+                            print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
                         self.save_reference_qualifier_changes(
                             id_to_int(property_id),
                             value_id=value_id,
@@ -426,6 +429,8 @@ class PageParser():
                         new_hash=new_hash
                     )
                 else: # value == 'reference_qualifier'
+                    if self.revision_meta['revision_id'] == '564334745':
+                        print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -461,6 +466,8 @@ class PageParser():
                         new_hash=new_hash
                     )
                 else: # value == 'reference_qualifier'
+                    if self.revision_meta['revision_id'] == '564334745':
+                        print("DEBUG RQ_CHANGE", self.revision_meta['revision_id'], property_id, value_id, rq_property_id, value_hash, key, old_meta, new_meta)
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
@@ -524,13 +531,14 @@ class PageParser():
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys
         if self.revision_meta['revision_id'] == 564334745:
+            print(f'----------------------- Revision id: {self.revision_meta["revision_id"]} ----------------------------')
             print('LAS REFSS1!!!!!')
             print(curr_refs)
             print(prev_refs)
             print('LOS MAPS!!!!!!!!!')
             print(prev_hash_map)
             print(curr_hash_map)
-            print(f'----------------------- Revision id: {self.revision_meta["revision_id"]} ----------------------------')
+            
             print('Las deleted:')
             print(deleted)
             print('Las created:')
