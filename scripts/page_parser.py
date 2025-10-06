@@ -342,6 +342,68 @@ class PageParser():
 
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash=None, new_hash=None, type_='value', rq_property_id=None, value_hash=None):
         
+        if old_datatype_metadata and not new_datatype_metadata: # deletion
+            for key in old_datatype_metadata.keys():
+                old_meta = old_datatype_metadata.get(key, None)
+                
+                if type_ == 'value':
+                    self.save_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=old_meta,
+                            new_value=None,
+                            datatype=old_datatype,
+                            change_target=key,
+                            change_type=change_type, 
+                            change_magnitude=change_magnitude,
+                            old_hash=old_hash,
+                            new_hash=None
+                        )
+                else:
+                    self.save_reference_qualifier_changes(
+                        id_to_int(property_id),
+                        value_id=value_id,
+                        rq_property_id=id_to_int(rq_property_id),
+                        value_hash=value_hash,
+                        old_value=old_meta,
+                        new_value=None,
+                        datatype=old_datatype,  # Use old_datatype, not new_datatype
+                        change_target=key,
+                        change_type=change_type
+                    )
+            return
+        
+        if new_datatype_metadata and not old_datatype_metadata: # creation
+            for key in new_datatype_metadata.keys():
+                new_meta = new_datatype_metadata.get(key, None)
+                
+                if type_ == 'value':
+                    self.save_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=None,
+                            new_value=new_meta,
+                            datatype=new_datatype,
+                            change_target=key,
+                            change_type=change_type, 
+                            change_magnitude=change_magnitude,
+                            old_hash=None,
+                            new_hash=new_hash
+                        )
+                else:
+                    self.save_reference_qualifier_changes(
+                        id_to_int(property_id),
+                        value_id=value_id,
+                        rq_property_id=id_to_int(rq_property_id),
+                        value_hash=value_hash,
+                        old_value=None,
+                        new_value=new_meta,
+                        datatype=new_datatype,
+                        change_target=key,
+                        change_type=change_type
+                    )
+            return
+
         if old_datatype == new_datatype:
         
             for key in set((old_datatype_metadata or {}).keys()):
@@ -462,7 +524,7 @@ class PageParser():
                         value_id=value_id,
                         old_value=old_meta,
                         new_value=new_meta,
-                        datatype=new_datatype,
+                        datatype=old_datatype,
                         change_target=key,
                         change_type=change_type,
                         old_hash=old_hash,
@@ -478,7 +540,7 @@ class PageParser():
                         value_hash=value_hash,
                         old_value=old_meta,
                         new_value=new_meta,
-                        datatype=new_datatype,
+                        datatype=old_datatype,
                         change_target=key,
                         change_type=change_type
                     )
@@ -549,7 +611,7 @@ class PageParser():
             print(deleted)
             print('Las created:')
             print(created)
-            sys.stdout.flush()
+            
 
         # deletions
         for pid, value_hash in deleted:
@@ -563,7 +625,7 @@ class PageParser():
                 prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
             if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
                 print('callinf save change for removed reference')
-                sys.stdout.flush()
+
             self.save_reference_qualifier_changes(
                 property_id=id_to_int(stmt_pid),
                 value_id=stmt_value_id,
@@ -579,7 +641,7 @@ class PageParser():
             if old_datatype_metadata:
                 if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
                     print('callinf save dt metada change for removed reference')
-                    sys.stdout.flush()
+   
                 self._handle_datatype_metadata_changes(
                     old_datatype_metadata=old_datatype_metadata,
                     new_datatype_metadata=None,
@@ -605,7 +667,7 @@ class PageParser():
                 curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
             if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
                 print('callinf save change for created reference')
-                sys.stdout.flush()
+
             self.save_reference_qualifier_changes(
                 property_id=id_to_int(stmt_pid),
                 value_id=stmt_value_id,
@@ -621,7 +683,7 @@ class PageParser():
             if new_datatype_metadata:
                 if self.revision_meta['revision_id'] == 564334745 and stmt_pid == 'P580':
                     print('callinf save dt metada change for created reference')
-                    sys.stdout.flush()
+           
                 self._handle_datatype_metadata_changes(
                     old_datatype_metadata=None,
                     new_datatype_metadata=new_datatype_metadata,
@@ -634,6 +696,8 @@ class PageParser():
                     rq_property_id=pid,
                     value_hash=value_hash
                 )
+        
+        sys.stdout.flush()
 
         return change_detected
     
