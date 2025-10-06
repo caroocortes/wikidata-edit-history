@@ -513,7 +513,7 @@ class PageParser():
         prev_hashes = set(prev_map.keys())
         curr_hashes = set(curr_map.keys())
 
-        unchanged = prev_hashes & curr_hashes
+        unchanged = prev_hashes.intersection(curr_hashes)
         deleted = prev_hashes - unchanged
         added = curr_hashes - unchanged
 
@@ -521,6 +521,11 @@ class PageParser():
         for h in deleted:
             change_detected = True
             prev_ref = prev_map[h] # snaks
+
+            if h in added:
+                print('the same hash was added and deleted !!!!!!!!!')
+                print(prev_map[h])
+                print(curr_map[h])
 
             for pid, snaks in prev_ref.items():
                 
