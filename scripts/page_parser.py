@@ -430,33 +430,27 @@ class PageParser():
             new_hash=new_hash
         )
 
-
-    def _handle_reference_qualifier_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt, type_):
+    def _handle_reference_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt):
         """
-        Handles addition, deletion of references/qualifiers values.
-        Uses a simple CREATE/DELETE logic based on snak hashes.
+        Handles addition, deletion of references values.
+        Uses a simple CREATE/DELETE logic based on hashes.
         """
 
         change_detected = False
 
-        prev = prev_stmt.get(type_, {}) if prev_stmt else {}
-        curr = curr_stmt.get(type_, {}) if curr_stmt else {}
+        prev = prev_stmt.get('references', {}) if prev_stmt else {}
+        curr = curr_stmt.get('references', {}) if curr_stmt else {}
 
-        if isinstance(prev, list):
-            prev = {}
-        if isinstance(curr, list):
-            curr = {}
+        # if there are no references, there's no 'references' in the mainsnak of the statement
+        if not prev and not curr:
+            return False
 
-        if prev and curr and prev.get('hash') == curr.get('hash') or (not prev and not curr):
+        if prev and curr and prev.get('hash') == curr.get('hash'):
             return False  # no change
-        
-        if self.revision_meta['entity_id'] == 3:
-            if type_ == 'references':
-                print('A REFERENCE CHANGE!!!')
             
-        # different from properyt changes (there it's mainsnak)
-        prev_snaks = prev.get('snaks', prev)
-        curr_snaks = curr.get('snaks', curr)
+        # different from qualifier changes - there's no snaks in qualifiers
+        prev_snaks = prev.get('snaks', {})
+        curr_snaks = curr.get('snaks', {})
 
         all_pids = set(prev_snaks.keys()).union(curr_snaks.keys())
 
@@ -490,9 +484,9 @@ class PageParser():
                     prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
                 if not curr:
-                    change_type = DELETE_QUALIFIER if type_ == 'qualifiers' else DELETE_REFERENCE
+                    change_type = DELETE_REFERENCE
                 elif len(prev_stmts) > len(curr_stmts):
-                    change_type = DELETE_QUALIFIER_VALUE if type_ == 'qualifiers' else DELETE_REFERENCE_VALUE
+                    change_type = DELETE_REFERENCE_VALUE
                 
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
@@ -520,9 +514,105 @@ class PageParser():
                     curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
                 if not prev: # there was nor eference/qualifier in previous statement
-                    change_type = CREATE_QUALIFIER if type_ == 'qualifiers' else CREATE_REFERENCE
+                    change_type = CREATE_REFERENCE
                 elif len(prev_stmts) < len(curr_stmts):
-                    change_type = CREATE_QUALIFIER_VALUE if type_ == 'qualifiers' else CREATE_REFERENCE_VALUE
+                    change_type = CREATE_REFERENCE_VALUE
+
+                self.save_changes(
+                    property_id=id_to_int(stmt_pid),
+                    value_id=f"{h}-{stmt_value_id}",
+                    old_value=None,
+                    new_value=curr_val,
+                    datatype=curr_dtype,
+                    change_target=id_to_int(pid),
+                    change_type=change_type,
+                    change_magnitude=None,
+                    old_hash=None,
+                    new_hash=h
+                )
+
+        return change_detected
+
+    def _handle_qualifier_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt):
+        """
+        Handles addition, deletion of qualifiers values.
+        Uses a simple CREATE/DELETE logic based on hashes.
+        """
+
+        change_detected = False
+
+        prev = prev_stmt.get('qualifiers', {}) if prev_stmt else {}
+        curr = curr_stmt.get('qualifiers', {}) if curr_stmt else {}
+
+        # if there are no qualifiers, there's no 'qualifiers' in the mainsnak of the statement
+        if not prev and not curr:
+            return False
+
+        all_pids = set(prev.keys()).union(curr.keys())
+
+        for pid in all_pids:
+            prev_stmts = prev.get(pid, []) # pid : [{ 'snaktype': 'value', 'hash': '...', ...}]
+            curr_stmts = curr.get(pid, [])
+
+            # map by hash : stmt
+            # we compare hashes because they are created from the actual values, so if the hashes are different, something changed
+            prev_map = {s.get('hash', ''): s for s in prev_stmts}
+            curr_map = {s.get('hash', ''): s for s in curr_stmts}
+            
+            # hashes are created from the actial values, so if there are different hashes something changed
+            prev_hashes = set(prev_map.keys())
+            curr_hashes = set(curr_map.keys())
+
+            unchanged = prev_hashes & curr_hashes
+            deleted = prev_hashes - unchanged
+            added = curr_hashes - unchanged
+
+            # --- Deleted values ---
+            for h in deleted:
+                change_detected = True
+                prev_stmt_match = prev_map[h]
+
+                snaktype = prev_stmt_match['snaktype']
+                if snaktype in ('novalue', 'somevalue'):
+                    prev_val, prev_dtype = (snaktype, 'string')
+                else:
+                    dv = prev_stmt_match['datavalue']
+                    prev_val, prev_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+
+                if not curr:
+                    change_type = DELETE_QUALIFIER
+                elif len(prev_stmts) > len(curr_stmts):
+                    change_type = DELETE_QUALIFIER_VALUE
+                
+                self.save_changes(
+                    property_id=id_to_int(stmt_pid),
+                    value_id=f"{h}-{stmt_value_id}",
+                    old_value=prev_val,
+                    new_value=None,
+                    datatype=prev_dtype,
+                    change_target=id_to_int(pid),
+                    change_type=change_type,
+                    change_magnitude=None,
+                    old_hash=h,
+                    new_hash=None
+                )
+
+            # --- Added values ---
+            for h in added:
+                change_detected = True
+                curr_stmt_match = curr_map[h]
+
+                snaktype = curr_stmt_match['snaktype']
+                if snaktype in ('novalue', 'somevalue'):
+                    curr_val, curr_dtype = (snaktype, 'string')
+                else:
+                    dv = curr_stmt_match['datavalue']
+                    curr_val, curr_dtype, _ = PageParser.parse_datavalue_json(dv['value'], dv['type'])
+
+                if not prev: # there was no qualifier in previous statement
+                    change_type = CREATE_QUALIFIER
+                elif len(prev_stmts) < len(curr_stmts):
+                    change_type = CREATE_QUALIFIER_VALUE
 
                 self.save_changes(
                     property_id=id_to_int(stmt_pid),
@@ -585,10 +675,10 @@ class PageParser():
                         )
 
                 # qualifier changes
-                _ = self._handle_reference_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt, type_='qualifiers')
+                _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
                 # references changes
-                _ = self._handle_reference_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt, type_='references')
+                _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
 
         # If there's no description or label, the revisions shows them as []
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
@@ -707,10 +797,10 @@ class PageParser():
                 )
 
                 # qualifier changes
-                _ = self._handle_reference_qualifier_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s, type_='qualifiers')
+                _ = self._handle_qualifier_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
 
                 # reference changes
-                _ = self._handle_reference_qualifier_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s, type_='references')
+                _ = self._handle_reference_changes(new_pid, value_id, prev_stmt=None, curr_stmt=s)
     
     def _handle_removed_pids(self, removed_pids, prev_claims):
         """
@@ -747,10 +837,10 @@ class PageParser():
                 )
 
                 # qualifier changes
-                _ = self._handle_reference_qualifier_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None, type_='qualifiers')
+                _ = self._handle_qualifier_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
                 # references changes
-                _ = self._handle_reference_qualifier_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None, type_='references')
+                _ = self._handle_reference_changes(removed_pid, value_id, prev_stmt=s, curr_stmt=None)
 
     def _handle_rank_changes(self, prev_stmt, curr_stmt, pid, sid):
         prev_rank = prev_stmt.get('rank') if prev_stmt else None
@@ -874,10 +964,10 @@ class PageParser():
                 rank_change_detected = self._handle_rank_changes(prev_stmt, curr_stmt, pid, sid)
 
                 # qualifier changes
-                qualifier_change_detected = self._handle_reference_qualifier_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt, type_='qualifiers')
+                qualifier_change_detected = self._handle_qualifier_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
                 # qualifier changes
-                reference_change_detected = self._handle_reference_qualifier_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt, type_='references')
+                reference_change_detected = self._handle_reference_changes(pid, sid, prev_stmt=prev_stmt, curr_stmt=curr_stmt)
 
                 change_detected = change_detected or rank_change_detected or qualifier_change_detected or reference_change_detected
 
