@@ -506,7 +506,7 @@ class PageParser():
             return False
 
         # map hash (high-level): snaks
-        prev_map = {ref['hash']: ['snaks'] for ref in prev_refs}
+        prev_map = {ref['hash']: ref['snaks'] for ref in prev_refs}
         curr_map = {ref['hash']: ref['snaks'] for ref in curr_refs}
 
         prev_hashes = set(prev_map.keys())
@@ -521,7 +521,6 @@ class PageParser():
             change_detected = True
             prev_ref = prev_map[h] # snaks
 
-            # Save all snaks in this reference
             for pid, snaks in prev_ref.items():
                 for snak in snaks: # P-id : [] of values (can have more than one)
                     snaktype = snak['snaktype']
