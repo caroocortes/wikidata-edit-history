@@ -462,9 +462,10 @@ class PageParser():
         if prev and curr and prev.get('hash') == curr.get('hash') or (not prev and not curr):
             return False  # no change
         
-        if type_ == 'references':
-            print('A REFERENCE CHANGE!!!')
-        
+        if self.revision_meta['entity_id'] == 3:
+            if type_ == 'references':
+                print('A REFERENCE CHANGE!!!')
+            
         # different from properyt changes (there it's mainsnak)
         prev_snaks = prev.get('snaks', prev)
         curr_snaks = curr.get('snaks', curr)
@@ -598,7 +599,7 @@ class PageParser():
                 # qualifier changes
                 _ = self._handle_reference_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt, type_='qualifiers')
 
-                # qualifier changes
+                # references changes
                 _ = self._handle_reference_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt, type_='references')
 
         # If there's no description or label, the revisions shows them as []
