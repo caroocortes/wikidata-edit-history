@@ -549,6 +549,7 @@ class PageParser():
             print(deleted)
             print('Las created:')
             print(created)
+            sys.stdout.flush()
 
         # deletions
         for pid, value_hash in deleted:
