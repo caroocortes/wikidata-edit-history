@@ -1,8 +1,8 @@
 {
     "language": "en",
-    "files_in_parallel": 4,
-    "pages_in_parallel": 3,
+    "files_in_parallel": 1,
+    "pages_in_parallel": 1,
     "batch_changes_store": 10000,
-    "max_files": 15,
-    "files_directory": "../../../san2/data/wikidata-history-dumps"
+    "max_files": 1,
+    "files_directory": "data/wikidata_dumps_20250601"
 }
