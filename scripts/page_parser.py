@@ -369,7 +369,7 @@ class PageParser():
                         self.save_reference_qualifier_changes(
                             id_to_int(property_id),
                             value_id=value_id,
-                            rq_property_id=rq_property_id,
+                            rq_property_id=id_to_int(rq_property_id),
                             value_hash=value_hash,
                             old_value=old_meta,
                             new_value=new_meta,
@@ -429,7 +429,7 @@ class PageParser():
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
-                        rq_property_id=rq_property_id,
+                        rq_property_id=id_to_int(rq_property_id),
                         value_hash=value_hash,
                         old_value=old_meta,
                         new_value=new_meta,
@@ -464,7 +464,7 @@ class PageParser():
                     self.save_reference_qualifier_changes(
                         id_to_int(property_id),
                         value_id=value_id,
-                        rq_property_id=rq_property_id,
+                        rq_property_id=id_to_int(rq_property_id),
                         value_hash=value_hash,
                         old_value=old_meta,
                         new_value=new_meta,
@@ -654,7 +654,7 @@ class PageParser():
                 self.save_reference_qualifier_changes(
                     property_id=id_to_int(stmt_pid),
                     value_id=stmt_value_id,
-                    rq_property_id=pid,
+                    rq_property_id=id_to_int(pid),
                     value_hash=value_hash,
                     old_value=prev_val,
                     new_value=None,
@@ -694,7 +694,7 @@ class PageParser():
                 self.save_reference_qualifier_changes(
                     property_id=id_to_int(stmt_pid),
                     value_id=stmt_value_id,
-                    rq_property_id=pid,
+                    rq_property_id=id_to_int(pid),
                     value_hash=value_hash,
                     old_value=None,
                     new_value=curr_val,
