@@ -355,7 +355,6 @@ class PageParser():
                             datatype=old_datatype,
                             change_target=key,
                             change_type=change_type, 
-                            change_magnitude=change_magnitude,
                             old_hash=old_hash,
                             new_hash=None
                         )
@@ -386,7 +385,6 @@ class PageParser():
                             datatype=new_datatype,
                             change_target=key,
                             change_type=change_type, 
-                            change_magnitude=None,
                             old_hash=None,
                             new_hash=new_hash
                         )
@@ -426,7 +424,7 @@ class PageParser():
                             datatype=new_datatype,
                             change_target=key,
                             change_type=change_type, 
-                            change_magnitude=None,
+                            change_magnitude=change_magnitude,
                             old_hash=old_hash,
                             new_hash=new_hash
                         )
