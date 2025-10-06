@@ -573,6 +573,11 @@ class PageParser():
             change_detected = True
             curr_ref = curr_map[h]
 
+            if h in deleted:
+                print('the same hash was added and deleted !!!!!!!!!')
+                print(prev_map[h])
+                print(curr_map[h])
+
             for pid, snaks in curr_ref.items():
                 # deduplicate values for a property - because we are using hashes, if 2 values are = , the hash is too
                 unique_snaks = {snak['hash']: snak for snak in snaks}
