@@ -172,8 +172,7 @@ def insert_rows(conn, table_name, rows, columns):
                             cur.execute(select_query, key_vals)
                             existing = cur.fetchone()
                             if existing:
-                                print(f"Existing conflicting row for {dict(zip(key_cols, key_vals))} in table {table_name}: {existing}")
-                                print(f'Row that retunrs error: {e_row} \n {row}')
+                                print(f'Rows: {e_row} \n {row}')
                     except Exception as select_err:
                         print(f"Error checking for existing row: {select_err}")
 
