@@ -640,16 +640,16 @@ class PageParser():
             # --- Deleted values ---
             for h in deleted:
                 change_detected = True
-                prev_stmt_match = prev_map[h]
+                prev_stmt = prev_map[h]
 
-                snaktype = prev_stmt_match['snaktype']
+                snaktype = prev_stmt['snaktype']
                 if snaktype in ('novalue', 'somevalue'):
                     prev_val, prev_dtype, old_datatype_metadata = (snaktype, 'string', None)
                 else:
-                    dv = prev_stmt_match['datavalue']
+                    dv = prev_stmt['datavalue']
                     prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                value_hash = curr_stmt_match['hash']
+                value_hash = prev_stmt['hash']
                 
                 self.save_reference_qualifier_changes(
                     property_id=id_to_int(stmt_pid),
@@ -680,16 +680,16 @@ class PageParser():
             # --- Added values ---
             for h in added:
                 change_detected = True
-                curr_stmt_match = curr_map[h]
+                curr_stmt = curr_map[h]
 
-                snaktype = curr_stmt_match['snaktype']
+                snaktype = curr_stmt['snaktype']
                 if snaktype in ('novalue', 'somevalue'):
                     curr_val, curr_dtype, new_datatype_metadata = (snaktype, 'string', None)
                 else:
-                    dv = curr_stmt_match['datavalue']
+                    dv = curr_stmt['datavalue']
                     curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                value_hash = curr_stmt_match['hash']
+                value_hash = curr_stmt['hash']
 
                 self.save_reference_qualifier_changes(
                     property_id=id_to_int(stmt_pid),
