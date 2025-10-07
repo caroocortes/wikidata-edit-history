@@ -555,6 +555,33 @@ class PageParser():
         """
         Handles addition/deletion of references by comparing snak value hashes.
         Deduplicates snaks within references and avoids unnecessary CREATE/DELETE.
+
+        Structure of reference:
+        "references": [
+            {
+                "hash": "fa278ebfc458360e5aed63d5058cca83c46134f1",
+                "snaks": {
+                    "P143": [
+                        {
+                            "snaktype": "value",
+                            "property": "P143",
+                            "hash": "e4f6d9441d0600513c4533c672b5ab472dc73694",
+                            "datavalue": {
+                                "value": {
+                                    "entity-type": "item",
+                                    "numeric-id": 328,
+                                    "id": "Q328"
+                                },
+                                "type": "wikibase-entityid"
+                            }
+                        }
+                    ]
+                },
+                "snaks-order": [
+                    "P143"
+                ]
+            }
+        ]
         """
 
         change_detected = False
@@ -565,28 +592,26 @@ class PageParser():
         if not prev_refs and not curr_refs:
             return False
         
-        def canonical_hash(data):
+        def canonical_hash(prop_val):
             import hashlib
-            # remove nulls & sort keys recursively
-            def clean(obj):
-                if isinstance(obj, dict):
-                    return {k: clean(obj[k]) for k in sorted(obj) if obj[k] is not None}
-                if isinstance(obj, list):
-                    return [clean(i) for i in obj]
-                return obj
-            return hashlib.sha1(json.dumps(clean(data), separators=(',', ':')).encode('utf-8')).hexdigest()
+            # create hash from the actual value (either novalue/somevalue or the actual datavalue)
+            if prop_val['snaktype'] in ('novalue', 'somevalue'):
+                val = {'snaktype': prop_val['snaktype'] }
+            else:
+                val = prop_val['datavalue']
+            return hashlib.sha1(json.dumps(val, separators=(',', ':')).encode('utf-8')).hexdigest()
                 
         # map of (pid, hash): value 
         def build_hash_map(refs):
             hash_map = {}
             for ref in refs: # refs is a list of { 'hash': '', 'snaks': {}}
                 for pid, vals in ref['snaks'].items(): # snaks contains P-id: [{}] -> list of value
-                    for val in vals:
+                    for prop_val in vals:
                         # don't use the hash provided by WD since it's not stable
                         # the same value appeared with != hashes and that implies a create/delete even though there
                         # was no change
-                        value_hash = canonical_hash(val) 
-                        hash_map[(pid, value_hash)] = val # need to keep the p-id in case the value repeats for different pids (same value, same hash)
+                        value_hash = canonical_hash(prop_val) 
+                        hash_map[(pid, value_hash)] = prop_val # need to keep the p-id in case the value repeats for different pids (same value, same hash)
             return hash_map
 
         prev_hash_map = build_hash_map(prev_refs)
@@ -600,6 +625,15 @@ class PageParser():
         # remains the same, just because at least one changed
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys    
+
+        if self.revision_meta['revision_id'] == 157416061:
+            print('DEBUG REVISION 157416061')
+            print('DELETED:', deleted)
+            print('CREATED:', created)
+            print('PREV HASH MAP: ', prev_hash_map)
+            print('CURR HASH MAP: ', curr_hash_map)
+            print('PREVIOUS STMT REFS: ', prev_refs)
+            print('CURRENT STMT REFS', curr_refs)
 
         # deletions
         for pid, value_hash in deleted:

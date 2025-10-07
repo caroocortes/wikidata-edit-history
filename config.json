@@ -4,5 +4,5 @@
     "pages_in_parallel": 1,
     "batch_changes_store": 10000,
     "max_files": 1,
-    "files_directory": "data/wikidata_dumps_20250601"
+    "files_directory": "../../../san2/data/wikidata-history-dumps"
 }
