@@ -947,7 +947,8 @@ class PageParser():
         
         sys.stdout.flush()
 
-        print('SOME REFERENCE CHANGE DETECTED')
+        if change_detected:
+            print('SOME REFERENCE CHANGE DETECTED')
 
         return change_detected
     
@@ -1103,6 +1104,8 @@ class PageParser():
                         rq_property_id=pid, 
                         value_hash=value_hash
                     )
+        if change_detected:
+            print('qualifier change detected!!!!!!!!')
 
         return change_detected
             
