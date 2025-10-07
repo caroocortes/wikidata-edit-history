@@ -875,7 +875,6 @@ class PageParser():
 
             change_detected = True
             prop_value = prev_hash_map[(ref_hash, pid, value_hash)]
-            print('el ref hash!!!!!!!!!!!!', ref_hash)
 
             if prop_value['snaktype'] in (NO_VALUE, SOME_VALUE):
                 prev_val, prev_dtype, old_datatype_metadata = (prop_value['snaktype'], 'string', None)
