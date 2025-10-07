@@ -334,10 +334,6 @@ class PageParser():
             target
         )
 
-        if self.revision_meta['revision_id'] == 564334745:
-            print('SAVING: ', property_id, value_id, rq_property_id, value_hash, old_value, new_value, datatype, change_target, action, target)
-        
-
         self.reference_qualifier_changes.append(change)
 
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash=None, new_hash=None, type_='value', rq_property_id=None, value_hash=None):
@@ -1160,7 +1156,15 @@ class PageParser():
                             # and for the same datatype
                             change_magnitude = PageParser.magnitude_of_change(old_value, new_value, new_datatype)
                         
-                        self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
+                        if new_datatype == 'time':
+                            # don't consider changes like +00002025-10-01T:00:00:00Z to +2025-10-01T:00:00:00Z
+                            # this is internal to WD representation
+                            old_value_cleaned = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', old_value)
+                            new_value_cleaned = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', new_value)
+                            if old_value_cleaned != new_value_cleaned:
+                                self._handle_value_changes(new_datatype, new_value_cleaned, old_value_cleaned, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
+                        else:
+                            self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
 
                     if (old_datatype != new_datatype) or (old_datatype_metadata != new_datatype_metadata):
                         # Datatype change imples a datatype_metadata change
