@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS reference_change (
     value_id TEXT, -- statement value id
     ref_property_id INT, -- reference property id
     ref_property_id_label TEXT,
-    ref_hash, -- identifies the reference (a reference is composed of multiple property - values)
+    ref_hash TEXT, -- identifies the reference (a reference is composed of multiple property - values)
     value_hash TEXT, -- hash of reference value. This hash + qual_property_id identify each reference value
     old_value JSONB,
     new_value JSONB,
