@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from lxml import etree
 import re
+import hashlib
 
 from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label, id_to_int
 from scripts.const import *
@@ -547,6 +548,85 @@ class PageParser():
             new_hash=new_hash
         )
 
+    @staticmethod
+    def generate_value_hash(prop_val):
+        """
+            Input:
+            - prop_val: whole snak for a property value (includes snaktype, hash, datavalue)
+            Generates a hash from the datavalue.
+            Removes inconsistencies that happen in WD due to schema changes
+            e.g.:
+                - Lack of id between revisions:
+                    r1: 
+                        'datavalue': {
+                            'value': {
+                                'entity-type': 'item', 
+                                'numeric-id': 15241312
+                            }, 
+                            'type': 'wikibase-entityid'}
+                        }
+                    r2: 
+                        'datavalue': {
+                            'value': {
+                                'entity-type': 'item', 
+                                'numeric-id': 15241312, 
+                                'id': 'Q15241312'         <---------- The value is the same, but the hash differs because of the different JSON structure
+                            }, 
+                            'type': 'wikibase-entityid'
+                        }
+                - Extra 0's in dates
+                    r1:
+                        'datavalue': {
+                            'value': {'time': '+2013-10-28T00:00:00Z', 'timezone': 0, 'before': 0, 'after': 0, 'precision': 11, 'calendarmodel': 'http://www.wikidata.org/entity/Q1985727'}, 
+                            'type': 'time'
+                        }
+                    r2:
+                        'datavalue': {
+                            'value': {'time': '+00000002013-10-28T00:00:00Z', 'timezone': 0, 'before': 0, 'after': 0, 'precision': 11, 'calendarmodel': 'http://www.wikidata.org/entity/Q1985727'}, 
+                            'type': 'time'
+                        }
+        """
+        
+        # create hash from the actual datavalue
+        snaktype = prop_val.get('snaktype', None)
+        current_hash = prop_val.get('hash', None)
+
+        if not current_hash and not snaktype:
+            return None
+        
+        type_ = prop_val['datavalue']['type']
+        if snaktype in (NO_VALUE, SOME_VALUE) or \
+            (
+                snaktype == 'value' and 
+                type_ not in WD_ENTITY_TYPES and
+                type_ not in ('time', 'globecoordinate')
+             ):
+            return current_hash
+        else:
+            # Remove inconsistencies in time values + entities + unused/deprcated fields in time and globecoordinate
+            if type_ == 'globecoordinate':
+                prop_val['datavalue']['value'].pop("altitude", None)
+
+            if type_ == 'time':
+                # remove unused values
+                prop_val['datavalue']['value'].pop("before", None)
+                prop_val['datavalue']['value'].pop("after", None)
+                
+                # remove 0's at the beggining
+                prop_val['datavalue']['value']['time'] = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', prop_val['datavalue']['value']['time'])
+
+            if type_ in WD_ENTITY_TYPES:
+                # NOTE: From WD's doc, not all entities have a numeric-id
+                # however, I've found revisions where the id is not present but the numeric-id is
+                # therefore, I normalize and keep only 'id' or generate it from numeric-id
+                if not 'id' in prop_val['datavalue']['value']:
+                    prop_val['datavalue']['value']['id'] = f'Q{prop_val['datavalue']['value']['numeric-id']}'
+                
+                # remove numeric-id, only keep id
+                prop_val['datavalue']['value'].pop("numeric-id", None)
+
+            return hashlib.sha1(json.dumps(prop_val['datavalue'], separators=(',', ':')).encode('utf-8')).hexdigest()
+
     def _handle_reference_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt):
         """
         Handles addition/deletion of references by comparing snak value hashes.
@@ -587,28 +667,6 @@ class PageParser():
 
         if not prev_refs and not curr_refs:
             return False
-        
-        def generate_value_hash(prop_val):
-            import hashlib
-            # create hash from the actual value (either novalue/somevalue or the actual datavalue)
-            if prop_val['snaktype'] in ('novalue', 'somevalue'):
-                val = { 'snaktype': prop_val['snaktype'] }
-            else:
-                if prop_val['datavalue']['type'] == 'time':
-                    # remove 0's at the beggining
-                    prop_val['datavalue']['value']['time'] = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', prop_val['datavalue']['value']['time'])
-
-                if prop_val['datavalue']['type'] in WD_ENTITY_TYPES:
-                    # NOTE: From WD's doc, not all entities have a numeric-id
-                    # however, I've found revisions where the id is not present but the numeric-id is
-                    # therefore, I normalize and keep only 'id' or generate it from numeric-id
-                    if not 'id' in prop_val['datavalue']['value']:
-                        prop_val['datavalue']['value']['id'] = f'Q{prop_val['datavalue']['value']['numeric-id']}'
-                    
-                    prop_val['datavalue']['value'].pop("numeric-id", None)
-
-                val = prop_val['datavalue']
-            return hashlib.sha1(json.dumps(val, separators=(',', ':')).encode('utf-8')).hexdigest()
                 
         # map of (pid, hash): value 
         def build_hash_map(refs):
@@ -616,10 +674,11 @@ class PageParser():
             for ref in refs: # refs is a list of { 'hash': '', 'snaks': {}}
                 for pid, vals in ref['snaks'].items(): # snaks contains P-id: [{}] -> list of value
                     for prop_val in vals:
-                        # don't use the hash provided by WD since it's not stable
+                        # NOTE: don't use the hash provided by WD since it's not stable
                         # the same value appeared with != hashes and that implies a create/delete even though there
                         # was no change
-                        value_hash = canonical_hash(prop_val) 
+                        value_hash = PageParser.generate_value_hash(prop_val) 
+                        prop_val['hash'] = value_hash # update hash 
                         hash_map[(pid, value_hash)] = prop_val # need to keep the p-id in case the value repeats for different pids (same value, same hash)
             return hash_map
 
@@ -649,7 +708,7 @@ class PageParser():
             change_detected = True
             prop_value = prev_hash_map[(pid, value_hash)]
 
-            if prop_value['snaktype'] in ('novalue', 'somevalue'):
+            if prop_value['snaktype'] in (NO_VALUE, SOME_VALUE):
                 prev_val, prev_dtype, old_datatype_metadata = (prop_value['snaktype'], 'string', None)
             else:
                 dv = prop_value['datavalue']
@@ -687,7 +746,7 @@ class PageParser():
             change_detected = True
             prop_value = curr_hash_map[(pid, value_hash)]
 
-            if prop_value['snaktype'] in ('novalue', 'somevalue'):
+            if prop_value['snaktype'] in (NO_VALUE, SOME_VALUE):
                 curr_val, curr_dtype, new_datatype_metadata = (prop_value['snaktype'], 'string', None)
             else:
                 dv = prop_value['datavalue']
@@ -728,6 +787,29 @@ class PageParser():
         """
         Handles addition, deletion of qualifiers values.
         Uses a simple CREATE/DELETE logic based on hashes.
+
+        Structure of qualifiers:
+        "qualifiers": {
+            "P813": [
+                {
+                    "snaktype": "value",
+                    "property": "P813",
+                    "hash": "54358f6e346b19bed53f5b3a57e82a4f562940aa",
+                    "datavalue": {
+                        "value": {
+                            "time": "+2021-12-31T00:00:00Z",
+                            "timezone": 0,
+                            "before": 0,
+                            "after": 0,
+                            "precision": 11,
+                            "calendarmodel": "http://www.wikidata.org/entity/Q1985727"
+                        },
+                        "type": "time"
+                    }
+                }
+            ]
+        },
+
         """
 
         change_detected = False
@@ -742,7 +824,7 @@ class PageParser():
         all_pids = set(prev.keys()).union(curr.keys())
 
         for pid in all_pids:
-            prev_stmts = prev.get(pid, []) # pid : [{ 'snaktype': 'value', 'hash': '...', ...}]
+            prev_stmts = prev.get(pid, []) # [{ 'snaktype': 'value', 'hash': '...', ...}]
             curr_stmts = curr.get(pid, [])
 
             # map by hash : stmt
@@ -750,10 +832,20 @@ class PageParser():
             
             # Because we are using hashes to identify values, if there are duplicate values we will have duplicate rows inserted
             # deduplicate prev_stmts by hash
-            prev_map = {s['hash']: s for s in prev_stmts}  # {hash: snak}
+
+            def build_hash_map(pid_values):
+                hash_map = {}
+                for prop_val in pid_values:
+                    value_hash = PageParser.generate_value_hash(prop_val) 
+                    prop_val['hash'] = value_hash # update hash
+                    hash_map[value_hash] = prop_val
+                return hash_map
+
+            # deduplicate pevstmts by hash
+            prev_map = build_hash_map(prev_stmts) # {hash: snak}
 
             # deduplicate curr_stmts by hash
-            curr_map = {s['hash']: s for s in curr_stmts}
+            curr_map = build_hash_map(curr_stmts)
             
             # hashes are created from the actial values, so if there are different hashes something changed
             prev_hashes = set(prev_map.keys())
@@ -769,7 +861,7 @@ class PageParser():
                 prev_stmt = prev_map[h]
 
                 snaktype = prev_stmt['snaktype']
-                if snaktype in ('novalue', 'somevalue'):
+                if snaktype in (NO_VALUE, SOME_VALUE):
                     prev_val, prev_dtype, old_datatype_metadata = (snaktype, 'string', None)
                 else:
                     dv = prev_stmt['datavalue']
@@ -809,7 +901,7 @@ class PageParser():
                 curr_stmt = curr_map[h]
 
                 snaktype = curr_stmt['snaktype']
-                if snaktype in ('novalue', 'somevalue'):
+                if snaktype in (NO_VALUE, SOME_VALUE):
                     curr_val, curr_dtype, new_datatype_metadata = (snaktype, 'string', None)
                 else:
                     dv = curr_stmt['datavalue']
@@ -1135,8 +1227,11 @@ class PageParser():
                 new_value, new_datatype, new_datatype_metadata = PageParser._parse_datavalue(curr_stmt)
                 old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(prev_stmt)
 
-                old_hash = PageParser._get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
-                new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
+                old_hash = PageParser.generate_value_hash(prev_stmt)
+                new_hash = PageParser.generate_value_hash(curr_stmt)
+
+                # old_hash = PageParser._get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
+                # new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
 
                 # value changes
                 if prev_stmt and not curr_stmt:
