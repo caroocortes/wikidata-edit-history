@@ -1020,7 +1020,7 @@ class PageParser():
 
             if self.revision_meta['revision_id'] == 473525715:
                 print('------------------------------------------------------------')
-                print('DEBUG REVISION 473525715')
+                print('DEBUG REVISION QUALIFIERS!!!!!!! 473525715')
                 print('DELETED:', deleted)
                 print('CREATED:', added)
                 print('PREV HASH MAP: ', prev_hashes)
