@@ -588,7 +588,7 @@ class PageParser():
         if not prev_refs and not curr_refs:
             return False
         
-        def canonical_hash(prop_val):
+        def generate_value_hash(prop_val):
             import hashlib
             # create hash from the actual value (either novalue/somevalue or the actual datavalue)
             if prop_val['snaktype'] in ('novalue', 'somevalue'):
@@ -597,6 +597,15 @@ class PageParser():
                 if prop_val['datavalue']['type'] == 'time':
                     # remove 0's at the beggining
                     prop_val['datavalue']['value']['time'] = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', prop_val['datavalue']['value']['time'])
+
+                if prop_val['datavalue']['type'] in WD_ENTITY_TYPES:
+                    # NOTE: From WD's doc, not all entities have a numeric-id
+                    # however, I've found revisions where the id is not present but the numeric-id is
+                    # therefore, I normalize and keep only 'id' or generate it from numeric-id
+                    if not 'id' in prop_val['datavalue']['value']:
+                        prop_val['datavalue']['value']['id'] = f'Q{prop_val['datavalue']['value']['numeric-id']}'
+                    
+                    prop_val['datavalue']['value'].pop("numeric-id", None)
 
                 val = prop_val['datavalue']
             return hashlib.sha1(json.dumps(val, separators=(',', ':')).encode('utf-8')).hexdigest()
