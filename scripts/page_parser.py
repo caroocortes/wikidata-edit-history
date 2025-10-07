@@ -1396,12 +1396,12 @@ class PageParser():
                 old_hash = None
                 if prev_stmt:
                     prev_stmt['mainsnak'] = PageParser.homogenize_datavalue(prev_stmt['mainsnak'])
-                    old_hash = PageParser.generate_value_hash(prev_stmt)
+                    old_hash = PageParser.generate_value_hash(prev_stmt['mainsnak'])
 
                 new_hash = None
                 if curr_stmt:
                     curr_stmt['mainsnak'] = PageParser.homogenize_datavalue(curr_stmt['mainsnak'])
-                    new_hash = PageParser.generate_value_hash(curr_stmt)
+                    new_hash = PageParser.generate_value_hash(curr_stmt['mainsnak'])
 
                 # old_hash = PageParser._get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
                 # new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
