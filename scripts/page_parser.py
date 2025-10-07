@@ -876,7 +876,7 @@ class PageParser():
                 )
 
         # creations
-        for pid, value_hash in deleted:
+        for pid, value_hash in created:
 
             change_detected = True
             prop_value = curr_hash_map[(pid, value_hash)]['prop_val']
