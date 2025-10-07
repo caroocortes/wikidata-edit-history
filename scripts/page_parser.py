@@ -840,16 +840,6 @@ class PageParser():
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys    
 
-        if self.revision_meta['revision_id'] == 473525715:
-            print('------------------------------------------------------------')
-            print('DEBUG REVISION 473525715')
-            print('DELETED:', deleted)
-            print('CREATED:', created)
-            print('PREV HASH MAP: ', prev_hash_map)
-            print('CURR HASH MAP: ', curr_hash_map)
-            print('PREVIOUS STMT REFS: ', prev_refs)
-            print('CURRENT STMT REFS', curr_refs)
-
         if self.revision_meta['revision_id'] == 589502160:
             print('------------------------------------------------------------')
             print('DEBUG REVISION 589502160')
@@ -1027,6 +1017,36 @@ class PageParser():
 
             deleted = prev_hashes - curr_hashes
             added = curr_hashes - prev_hashes
+
+            if self.revision_meta['revision_id'] == 473525715:
+                print('------------------------------------------------------------')
+                print('DEBUG REVISION 473525715')
+                print('DELETED:', deleted)
+                print('CREATED:', added)
+                print('PREV HASH MAP: ', prev_hashes)
+                print('CURR HASH MAP: ', curr_hashes)
+                print('PREVIOUS STMT REFS: ', prev_stmts)
+                print('CURRENT STMT REFS', curr_stmts)
+
+            if self.revision_meta['revision_id'] == 589502160:
+                print('------------------------------------------------------------')
+                print('DEBUG REVISION 589502160')
+                print('DELETED:', deleted)
+                print('CREATED:', added)
+                print('PREV HASH MAP: ', prev_hashes)
+                print('CURR HASH MAP: ', curr_hashes)
+                print('PREVIOUS STMT REFS: ', prev_stmts)
+                print('CURRENT STMT REFS', curr_stmts)
+
+            if self.revision_meta['revision_id'] == 2236873547:
+                print('------------------------------------------------------------')
+                print('DEBUG REVISION 589502160')
+                print('DELETED:', deleted)
+                print('CREATED:', added)
+                print('PREV HASH MAP: ', prev_hashes)
+                print('CURR HASH MAP: ', curr_hashes)
+                print('PREVIOUS STMT REFS: ', prev_stmts)
+                print('CURRENT STMT REFS', curr_stmts)
 
             # --- Deleted values ---
             for h in deleted:
