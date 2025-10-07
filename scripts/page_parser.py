@@ -588,6 +588,9 @@ class PageParser():
         """
         if not prop_val:
             return None
+        
+        if 'mainsnak' in prop_val: # statement snak
+            prop_val = prop_val['mainsnak']
 
         snaktype = prop_val.get('snaktype', None)
         current_hash = prop_val.get('hash', None)
@@ -601,11 +604,8 @@ class PageParser():
             return current_hash
         else:
             
-            try:
-                type_ = prop_val['datavalue']['type']
-            except:
-                print('cant access type in datavalue')
-                print(prop_val)
+            type_ = prop_val['datavalue']['type']
+
             # Remove inconsistencies in time values + entities + unused/deprcated fields in time and globecoordinate
             if type_ == 'globecoordinate':
                 prop_val['datavalue']['value'].pop("altitude", None)
