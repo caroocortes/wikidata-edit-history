@@ -32,7 +32,7 @@ QUEUE_SIZE = 150
 
 # Wikidata's special values
 NO_VALUE = 'novalue'
-SOME_VALUE = 'unknown'
+SOME_VALUE = 'somevalue'
 
 # Wikidata's XML namespace
 NS = "http://www.mediawiki.org/xml/export-0.11/"
