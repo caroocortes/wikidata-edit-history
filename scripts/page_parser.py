@@ -600,7 +600,12 @@ class PageParser():
              ):
             return current_hash
         else:
-            type_ = prop_val['datavalue']['type']
+            
+            try:
+                type_ = prop_val['datavalue']['type']
+            except:
+                print('cant access type in datavalue')
+                print(prop_val)
             # Remove inconsistencies in time values + entities + unused/deprcated fields in time and globecoordinate
             if type_ == 'globecoordinate':
                 prop_val['datavalue']['value'].pop("altitude", None)
