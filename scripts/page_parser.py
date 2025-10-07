@@ -347,7 +347,7 @@ class PageParser():
         old_value = json.dumps(str(old_value)) if old_value else {}
         new_value = json.dumps(str(new_value)) if new_value else {}
 
-        action, target = PageParser.get_target_action_from_change_type(change_type)
+        action, target = PageParser.get_target_action_from_change_type(change_type) 
 
         change = (
             self.revision_meta['revision_id'],
@@ -946,6 +946,8 @@ class PageParser():
                 )
         
         sys.stdout.flush()
+
+        print('SOME REFERENCE CHANGE DETECTED')
 
         return change_detected
     
