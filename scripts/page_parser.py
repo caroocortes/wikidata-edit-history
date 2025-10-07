@@ -730,10 +730,7 @@ class PageParser():
              ):
             return current_hash
         else:
-            try:
-                hom_prop_val['datavalue']
-            except:
-                print(hom_prop_val)
+
             return hashlib.sha1(json.dumps(hom_prop_val['datavalue'], separators=(',', ':')).encode('utf-8')).hexdigest()
 
     def _handle_reference_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt):
