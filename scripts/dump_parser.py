@@ -43,11 +43,6 @@ class DumpParser():
             p.start()
             self.workers.append(p)
             
-        # TODO: remove
-        # monitoring thread
-        # self.monitor_thread = threading.Thread(target=self._simple_monitor, daemon=True)
-        # self.monitor_thread.start()
-
     def get_simple_stats(self):
         runtime = time.time() - self.start_time
         queue_size = self.page_queue.qsize()
@@ -57,11 +52,6 @@ class DumpParser():
             'entities_processed': self.num_entities,
             'num_workers': self.num_workers,
         }
-        
-        # if self.queue_size_history:
-        #     stats['avg_queue_size'] = sum(self.queue_size_history) / len(self.queue_size_history)
-        # else:
-        #     stats['avg_queue_size'] = 0
             
         return stats
     
@@ -151,6 +141,15 @@ class DumpParser():
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
 
+                if entity_id == 'Q3':
+                    with open('Q3.xml', "a") as f:
+                        revision_xml_str = etree.tostring(
+                            page_elem_str,
+                            pretty_print=True,
+                            encoding="unicode" 
+                        )
+                        f.write(revision_xml_str + "\n")
+
             # Periodic progress report
             if time.time() - last_report > 600:  # Every 10 min
                 rate = self.num_entities / (time.time() - self.start_time)
@@ -174,7 +173,6 @@ class DumpParser():
         # Wait for workers to finish
         for i, p in enumerate(self.workers):
             p.join()
-            # print(f"Worker {i} finished")
 
         self.stop_event.set()
 
@@ -186,10 +184,3 @@ class DumpParser():
         print(f"Workers used: {final_stats['num_workers']}")
         
         sys.stdout.flush()
-        # # Simple recommendations
-        # if final_stats['avg_queue_size'] < 10:
-        #     print("Consider reducing workers or increasing files_in_parallel")
-        # elif final_stats['avg_queue_size'] > 80:
-        #     print("Consider increasing workers (pages_in_parallel)")
-        # else:
-        #     print("Worker configuration seems well balanced")
