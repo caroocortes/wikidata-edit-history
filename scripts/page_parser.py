@@ -827,19 +827,28 @@ class PageParser():
         # map of (pid, hash): value 
         def build_hash_map(refs):
             hash_map = {}
-            for ref in refs: # refs is a list of { 'hash': '', 'snaks': {}}
-                ref_hash = ref['hash']
-                for pid, vals in ref['snaks'].items(): # snaks contains P-id: [{}] -> list of value
+            for ref in refs:
+                # Create a stable "content hash" for the whole reference
+                ref_snaks = []
+                for pid, vals in sorted(ref['snaks'].items()):
                     for prop_val in vals:
-
-                        value_hash = PageParser.generate_value_hash(prop_val) 
                         hom_prop_val = PageParser.homogenize_datavalue(prop_val)
-                        hom_prop_val['hash'] = value_hash # update hash 
-                        hash_map[(pid, value_hash)] = { # need to keep the p-id in case the value repeats for different pids (same value, same hash)
-                            "prop_val": hom_prop_val,
-                            "ref_hash": ref_hash
-                        }
-            
+                        value_hash = PageParser.generate_value_hash(hom_prop_val)
+                        ref_snaks.append((pid, value_hash))
+                
+                # Sort and hash to get a stable reference-level id
+                ref_content_hash = hashlib.sha1(
+                    json.dumps(sorted(ref_snaks)).encode("utf-8")
+                ).hexdigest()
+
+                # Now map each snak individually
+                for pid, vals in ref['snaks'].items():
+                    for prop_val in vals:
+                        hom_prop_val = PageParser.homogenize_datavalue(prop_val)
+                        value_hash = PageParser.generate_value_hash(hom_prop_val)
+                        hom_prop_val['hash'] = value_hash
+                        hash_map[(ref_content_hash, pid, value_hash)] = hom_prop_val
+                        
             return hash_map
 
         prev_hash_map = build_hash_map(prev_refs)
@@ -885,11 +894,11 @@ class PageParser():
             print('CURRENT STMT REFS', curr_refs)
 
         # deletions
-        for pid, value_hash in deleted:
+        for ref_hash, pid, value_hash in deleted:
 
             change_detected = True
-            prop_value = prev_hash_map[(pid, value_hash)]['prop_val']
-            ref_hash = prev_hash_map[(pid, value_hash)]['ref_hash']
+            prop_value = prev_hash_map[(ref_hash, pid, value_hash)]
+            print('el ref hash!!!!!!!!!!!!', ref_hash)
 
             if prop_value['snaktype'] in (NO_VALUE, SOME_VALUE):
                 prev_val, prev_dtype, old_datatype_metadata = (prop_value['snaktype'], 'string', None)
@@ -927,11 +936,10 @@ class PageParser():
                 )
 
         # creations
-        for pid, value_hash in created:
+        for ref_hash, pid, value_hash in created:
 
             change_detected = True
-            prop_value = curr_hash_map[(pid, value_hash)]['prop_val']
-            ref_hash = curr_hash_map[(pid, value_hash)]['ref_hash']
+            prop_value = curr_hash_map[(ref_hash, pid, value_hash)]
 
             if prop_value['snaktype'] in (NO_VALUE, SOME_VALUE):
                 curr_val, curr_dtype, new_datatype_metadata = (prop_value['snaktype'], 'string', None)
@@ -1041,9 +1049,8 @@ class PageParser():
             prev_hashes = set(prev_map.keys())
             curr_hashes = set(curr_map.keys())
 
-            unchanged = prev_hashes & curr_hashes
-            deleted = prev_hashes - unchanged
-            added = curr_hashes - unchanged
+            deleted = prev_hashes - curr_hashes
+            added = curr_hashes - prev_hashes
 
             # --- Deleted values ---
             for h in deleted:
@@ -1056,14 +1063,12 @@ class PageParser():
                 else:
                     dv = prev_stmt['datavalue']
                     prev_val, prev_dtype, old_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
-
-                value_hash = prev_stmt['hash']
                 
                 self.save_qualifier_changes(
                     property_id=id_to_int(stmt_pid),
                     value_id=stmt_value_id,
                     qual_property_id=id_to_int(pid),
-                    value_hash=value_hash,
+                    value_hash=h,
                     old_value=prev_val,
                     new_value=None,
                     datatype=prev_dtype,
@@ -1082,7 +1087,7 @@ class PageParser():
                         change_type=DELETE_QUALIFIER, 
                         type_='qualifier', 
                         rq_property_id=pid, 
-                        value_hash=value_hash
+                        value_hash=h
                     )
 
             # --- Added values ---
@@ -1097,13 +1102,11 @@ class PageParser():
                     dv = curr_stmt['datavalue']
                     curr_val, curr_dtype, new_datatype_metadata = PageParser.parse_datavalue_json(dv['value'], dv['type'])
 
-                value_hash = curr_stmt['hash']
-
                 self.save_qualifier_changes(
                     property_id=id_to_int(stmt_pid),
                     value_id=stmt_value_id,
                     qual_property_id=id_to_int(pid),
-                    value_hash=value_hash,
+                    value_hash=h,
                     old_value=None,
                     new_value=curr_val,
                     datatype=curr_dtype,
@@ -1122,7 +1125,7 @@ class PageParser():
                         change_type=CREATE_QUALIFIER, 
                         type_='qualifier', 
                         rq_property_id=pid, 
-                        value_hash=value_hash
+                        value_hash=h
                     )
 
         return change_detected
