@@ -8,11 +8,10 @@ A .env template file is provided with the variables needed to connect to the pos
 When running the parsers, the table schemas are automatically created.
 
 ### Structure of the repo
-
+- *data*: contains auxiliary datasets to populate the DB 
 - *scripts*: contains classes DumpParser and PageParser which parse Wikidata's XML files.
 - *download*: containts script to download XML files + list of links of XML files.
-- *notebooks*: contains notebooks for data exploration
-- *test*: contains 2 xml test files + script for testing the parser.
+- *test*: contains 2 xml test files + script for testing the parser. Also contains examples of revision texts
 
 ### Download wikidata dumps
 
@@ -30,20 +29,11 @@ The simple way of running the parser is with the following command: `python3 -m 
 
 `[options]`:
 `-f`: path to .xml.bz2 file to process (for single file).
-`-dir`: Directory containing .xml.bz2 files to process. Required.
 
-The parsing of each file takes approx. 50 minutes (using 6 processes in parallel to process pages inside file).
-We provide a script run_parser.sh to run multiple files in parallel.
+The parsing of each file takes approx. 50 minutes (using 4 processes in parallel to process pages inside file).
 
-By default, main.py creates *files_in_parallel* (config.json) processes that call DumpParser. DumpParser creates *pages_in_parallel* (config.json) processes which call page_parser and process a page (all revisions for an entity).
-Therefore, the system where the main.py is run needs to support at least *files_in_parallel * pages_in_parallel* cores.
-
-### Fetch entity types and property labels
-
-From root run: 
-- `nohup python3 -m scripts.query_wd_sparql >> fetch_class_property.log 2>&1 &`
-
-or create a "__main__" inside utils.py and run `python3 -m main`
+By default, main.py creates *files_in_parallel* (config.json) processes that call DumpParser. DumpParser creates *pages_in_parallel* (config.json) processes which call PageParser and process a page (all revisions for an entity).
+Therefore, the system where the main.py is run needs to support at least *files_in_parallel x pages_in_parallel* cores.
 
 **Config file**
 *config.json* contains the following parameters:
@@ -54,6 +44,8 @@ or create a "__main__" inside utils.py and run `python3 -m main`
 - max_files: max files to process (for all files use 2125)
 
 **Run multiple files at a time until max_files files are reached**
+The script *run_parser.sh* can be used to run batches of files until a certain TOTAL amount of files is processed.
+
 chmod +x run_parser.sh
 ./run_parser.sh &
 
