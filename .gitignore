@@ -1,4 +1,5 @@
-data/*
+!data/property.csv
+data/wikidata_dumps_20250601/*
 __pycache__/*
 venv/*
 scripts/__pycache__/*
