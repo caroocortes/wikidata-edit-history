@@ -592,15 +592,15 @@ class PageParser():
         snaktype = prop_val.get('snaktype', None)
         current_hash = prop_val.get('hash', None)
         
-        type_ = prop_val['datavalue']['type']
         if snaktype in (NO_VALUE, SOME_VALUE) or \
             (
                 snaktype == 'value' and 
-                type_ not in WD_ENTITY_TYPES and
-                type_ not in ('time', 'globecoordinate')
+                prop_val['datavalue']['type'] not in WD_ENTITY_TYPES and
+                prop_val['datavalue']['type'] not in ('time', 'globecoordinate')
              ):
             return current_hash
         else:
+            type_ = prop_val['datavalue']['type']
             # Remove inconsistencies in time values + entities + unused/deprcated fields in time and globecoordinate
             if type_ == 'globecoordinate':
                 prop_val['datavalue']['value'].pop("altitude", None)
