@@ -10,10 +10,14 @@ When running the parsers, the table schemas are automatically created.
 ### Structure of the repo
 - *data*: contains auxiliary datasets to populate the DB 
 - *scripts*: contains classes DumpParser and PageParser which parse Wikidata's XML files.
+    - dump_parser: processes XML files, extracts pages
+    - page_parser: processes a page (all edit history for an entity)
+    - fetch_entity_types: queries WD SPARQL query service to obtain entity types (*SCRIPT IS STILL RUNNING*)
+    - fetch_wd_entity_labels: queries WD SPARQL query service to obtain entity labels (for all entities in WD) (*SCRIPT IS STILL RUNNING*)
 - *download*: containts script to download XML files + list of links of XML files.
 - *test*: contains 2 xml test files + script for testing the parser. Also contains examples of revision texts
 
-### Download wikidata dumps
+### Download wikidata dumps - *ALL FILES HAVE ALREADY BEEN DOWNLOADED TO A SERVER*
 
 Inside download/ run:
 ```chmod +x download_wikidumps.sh```
