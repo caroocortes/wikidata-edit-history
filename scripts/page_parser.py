@@ -337,17 +337,7 @@ class PageParser():
             action,
             target
         )
-        print('DEBUG QUALIFIER CHANGED SAVED: ', self.revision_meta['revision_id'],
-            property_id,
-            value_id,
-            qual_property_id,
-            value_hash,
-            old_value,
-            new_value,
-            datatype,
-            change_target if change_target else '', # can't be None since change_target is part of the key of the table
-            action,
-            target)
+
         self.qualifier_changes.append(change)
 
     def save_reference_changes(self, property_id, value_id, ref_property_id, ref_hash, value_hash, old_value, new_value, datatype, change_target, change_type):
@@ -373,19 +363,6 @@ class PageParser():
             action,
             target
         )
-
-        print('DEBUG REFERENCE CHANGED SAVED: ', self.revision_meta['revision_id'],
-            property_id,
-            value_id,
-            ref_property_id,
-            ref_hash,
-            value_hash,
-            old_value,
-            new_value,
-            datatype,
-            change_target if change_target else '', # can't be None since change_target is part of the key of the table
-            action,
-            target)
 
         self.reference_changes.append(change)
 
