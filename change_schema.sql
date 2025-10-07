@@ -1,3 +1,5 @@
+SET CLIENT_ENCODING = 'UTF8';
+
 CREATE TABLE IF NOT EXISTS revision (
     prev_revision_id BIGINT,
     revision_id BIGINT,
@@ -40,21 +42,41 @@ CREATE TABLE IF NOT EXISTS value_change_metadata (
     FOREIGN KEY (revision_id, property_id, value_id, change_target) REFERENCES value_change(revision_id, property_id, value_id, change_target)
 );
 
-CREATE TABLE IF NOT EXISTS reference_qualifier_change (
+CREATE TABLE IF NOT EXISTS qualifier_change (
     revision_id BIGINT,
     property_id INT, -- statement property id
     property_label TEXT,
     value_id TEXT, -- statement value id
-    rq_property_id INT, -- reference or qualifier property id
-    rq_property_id_label TEXT,
-    value_hash TEXT, -- hash of reference/qualifier value. This hash + rq_property_id identify each refference/qualifier value
+    qual_property_id INT, -- qualifier property id
+    qual_property_id_label TEXT,
+    value_hash TEXT, -- hash of qualifier value. This hash + qual_property_id identify each qualifier value
     old_value JSONB,
     new_value JSONB,
     datatype TEXT,
     change_target TEXT, -- will be '' or datatype metadata name
     action TEXT, -- Will only be CREATE/DELETE, never UPDATE
     target TEXT,
-    PRIMARY KEY (revision_id, property_id, value_id, rq_property_id, value_hash, change_target, target),
+    PRIMARY KEY (revision_id, property_id, value_id, qual_property_id, value_hash, change_target),
+    FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
+    -- NOTE: revision_id, property_id, value_id does not necessarily exist in value_change since a revision could involve only reference/qualifier changes
+);
+
+CREATE TABLE IF NOT EXISTS reference_change (
+    revision_id BIGINT,
+    property_id INT, -- statement property id
+    property_label TEXT,
+    value_id TEXT, -- statement value id
+    ref_property_id INT, -- reference property id
+    ref_property_id_label TEXT,
+    ref_hash, -- identifies the reference (a reference is composed of multiple property - values)
+    value_hash TEXT, -- hash of reference value. This hash + qual_property_id identify each reference value
+    old_value JSONB,
+    new_value JSONB,
+    datatype TEXT,
+    change_target TEXT, -- will be '' or datatype metadata name
+    action TEXT, -- Will only be CREATE/DELETE, never UPDATE
+    target TEXT,
+    PRIMARY KEY (revision_id, property_id, value_id, ref_hash, ref_property_id, value_hash, change_target),
     FOREIGN KEY (revision_id) REFERENCES revision(revision_id)
     -- NOTE: revision_id, property_id, value_id does not necessarily exist in value_change since a revision could involve only reference/qualifier changes
 );
