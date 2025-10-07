@@ -586,13 +586,11 @@ class PageParser():
                             'type': 'time'
                         }
         """
-        
-        # create hash from the actual datavalue
+        if not prop_val:
+            return None
+
         snaktype = prop_val.get('snaktype', None)
         current_hash = prop_val.get('hash', None)
-
-        if not current_hash and not snaktype:
-            return None
         
         type_ = prop_val['datavalue']['type']
         if snaktype in (NO_VALUE, SOME_VALUE) or \
