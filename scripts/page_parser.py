@@ -594,9 +594,9 @@ class PageParser():
             if prop_val['snaktype'] in ('novalue', 'somevalue'):
                 val = { 'snaktype': prop_val['snaktype'] }
             else:
-                if val['datavalue']['type'] == 'time':
+                if prop_val['datavalue']['type'] == 'time':
                     # remove 0's at the beggining
-                    val['datavalue']['value']['time'] = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', val['datavalue']['value']['time'])
+                    prop_val['datavalue']['value']['time'] = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', prop_val['datavalue']['value']['time'])
 
                 val = prop_val['datavalue']
             return hashlib.sha1(json.dumps(val, separators=(',', ':')).encode('utf-8')).hexdigest()
