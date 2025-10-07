@@ -645,6 +645,10 @@ class PageParser():
 
     @staticmethod
     def homogenize_datavalue(prop_val):
+
+        if 'datavalue' not in prop_val: # fallback for somevalue, novalue
+            return prop_val
+        
         type_ = prop_val['datavalue']['type']
 
         # Remove inconsistencies in time values + entities + unused/deprcated fields in time and globecoordinate
