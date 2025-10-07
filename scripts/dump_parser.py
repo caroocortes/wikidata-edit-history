@@ -141,15 +141,6 @@ class DumpParser():
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
 
-                if entity_id == 'Q3':
-                    with open('Q3.xml', "a") as f:
-                        revision_xml_str = etree.tostring(
-                            page_elem_str,
-                            pretty_print=True,
-                            encoding="unicode" 
-                        )
-                        f.write(revision_xml_str + "\n")
-
             # Periodic progress report
             if time.time() - last_report > 600:  # Every 10 min
                 rate = self.num_entities / (time.time() - self.start_time)
