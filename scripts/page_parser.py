@@ -750,15 +750,9 @@ class PageParser():
         snaktype = hom_prop_val.get('snaktype', None)
         current_hash = hom_prop_val.get('hash', None)
         
-        if snaktype in (NO_VALUE, SOME_VALUE) or \
-            (
-                snaktype == 'value' and 
-                hom_prop_val['datavalue']['type'] not in WD_ENTITY_TYPES and
-                hom_prop_val['datavalue']['type'] not in ('time', 'globecoordinate')
-             ):
+        if snaktype in (NO_VALUE, SOME_VALUE):
             return current_hash
         else:
-
             return hashlib.sha1(json.dumps(hom_prop_val['datavalue'], separators=(',', ':')).encode('utf-8')).hexdigest()
 
     def _handle_reference_changes(self, stmt_pid, stmt_value_id, prev_stmt, curr_stmt):
