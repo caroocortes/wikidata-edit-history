@@ -371,6 +371,9 @@ class PageParser():
         if old_datatype_metadata and not new_datatype_metadata: # deletion
             for key in old_datatype_metadata.keys():
                 old_meta = old_datatype_metadata.get(key, None)
+
+                if key == 'calendarmodel' or key == 'unit': # keep only the Q-id
+                    old_meta = old_meta.split('/')[-1]
                 
                 if type_ == 'value':
                     self.save_changes(
@@ -414,6 +417,9 @@ class PageParser():
         if new_datatype_metadata and not old_datatype_metadata: # creation
             for key in new_datatype_metadata.keys():
                 new_meta = new_datatype_metadata.get(key, None)
+
+                if key == 'calendarmodel' or key == 'unit': # keep only the Q-id
+                    new_meta = new_meta.split('/')[-1]
                 
                 if type_ == 'value':
                     self.save_changes(
@@ -464,6 +470,12 @@ class PageParser():
                     change_magnitude = PageParser.magnitude_of_change(old_meta, new_meta, new_datatype, metadata=True)
                 else: 
                     change_magnitude = None
+
+                if key == 'calendarmodel' or key == 'unit': # keep only the Q-id
+                    new_meta = new_meta.split('/')[-1]
+
+                if key == 'calendarmodel' or key == 'unit': # keep only the Q-id
+                    old_meta = old_meta.split('/')[-1]
 
                 if old_meta != new_meta: # save only what changed
                     
@@ -524,19 +536,29 @@ class PageParser():
             for key in small_set:
 
                 if big_old:
-
+                    
                     new_meta = (new_datatype_metadata or {}).get(key, None)
+                    if key == 'calendarmodel' or key == 'unit': # keep only the Q-id
+                        new_meta = new_meta.split('/')[-1]
                     
                     old_meta_key = next((k for k in old_keys_set if k not in keys_to_skip), None)
                     old_meta = (old_datatype_metadata or {}).get(old_meta_key, None)
+
+                    if old_meta_key == 'calendarmodel' or old_meta_key == 'unit': # keep only the Q-id
+                        old_meta = old_meta.split('/')[-1]
 
                     if old_meta_key is not None:
                         keys_to_skip.add(old_meta_key)
                 else:
                     old_meta = (old_datatype_metadata or {}).get(key, None)
+                    if key == 'calendarmodel' or key == 'unit': # keep only the Q-id
+                        old_meta = old_meta.split('/')[-1]
 
                     new_meta_key = next((k for k in new_keys_set if k not in keys_to_skip), None)
                     new_meta = (new_datatype_metadata or {}).get(new_meta_key, None)
+
+                    if new_meta_key == 'calendarmodel' or new_meta_key == 'unit': # keep only the Q-id
+                        new_meta = new_meta.split('/')[-1]
 
                     if new_meta_key is not None:
                         keys_to_skip.add(new_meta_key)
@@ -584,9 +606,15 @@ class PageParser():
                 
                 if big_old:
                     old_meta = (old_datatype_metadata or {}).get(key, None)
+                    if key == 'calendarmodel' or key == 'unit': # keep only the Q-id
+                        old_meta = old_meta.split('/')[-1]
+
                     new_meta = None
                 else:
                     new_meta = (new_datatype_metadata or {}).get(key, None)
+                    if key == 'calendarmodel' or key == 'unit': # keep only the Q-id
+                        new_meta = new_meta.split('/')[-1]
+                        
                     old_meta = None
                 
                 if type_ == 'value':
