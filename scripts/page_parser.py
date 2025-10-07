@@ -891,7 +891,7 @@ class PageParser():
             self.save_reference_changes(
                 property_id=id_to_int(stmt_pid),
                 value_id=stmt_value_id,
-                rq_property_id=id_to_int(pid),
+                ref_property_id=id_to_int(pid),
                 ref_hash=ref_hash,
                 value_hash=value_hash,
                 old_value=None,
