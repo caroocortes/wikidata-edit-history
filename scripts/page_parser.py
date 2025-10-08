@@ -282,7 +282,7 @@ class PageParser():
         """
             Store value + datatype metadata (of property value) + rank changes
         """
-        old_value = json.dumps(str(old_value)) if old_value else '{}'
+        old_value = json.dumps(str(old_value)) if old_value else '{}' # in the DB can't be NULL because null = null is NULL in postgresql
         new_value = json.dumps(str(new_value)) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
@@ -834,26 +834,6 @@ class PageParser():
         deleted = prev_keys - curr_keys
         created = curr_keys - prev_keys    
 
-        if self.revision_meta['revision_id'] == 589502160:
-            print('------------------------------------------------------------')
-            print('DEBUG REVISION 589502160')
-            print('DELETED:', deleted)
-            print('CREATED:', created)
-            print('PREV HASH MAP: ', prev_hash_map)
-            print('CURR HASH MAP: ', curr_hash_map)
-            print('PREVIOUS STMT REFS: ', prev_refs)
-            print('CURRENT STMT REFS', curr_refs)
-
-        if self.revision_meta['revision_id'] == 2236873547:
-            print('------------------------------------------------------------')
-            print('DEBUG REVISION 589502160')
-            print('DELETED:', deleted)
-            print('CREATED:', created)
-            print('PREV HASH MAP: ', prev_hash_map)
-            print('CURR HASH MAP: ', curr_hash_map)
-            print('PREVIOUS STMT REFS: ', prev_refs)
-            print('CURRENT STMT REFS', curr_refs)
-
         # deletions
         for ref_hash, pid, value_hash in deleted:
 
@@ -1011,36 +991,6 @@ class PageParser():
 
             deleted = prev_hashes - curr_hashes
             added = curr_hashes - prev_hashes
-
-            if self.revision_meta['revision_id'] == 473525715:
-                print('------------------------------------------------------------')
-                print('DEBUG REVISION QUALIFIERS!!!!!!! 473525715')
-                print('DELETED:', deleted)
-                print('CREATED:', added)
-                print('PREV HASH MAP: ', prev_hashes)
-                print('CURR HASH MAP: ', curr_hashes)
-                print('PREVIOUS STMT REFS: ', prev_stmts)
-                print('CURRENT STMT REFS', curr_stmts)
-
-            if self.revision_meta['revision_id'] == 589502160:
-                print('------------------------------------------------------------')
-                print('DEBUG REVISION 589502160')
-                print('DELETED:', deleted)
-                print('CREATED:', added)
-                print('PREV HASH MAP: ', prev_hashes)
-                print('CURR HASH MAP: ', curr_hashes)
-                print('PREVIOUS STMT REFS: ', prev_stmts)
-                print('CURRENT STMT REFS', curr_stmts)
-
-            if self.revision_meta['revision_id'] == 2236873547:
-                print('------------------------------------------------------------')
-                print('DEBUG REVISION 589502160')
-                print('DELETED:', deleted)
-                print('CREATED:', added)
-                print('PREV HASH MAP: ', prev_hashes)
-                print('CURR HASH MAP: ', curr_hashes)
-                print('PREVIOUS STMT REFS: ', prev_stmts)
-                print('CURRENT STMT REFS', curr_stmts)
 
             # --- Deleted values ---
             for h in deleted:

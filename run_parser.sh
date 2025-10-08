@@ -18,7 +18,7 @@ while true; do
     # Check if there are still unprocessed files left
     # `main.py` logs processed files into PROCESSED_FILES_PATH
     PROCESSED=$(wc -l < logs/processed_files.txt)
-    TOTAL=1
+    TOTAL=30
 
     if [ "$PROCESSED" -ge "$TOTAL" ]; then
         echo "All files processed at $(date)" >> $LOG
