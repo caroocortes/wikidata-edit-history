@@ -35,7 +35,6 @@ class DumpParser():
 
         # TODO: remove
         self.start_time = time.time()
-        # self.queue_size_history = deque(maxlen=50) # store last 50 queue sizes
 
         self.workers = []
         for i in range(self.num_workers):
@@ -45,7 +44,6 @@ class DumpParser():
             
     def get_simple_stats(self):
         runtime = time.time() - self.start_time
-        queue_size = self.page_queue.qsize()
         
         stats = {
             'runtime': runtime,

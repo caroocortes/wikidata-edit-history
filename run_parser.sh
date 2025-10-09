@@ -1,7 +1,13 @@
 #!/bin/bash
 
 LOG="logs/parser_output.log"
+if [ -z "$1" ]; then
+    read -p "Enter total number of files to process: " TOTAL
+else
+    TOTAL=$1
+fi
 
+echo "Starting parser with TOTAL=$TOTAL" >> "$LOG"
 while true; do
     echo "Starting a new batch at $(date)" >> $LOG
     echo "PID: $$" >> $LOG
@@ -18,7 +24,6 @@ while true; do
     # Check if there are still unprocessed files left
     # `main.py` logs processed files into PROCESSED_FILES_PATH
     PROCESSED=$(wc -l < logs/processed_files.txt)
-    TOTAL=30
 
     if [ "$PROCESSED" -ge "$TOTAL" ]; then
         echo "All files processed at $(date)" >> $LOG
