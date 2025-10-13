@@ -11,7 +11,7 @@ fi
 
 # Get how many files were already processed before this run started
 if [ -f logs/processed_files.txt ]; then
-    INITIAL_PROCESSED=$(wc -l < logs/processed_files.txt)
+    INITIAL_PROCESSED=$(wc -l < "${LOG_DIR}/processed_files.txt")
 else
     INITIAL_PROCESSED=0
 fi
@@ -39,7 +39,7 @@ while true; do
     fi
 
     # Recount total processed files
-    CURRENT_PROCESSED=$(wc -l < logs/processed_files.txt)
+    CURRENT_PROCESSED=$(wc -l < "${LOG_DIR}/processed_files.txt")
     NEW_PROCESSED=$((CURRENT_PROCESSED - INITIAL_PROCESSED - ACCUMULATED))
     ACCUMULATED=$((ACCUMULATED + NEW_PROCESSED))
 
