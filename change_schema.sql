@@ -81,17 +81,11 @@ CREATE TABLE IF NOT EXISTS reference_change (
     -- NOTE: revision_id, property_id, value_id does not necessarily exist in value_change since a revision could involve only reference/qualifier changes
 );
 
-CREATE TABLE IF NOT EXISTS class (
-    class_id INT,
-    class_label TEXT,
-    rank TEXT,
-    PRIMARY KEY (class_id)
-);
-
 CREATE TABLE IF NOT EXISTS entity_type (
     entity_id INT,
     class_id INT,
-    PRIMARY KEY (entity_id, class_id),
-    FOREIGN KEY (class_id) REFERENCES class(class_id)
+    class_label TEXT,
+    rank TEXT,
+    PRIMARY KEY (entity_id, class_id)
 );
     
