@@ -1143,6 +1143,79 @@ class PageParser():
                     new_hash=''
                 )
      
+    def _changes_cleaned_entity(self, revision):
+        # TODO: merge this one with the created, the only thing that changes is the old_value/new_value None
+        # Process claims
+        claims = PageParser._safe_get_nested(revision, 'claims')
+        
+        for property_id, property_stmts in claims.items():
+            for stmt in property_stmts:
+                
+                value, datatype, datatype_metadata = PageParser._parse_datavalue(stmt)
+                new_hash = PageParser._get_property_mainsnak(stmt, 'hash') if stmt else None
+                value_id = stmt.get('id', None)
+                
+                old_value = value
+                new_value = None
+                
+                self.save_changes(
+                    id_to_int(property_id), 
+                    value_id=value_id,
+                    old_value=old_value,
+                    new_value=new_value,
+                    datatype=datatype,
+                    change_target=None,
+                    change_type=DELETE_PROPERTY,
+                    old_hash=None,
+                    new_hash=new_hash
+                )
+
+                if datatype_metadata:
+                    for k, v in datatype_metadata.items():
+                        old_value = v
+                        new_value = None
+                        
+                        self.save_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=old_value,
+                            new_value=new_value,
+                            datatype=datatype,
+                            change_target=k,
+                            change_type=DELETE_PROPERTY,
+                            old_hash=None,
+                            new_hash=new_hash
+                        )
+
+                # qualifier changes
+                _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+
+                # references changes
+                _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+
+        # If there's no description or label, the revisions shows them as []
+        lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
+        labels = PageParser._safe_get_nested(revision, 'labels', lang, 'value')
+        descriptions = PageParser._safe_get_nested(revision, 'descriptions', lang, 'value')
+
+        # Process labels and descriptions (non-claim properties)
+        for pid, val in [(LABEL_PROP_ID, labels), (DESCRIPTION_PROP_ID, descriptions)]:
+            if val:
+                old_value = val
+                new_value = None
+
+                self.save_changes(
+                    pid, 
+                    value_id='label' if pid == LABEL_PROP_ID else 'description',
+                    old_value=old_value if not isinstance(old_value, dict) else None, # _safe_get_nested returns {} instead of None (?why)
+                    new_value=new_value if not isinstance(new_value, dict) else None,
+                    datatype='string',
+                    change_target=None,
+                    change_type=DELETE_PROPERTY,
+                    old_hash='',
+                    new_hash=''
+                )
+
     def _handle_description_label_change(self, previous_revision, current_revision):
         """
             Handles changes in labels and descriptions between two revisions.
@@ -1477,9 +1550,20 @@ class PageParser():
                 return True
 
             if not curr_claims and not curr_label and not curr_desc:
-                # skip revision 
-                # Reasons: can be an initial reivsion that only has sitelinks/aliases
-                return False
+
+                curr_aliases = PageParser._safe_get_nested(current_revision, 'aliases')
+                curr_sitelinks = PageParser._safe_get_nested(current_revision, 'sitelinks')
+
+                if curr_aliases or curr_sitelinks:
+                    # skip revision 
+                    # Reasons: can be an initial reivsion that only has sitelinks/aliases
+                    return False
+
+                # completely empty revision -> the item was cleaned, probably because of a merge
+                # the following revision is probably a redirect
+                if not curr_aliases and not curr_sitelinks:
+                    self._changes_cleaned_entity(current_revision)
+                    return True
             
             # --- Labels and Description changes ---
             change_detected = self._handle_description_label_change(previous_revision, current_revision)
