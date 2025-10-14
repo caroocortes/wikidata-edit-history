@@ -1562,6 +1562,7 @@ class PageParser():
                 # completely empty revision -> the item was cleaned, probably because of a merge
                 # the following revision is probably a redirect
                 if not curr_aliases and not curr_sitelinks:
+                    print(f'Revision {self.revision_meta['revision_id']} of entity {self.revision_meta['entity_id']} cleaned the entity')
                     self._changes_cleaned_entity(current_revision)
                     return True
             
