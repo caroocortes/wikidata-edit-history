@@ -282,8 +282,8 @@ class PageParser():
         """
             Store value + datatype metadata (of property value) + rank changes
         """
-        old_value = json.dumps(str(old_value)) if old_value else '{}' # in the DB can't be NULL because null = null is NULL in postgresql
-        new_value = json.dumps(str(new_value)) if new_value else '{}'
+        old_value = json.dumps(old_value) if old_value else '{}' # in the DB can't be NULL because null = null is NULL in postgresql
+        new_value = json.dumps(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
 
@@ -319,8 +319,8 @@ class PageParser():
         """
             Store reference/qualifier changes
         """
-        old_value = json.dumps(str(old_value)) if old_value else '{}'
-        new_value = json.dumps(str(new_value)) if new_value else '{}'
+        old_value = json.dumps(old_value) if old_value else '{}'
+        new_value = json.dumps(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
 
@@ -344,8 +344,8 @@ class PageParser():
         """
             Store reference changes
         """
-        old_value = json.dumps(str(old_value)) if old_value else '{}'
-        new_value = json.dumps(str(new_value)) if new_value else '{}'
+        old_value = json.dumps(old_value) if old_value else '{}'
+        new_value = json.dumps(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type) 
 
