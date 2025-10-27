@@ -30,7 +30,7 @@ def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimi
             
             print(f"Loaded data into temp table. Removing duplicates...")
             
-            cur.execute(f"CREATE TABLE {table_name} AS SELECT DISTINCT * FROM {temp_table};")
+            cur.execute(f"CREATE TABLE IF NOT EXISTS {table_name} AS SELECT DISTINCT * FROM {temp_table};")
             
             # add PK
             if primary_keys:
@@ -47,14 +47,19 @@ def update_value_change_entity_labels(conn, table_name):
     """
 
     with conn.cursor() as cur:
-        # cur.execute(f"CREATE TABLE IF NOT EXISTS entity_labels_aliases (id VARCHAR, label VARCHAR, alias VARCHAR);")
-        
-        cur.execute("SELECT COUNT(*) FROM entity_labels_aliases;")
-        count = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'entity_labels_aliases'
+            );
+        """)
+        exists = cur.fetchone()[0]
         
     conn.commit()
     
-    if count == 0: # only load if there's no data
+    if not exists: # only load if there's no data
         copy_from_csv(conn, ENTITY_LABEL_ALIAS_PATH, 'entity_labels_aliases', ['id', 'label', 'alias'], ['id'], ';')
 
     with conn.cursor() as cur:
@@ -117,9 +122,15 @@ def update_property_label(conn, table_name, property_id_column, property_label_c
     """
 
     with conn.cursor() as cur:
-        cur.execute(f"CREATE TABLE IF NOT EXISTS property_labels (id VARCHAR, label VARCHAR);")
-        cur.execute("SELECT COUNT(*) FROM property_labels;")
-        count = cur.fetchone()[0]
+        
+        cur.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'property_labels'
+            );
+        """)
+        exists = cur.fetchone()[0]
         
     conn.commit()
 
@@ -127,7 +138,7 @@ def update_property_label(conn, table_name, property_id_column, property_label_c
         cur.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {property_label_column} VARCHAR DEFAULT NULL;")
     conn.commit()
     
-    if count == 0:
+    if not exists:
         copy_from_csv(conn, PROPERTY_LABELS_PATH, 'property_labels', ['id', 'label'], ['id'], ',')
 
     with conn.cursor() as cur:
@@ -162,9 +173,32 @@ def load_entity_type(conn):
     """
         Creates table entity_type from csv file which containes the columns 'entity_id', 'class_id', 'class_label'
     """
+    with conn.cursor() as cur:
+        
+        cur.execute("""
+            SELECT 
+                EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'entity_type_p279'
+                ) as exists_p279,
+                EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'entity_type_p31'
+                ) as exists_p31;
+        """)
+        result = cur.fetchone()
+        exists_p279 = result[0]
+        exists_p31 = result[1]
+        
+    conn.commit()
 
-    copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
-    copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
+    if not exists_p279:
+        copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
+
+    if not exists_p31:
+        copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
 
     # # Update columns in entity_type table
     with conn.cursor() as cur:
