@@ -7,31 +7,38 @@ from const import PROPERTY_LABELS_PATH, ENTITY_LABEL_ALIAS_PATH, SUBCLASS_OF_PAT
 
 def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimiter=','):
     temp_table = f"{table_name}_temp"
-    
+
     with conn.cursor() as cur:
-        cols_definition = ', '.join([f"{col} VARCHAR" for col in columns])
-        cur.execute(f"CREATE TEMP TABLE {temp_table} ({cols_definition});")
-        
-        cols = ','.join(columns)
-        with open(csv_file_path, 'r', encoding='utf-8') as f:
-            next(f)  # skip header
-            cur.copy_expert(f"""
-                COPY {temp_table} ({cols})
-                FROM STDIN
-                WITH (FORMAT csv, HEADER FALSE, DELIMITER '{delimiter}');
-            """, f)
-        
-        print(f"Loaded data into temp table. Removing duplicates...")
-        
-        cur.execute(f"CREATE TABLE {table_name} AS SELECT DISTINCT * FROM {temp_table};")
-        
-        # add PK
-        if primary_keys:
-            pk_cols_str = ', '.join(primary_keys)
-            print("Adding PK")
-            cur.execute(f"ALTER TABLE {table_name} ADD PRIMARY KEY ({pk_cols_str});")
-    
+        cur.execute(f"SELECT COUNT(*) FROM {table_name};")
+        count = cur.fetchone()[0]
     conn.commit()
+
+    if count == 0:
+    
+        with conn.cursor() as cur:
+            cols_definition = ', '.join([f"{col} VARCHAR" for col in columns])
+            cur.execute(f"CREATE TEMP TABLE {temp_table} ({cols_definition});")
+            
+            cols = ','.join(columns)
+            with open(csv_file_path, 'r', encoding='utf-8') as f:
+                next(f)  # skip header
+                cur.copy_expert(f"""
+                    COPY {temp_table} ({cols})
+                    FROM STDIN
+                    WITH (FORMAT csv, HEADER FALSE, DELIMITER '{delimiter}');
+                """, f)
+            
+            print(f"Loaded data into temp table. Removing duplicates...")
+            
+            cur.execute(f"CREATE TABLE {table_name} AS SELECT DISTINCT * FROM {temp_table};")
+            
+            # add PK
+            if primary_keys:
+                pk_cols_str = ', '.join(primary_keys)
+                print("Adding PK")
+                cur.execute(f"ALTER TABLE {table_name} ADD PRIMARY KEY ({pk_cols_str});")
+        
+        conn.commit()
 
 def update_value_change_entity_labels(conn, table_name):
     """
