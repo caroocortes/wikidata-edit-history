@@ -1,4 +1,6 @@
-# Wikidata's entity change extraction
+# MP2025-WikiWatch
+
+## Getting Started
 
 ## Change Extraction
 
@@ -10,14 +12,14 @@ Install required libraries listed in `requirements.txt`.
 
 A `.env` template file is provided with the necessary variables to connect to the PostgreSQL database. This database stores the following tables:
 - `revision`
-- `value_changes`
+- `value_change`
 - `reference_change`
 - `qualifier_change`
 - `value_change_metadata`
 
-**Important**: Update the `.env` file with your database credentials. 
+**Important**: Update the `.env` file with your database credentials.
 
-**Note**: Table schemas are automatically created when running the parsers.
+**Note**: Table schemas are automatically created when running the parsers. The DB needs to be created manually.
 
 ## Repository Structure
 ```bash
@@ -25,9 +27,9 @@ A `.env` template file is provided with the necessary variables to connect to th
 ├── scripts/        # Core parsing classes 
 │   ├── dump_parser.py              # Processes XML files, extracts pages
 │   ├── page_parser.py              # Processes a page (all edit history for an entity)
-│   ├── fetch_entity_types.py      # Queries Wikidata SPARQL for entity types (RUNNING)
-│   └── fetch_wd_entity_labels.py  # Queries Wikidata SPARQL for entity labels (RUNNING)
-├── download/       # Scripts for downloading XML files + list of download links
+│   ├── utils.py                    # Auxiliary methods 
+│   └── load_external_data.py  # Loads data extracted from a full dump (entity labels, property labels, types of entities - subclass and instance of)
+├── download/       # Script for downloading XML files + list of download links for the dump of 20250601
 └── test/           # Test XML files, testing scripts, and example revision texts
 ```
 
@@ -112,3 +114,94 @@ nohup bash download_wikidumps.sh > download_output.log 2>&1 &
 
 To obtain new download links use the scrapper in *scripts/utils* (change link to wikidata service url and folder to save links in *scripts/const*)
 
+## Downloading extra data
+
+We used the Wikidata Toolkit to extract extra data, such as, entity labels, property labels, entity's types (instance of and subclass of statements) to make our dataset more human-readable.
+**NOTE:** The XML dump doesn't provide property's nor entity's labels in changes (e.g. if a property value is an entity, we only get the Q-id but not the label).
+
+This class processes a latest-all.json.bz2 dump from WD and creates the following files:
+- *labels_aliases.csv*: stores the english label and the first english alias of each entity (Q-id).
+- *p31.csv*: stores the class the entity belongs to. This is extracted from the statement <Q-id, P31, Q-ID>. The csv stores the entities Q-id and the class Q-id.
+- *p279.csv*: stores the superclass of the entity. This is extracted from the statement <Q-id, P279, Q-ID>. The csv stores the entities Q-id and the superclass Q-id.
+- *property_labels.csv*: stores the english label of each property.
+
+**Process to obtain files:**
+- Clone Wikidata Toolkit from [Wikidata Toolkit](https://github.com/Wikidata-Toolkit/Wikidata-Toolkit).
+- Download a `latest-all.json.bz2` from WD and store it in `Wikidata-Toolkit/dumpfiles/wikidatawiki/json-YYYYMMdd` where YYYYMMdd is the date when the dump was downloaded (The toolkit expects this format). Note that the downloaded dump needs to be in .json format.
+- See Wikidata Toolkit requirements for Java versions
+- Add the file `ExtractExtraData.java` in `wdtk/` to the folder `Wikidata-Toolkit/wdtk-examples/src/main/java/org/wikidata/wdtk/examples`.
+    Change the following variables to store the correct path:
+    ```java
+        String labelsFile = "/PATH_TO_FOLDER/wdtk-output/labels_aliases.csv";
+        String p31File = "/PATH_TO_FOLDER/wdtk-output/p31.csv";
+        String p279File = "/PATH_TO_FOLDER/wdtk-output/p279.csv";
+        String propertyLabelsFile = "/PATH_TO_FOLDER/wdtk-output/property_labels.csv";
+
+        String dumpUrl = "/PATH_TO_FOLDER/Wikidata-Toolkit/dumpfiles/wikidatawiki/json-20251018/wikidata-20251018-all.json.bz2";
+    ```
+- Change the line `public static final boolean OFFLINE_MODE = false;` in `Wikidata-Toolkit/wdtk-examples/src/main/java/org/wikidata/wdtk/ExampleHelpers.java` to `public static final boolean OFFLINE_MODE = true;`. This disables the download of a new dump. Don't do this if you want the toolkit to download the dump.
+- Add the following lines to the `<dependencies>` in the pom.xml inside `Wikidata-Toolkit/wdtk-examples/` and the outer pom.xml (root of the project):
+```java
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>1.26.0</version>
+    </dependency>
+    <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.15.1</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>5.2.2</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml</artifactId>
+        <version>5.2.2</version>
+    </dependency>
+```
+- Add this to the pom.xml in wdtk-examples:
+```java
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.5.0</version>
+            <executions>
+                <execution>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>shade</goal>
+                    </goals>
+                    <configuration>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
+                        <minimizeJar>false</minimizeJar>
+                        <artifactSet>
+                            <includes>
+                                <include>*:*</include>
+                            </includes>
+                        </artifactSet>
+                        <transformers>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <mainClass>org.wikidata.wdtk.examples.ExtractExtraData</mainClass>
+                            </transformer>
+                        </transformers>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+- Run the extraction with Maven inside `wdtk-examples/`:
+```bash
+mvn clean
+mvn package
+nohup java -jar target/NAME_OF_JAR.jar > dump_extract_output.log 2>&1 &
+```
