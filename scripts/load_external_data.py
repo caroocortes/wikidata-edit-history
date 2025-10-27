@@ -1,14 +1,13 @@
 import psycopg2
 from dotenv import load_dotenv
 import os
-import io
-import psycopg2
+import csv
 
 from const import PROPERTY_LABELS_PATH, ENTITY_LABEL_ALIAS_PATH, SUBCLASS_OF_PATH, INSTANCE_OF_PATH
 
-def copy_from_csv(conn, csv_file_path, table_name, columns, pk_cols):
+def copy_from_csv(conn, csv_file_path, table_name, columns, pk_cols, delimiter):
     with conn.cursor() as cur:
-
+        
         cur.execute("SET synchronous_commit = OFF;")
         cols = ','.join(columns)
         with open(csv_file_path, 'r', encoding='utf-8') as f:
@@ -17,7 +16,7 @@ def copy_from_csv(conn, csv_file_path, table_name, columns, pk_cols):
             cur.copy_expert(f"""
                 COPY {table_name} ({cols})
                 FROM STDIN
-                WITH (FORMAT csv, HEADER FALSE, QUOTE '"', ESCAPE '"');
+                WITH (FORMAT csv, HEADER FALSE, QUOTE '"', ESCAPE '"', DELIMITER '{delimiter}');
             """, f)
 
         conn.commit()
@@ -40,7 +39,7 @@ def update_value_change_entity_labels(conn, table_name):
         cur.execute(f"CREATE TABLE IF NOT EXISTS entity_labels_aliases (id VARCHAR, label VARCHAR, alias VARCHAR);")
     conn.commit()
     
-    copy_from_csv(conn, ENTITY_LABEL_ALIAS_PATH, 'entity_labels_aliases', ['id', 'label', 'alias'], ['id'])
+    copy_from_csv(conn, ENTITY_LABEL_ALIAS_PATH, 'entity_labels_aliases', ['id', 'label', 'alias'], ['id'], ';')
 
     with conn.cursor() as cur:
         cur.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS new_value_label VARCHAR DEFAULT NULL;")
@@ -107,7 +106,7 @@ def update_property_label(conn, table_name, property_id_column, property_label_c
         cur.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {property_label_column} VARCHAR DEFAULT NULL;")
     conn.commit()
     
-    copy_from_csv(conn, PROPERTY_LABELS_PATH, 'property_labels', ['id', 'label'], ['id'])
+    copy_from_csv(conn, PROPERTY_LABELS_PATH, 'property_labels', ['id', 'label'], ['id'], ',')
 
     with conn.cursor() as cur:
         cur.execute(f"""
@@ -145,8 +144,8 @@ def load_entity_type(conn):
     with conn.cursor() as cur:
         cur.execute(f"CREATE TABLE IF NOT EXISTS entity_type (entity_id BIGINT, class_id VARCHAR, class_label VARCHAR);")
     conn.commit()
-    copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type', ['entity_id', 'class_id'], ['entity_id', 'class_id'])
-    copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type', ['entity_id', 'class_id'], None) # set to None so it doesn't create the PK again
+    copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
+    copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
 
     # # Update columns in entity_type table
     with conn.cursor() as cur:
