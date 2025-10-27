@@ -67,8 +67,8 @@ def update_value_change_entity_labels(conn, table_name):
             --  if the label is empty, use the alias
                 new_value_label =
                     CASE 
-                        WHEN el.label IS NOT NULL and el.label <> '' THEN  el.label 
-                        ELSE new_value_label = el.alias 
+                        WHEN el.label IS NOT NULL and el.label <> '' THEN el.label 
+                        ELSE el.alias 
                     END
             FROM entity_labels_aliases el
             WHERE
@@ -84,7 +84,7 @@ def update_value_change_entity_labels(conn, table_name):
                 old_value_label =
                     CASE 
                         WHEN el.label IS NOT NULL and el.label <> '' THEN el.label
-                        ELSE new_value_label = el.alias 
+                        ELSE el.alias 
                     END
             FROM entity_labels_aliases el
             WHERE 
