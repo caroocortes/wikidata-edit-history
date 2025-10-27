@@ -72,7 +72,7 @@ def update_value_change_entity_labels(conn, table_name):
                     END
             FROM entity_labels_aliases el
             WHERE
-                vc.new_value_label IS NULL AND -- only update the ones that don't have a label yet
+                (vc.new_value_label IS NULL or vc.new_value_label = '') AND -- only update the ones that don't have a label yet
                 vc.datatype IN ('wikibase-item', 'wikibase-entityid', 'wikibase-property', 
                                     'wikibase-lexeme', 'wikibase-sense', 'wikibase-form', 'entity-schema')
                 AND
@@ -88,7 +88,7 @@ def update_value_change_entity_labels(conn, table_name):
                     END
             FROM entity_labels_aliases el
             WHERE 
-                vc.old_value_label IS NULL AND -- only update the ones that don't have a label yet
+                (vc.old_value_label IS NULL or vc.old_value_label = '') AND -- only update the ones that don't have a label yet
                 vc.old_value->>0 LIKE 'Q%' AND
                 vc.old_value->>0 = el.id;
         """)
@@ -134,7 +134,7 @@ def update_property_label(conn, table_name, property_id_column, property_label_c
             UPDATE {table_name} vc
             SET property_label = pl.label
             FROM property_labels pl
-            WHERE vc.{property_label_column} IS NULL AND vc.{property_id_column} = pl.id;
+            WHERE (vc.{property_label_column} IS NULL or vc.{property_label_column} = '') AND vc.{property_id_column} = pl.id;
 
             UPDATE {table_name} vc
             SET property_label = 'label'
