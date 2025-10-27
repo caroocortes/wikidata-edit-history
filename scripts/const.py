@@ -1,11 +1,17 @@
 WIKIDATA_SERVICE_URL = "https://dumps.wikimedia.org/wikidatawiki/20250601/"
 
+PATH_TO_EXTRA_DATA = '../../../san2/data/wdtk-output'
+
 # Paths
 DOWNLOAD_LINKS_FILE_PATH = 'data/xml_download_links.txt'
 PROCESSED_FILES_PATH = 'logs/processed_files.txt'
 PARSER_LOG_FILES_PATH = 'logs/parser_log_files.json'
 ERROR_REVISION_TEXT_PATH = "logs/error_revision_text.txt"
 REVISION_NO_CLAIMS_TEXT_PATH = "logs/revision_no_claims.txt"
+PROPERTY_LABELS_PATH = f'{PATH_TO_EXTRA_DATA}/property_labels.csv'
+ENTITY_LABEL_ALIAS_PATH = f'{PATH_TO_EXTRA_DATA}/labels_aliases.csv'
+SUBCLASS_OF_PATH = f'{PATH_TO_EXTRA_DATA}/p279.csv'
+INSTANCE_OF_PATH = f'{PATH_TO_EXTRA_DATA}/p31.csv'
 
 CREATE_PROPERTY = "CREATE_PROPERTY"
 CREATE_PROPERTY_VALUE = "CREATE_PROPERTY_VALUE"
