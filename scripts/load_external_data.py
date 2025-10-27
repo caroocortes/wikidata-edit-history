@@ -260,7 +260,7 @@ if "__main__":
     )
     
     # Update new_value_label + old_value_label
-    update_value_change_entity_labels(conn, 'value_change_sample_30')
+    # update_value_change_entity_labels(conn, 'value_change_sample_30')
 
     # Update property label
     # update_property_label(conn, 'value_change_sample_30', 'property_id', 'property_label') 
