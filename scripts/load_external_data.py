@@ -47,7 +47,7 @@ def update_value_change_entity_labels(conn, table_name):
     """
 
     with conn.cursor() as cur:
-        cur.execute(f"CREATE TABLE IF NOT EXISTS entity_labels_aliases (id VARCHAR, label VARCHAR, alias VARCHAR);")
+        # cur.execute(f"CREATE TABLE IF NOT EXISTS entity_labels_aliases (id VARCHAR, label VARCHAR, alias VARCHAR);")
         
         cur.execute("SELECT COUNT(*) FROM entity_labels_aliases;")
         count = cur.fetchone()[0]
@@ -163,9 +163,6 @@ def load_entity_type(conn):
         Creates table entity_type from csv file which containes the columns 'entity_id', 'class_id', 'class_label'
     """
 
-    with conn.cursor() as cur:
-        cur.execute(f"CREATE TABLE IF NOT EXISTS entity_type_p279 (entity_id VARCHAR, class_id VARCHAR, class_label VARCHAR); CREATE TABLE IF NOT EXISTS entity_type_p31 (entity_id VARCHAR, class_id VARCHAR, class_label VARCHAR);")
-    conn.commit()
     copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
     copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
 
