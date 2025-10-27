@@ -166,16 +166,27 @@ def load_entity_type(conn):
     with conn.cursor() as cur:
         cur.execute(f"CREATE TABLE IF NOT EXISTS entity_type (entity_id VARCHAR, class_id VARCHAR, class_label VARCHAR);")
     conn.commit()
-    copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
-    copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
+    copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
+    copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
 
     # # Update columns in entity_type table
     with conn.cursor() as cur:
         cur.execute(f"""
             CREATE INDEX IF NOT EXISTS idx_value_change_qid
-            ON entity_type (class_id);
+            ON entity_type_p279 (class_id);
 
-            UPDATE entity_type et
+            UPDATE entity_type_p279 et
+            SET  class_label = el.label 
+            FROM entity_labels_aliases el
+            WHERE
+                et.class_label IS NULL  -- only update the ones that don't have a label yet
+                AND
+                et.class_id = el.id;
+                    
+            CREATE INDEX IF NOT EXISTS idx_value_change_qid
+            ON entity_type_p31 (class_id);
+
+            UPDATE entity_type_p31 et
             SET  class_label = el.label 
             FROM entity_labels_aliases el
             WHERE
