@@ -164,7 +164,7 @@ def load_entity_type(conn):
     """
 
     with conn.cursor() as cur:
-        cur.execute(f"CREATE TABLE IF NOT EXISTS entity_type (entity_id VARCHAR, class_id VARCHAR, class_label VARCHAR);")
+        cur.execute(f"CREATE TABLE IF NOT EXISTS entity_type_p279 (entity_id VARCHAR, class_id VARCHAR, class_label VARCHAR); CREATE TABLE IF NOT EXISTS entity_type_p31 (entity_id VARCHAR, class_id VARCHAR, class_label VARCHAR);")
     conn.commit()
     copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
     copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
