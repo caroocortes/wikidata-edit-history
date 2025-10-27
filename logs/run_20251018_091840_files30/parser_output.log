@@ -1,0 +1,787 @@
+Starting parser — target: 30 new files (already processed before: 0)
+Starting a new batch at Sat Oct 18 09:18:40 CEST 2025
+PID: 23754
+Creating DB schema from /home/carolina.cortes/wikidata-edit-history/change_schema.sql...
+Found 2125 unprocessed .bz2 files in ../../../san2/data/wikidata-history-dumps, processing up to 15 files with 4 workers in parallel.
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p285p366.bz2
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1p154.bz2
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p155p284.bz2
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p367p411.bz2
+Progress: 14 entities read, 0.0 entities/sec, queue: 2/150
+Progress: 31 entities read, 0.0 entities/sec, queue: 4/150
+Progress: 10 entities read, 0.0 entities/sec, queue: 1/150
+Revision 484762233 of entity 52 cleaned the entity
+The revision 484762246 of entity 52 is a redirect
+Progress: 12 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 12 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 32 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 34 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 27 entities read, 0.0 entities/sec, queue: 0/150
+Revision 701955045 of entity 1 cleaned the entity
+The revision 701955048 of entity 1 is a redirect
+Revision 497446599 of entity 210 cleaned the entity
+The revision 497446601 of entity 210 is a redirect
+Revision 497522795 of entity 210 cleaned the entity
+Progress: 48 entities read, 0.0 entities/sec, queue: 1/150
+Revision 532188880 of entity 42 cleaned the entity
+Progress: 33 entities read, 0.0 entities/sec, queue: 9/150
+Worker 1 finished: 16 pages, 35.3% efficiency, 701.30s processing, 1286.65s waiting
+Progress: 63 entities read, 0.0 entities/sec, queue: 1/150
+Worker 2 finished: 12 pages, 39.3% efficiency, 852.07s processing, 1315.43s waiting
+Worker 0 finished: 6 pages, 50.3% efficiency, 1219.51s processing, 1203.84s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2423.6s
+Total entities processed: 34
+Average processing rate: 0.01 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p367p411.bz2 in 2423.63 seconds, 2.71 GB, 34 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p412p461.bz2
+Progress: 72 entities read, 0.0 entities/sec, queue: 2/150
+Progress: 38 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 91 entities read, 0.0 entities/sec, queue: 1/150
+Revision 306021184 of entity 224 cleaned the entity
+The revision 306021197 of entity 224 is a redirect
+Revision 306022634 of entity 224 cleaned the entity
+The revision 306023226 of entity 224 is a redirect
+Revision 306024991 of entity 224 cleaned the entity
+Worker 2 finished: 46 pages, 53.5% efficiency, 1671.71s processing, 1451.72s waiting
+Worker 1 finished: 14 pages, 60.5% efficiency, 1893.64s processing, 1233.78s waiting
+Worker 0 finished: 10 pages, 76.4% efficiency, 2423.41s processing, 747.39s waiting
+Worker 1 finished: 23 pages, 65.9% efficiency, 2124.03s processing, 1096.80s waiting
+Worker 2 finished: 16 pages, 70.9% efficiency, 2311.07s processing, 948.07s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 3259.4s
+Total entities processed: 40
+Average processing rate: 0.01 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p1p154.bz2 in 3259.91 seconds, 3.58 GB, 40 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p462p703.bz2
+Worker 1 finished: 36 pages, 65.3% efficiency, 2235.44s processing, 1186.57s waiting
+Worker 0 finished: 30 pages, 66.7% efficiency, 2372.06s processing, 1186.34s waiting
+Worker 0 finished: 6 pages, 74.4% efficiency, 2689.69s processing, 926.36s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 3616.9s
+Total entities processed: 75
+Average processing rate: 0.02 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p285p366.bz2 in 3617.12 seconds, 3.46 GB, 75 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p704p1002.bz2
+Worker 2 finished: 31 pages, 56.2% efficiency, 2162.34s processing, 1683.65s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 3846.3s
+Total entities processed: 97
+Average processing rate: 0.03 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p155p284.bz2 in 3847.13 seconds, 3.61 GB, 97 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1003p1106.bz2
+Progress: 46 entities read, 0.1 entities/sec, queue: 1/150
+Progress: 100 entities read, 0.2 entities/sec, queue: 1/150
+Revision 5526 of entity 586 cleaned the entity
+Revision 5680 of entity 593 cleaned the entity
+Progress: 30 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 21 entities read, 0.0 entities/sec, queue: 0/150
+Progress: 112 entities read, 0.1 entities/sec, queue: 1/150
+Worker 2 finished: 3 pages, 13.8% efficiency, 294.35s processing, 1843.82s waiting
+Worker 0 finished: 5 pages, 5.2% efficiency, 112.30s processing, 2027.13s waiting
+Worker 1 finished: 17 pages, 7.0% efficiency, 154.20s processing, 2049.94s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2207.3s
+Total entities processed: 25
+Average processing rate: 0.01 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p412p461.bz2 in 2205.25 seconds, 3.00 GB, 25 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1107p1209.bz2
+Revision 168335630 of entity 651 cleaned the entity
+Revision 168411022 of entity 651 cleaned the entity
+Progress: 187 entities read, 0.1 entities/sec, queue: 1/150
+Revision 169720338 of entity 665 cleaned the entity
+Progress: 58 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 123 entities read, 0.1 entities/sec, queue: 2/150
+Revision 11273 of entity 768 cleaned the entity
+Progress: 16 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 213 entities read, 0.1 entities/sec, queue: 1/150
+Worker 1 finished: 62 pages, 60.1% efficiency, 1547.37s processing, 1028.50s waiting
+Progress: 73 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 42 entities read, 0.0 entities/sec, queue: 1/150
+Worker 2 finished: 70 pages, 62.0% efficiency, 1703.55s processing, 1042.61s waiting
+Worker 0 finished: 39 pages, 67.4% efficiency, 1878.33s processing, 909.41s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2788.4s
+Total entities processed: 171
+Average processing rate: 0.06 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p462p703.bz2 in 2787.99 seconds, 2.43 GB, 171 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1210p1330.bz2
+Progress: 226 entities read, 0.1 entities/sec, queue: 1/150
+Worker 0 finished: 94 pages, 58.4% efficiency, 1587.52s processing, 1128.99s waiting
+Worker 1 finished: 55 pages, 57.9% efficiency, 1615.92s processing, 1175.05s waiting
+Progress: 89 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 65 entities read, 0.0 entities/sec, queue: 4/150
+Worker 0 finished: 43 pages, 52.9% efficiency, 1480.38s processing, 1315.95s waiting
+Progress: 31 entities read, 0.0 entities/sec, queue: 1/150
+Worker 1 finished: 31 pages, 66.7% efficiency, 1955.07s processing, 975.34s waiting
+Progress: 88 entities read, 0.0 entities/sec, queue: 1/150
+Worker 0 finished: 28 pages, 73.2% efficiency, 1928.20s processing, 707.69s waiting
+Worker 1 finished: 31 pages, 66.6% efficiency, 1788.09s processing, 897.45s waiting
+Progress: 60 entities read, 0.0 entities/sec, queue: 1/150
+Worker 2 finished: 83 pages, 68.7% efficiency, 2582.26s processing, 1178.59s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 3761.5s
+Total entities processed: 232
+Average processing rate: 0.06 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p704p1002.bz2 in 3761.36 seconds, 2.73 GB, 232 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1331p1461.bz2
+Worker 2 finished: 16 pages, 78.5% efficiency, 2797.05s processing, 766.98s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 3565.0s
+Total entities processed: 90
+Average processing rate: 0.03 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p1003p1106.bz2 in 3564.61 seconds, 2.42 GB, 90 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1462p2110.bz2
+Worker 2 finished: 32 pages, 73.4% efficiency, 2086.25s processing, 754.97s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2845.4s
+Total entities processed: 91
+Average processing rate: 0.03 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p1107p1209.bz2 in 2843.40 seconds, 2.70 GB, 91 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p2111p3493.bz2
+Revision 232263416 of entity 1690 cleaned the entity
+The revision 232263419 of entity 1690 is a redirect
+Revision 1755577191 of entity 1690 cleaned the entity
+The revision 1755577194 of entity 1690 is a redirect
+Revision 1230657293 of entity 1734 cleaned the entity
+The revision 1230657304 of entity 1734 is a redirect
+Progress: 83 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 101 entities read, 0.2 entities/sec, queue: 2/150
+Progress: 18 entities read, 0.0 entities/sec, queue: 1/150
+Progress: 145 entities read, 0.2 entities/sec, queue: 1/150
+Revision 168341510 of entity 981 cleaned the entity
+Revision 168411466 of entity 981 cleaned the entity
+Revision 428723166 of entity 1834 cleaned the entity
+The revision 428723168 of entity 1834 is a redirect
+Worker 0 finished: 25 pages, 69.1% efficiency, 1638.29s processing, 732.08s waiting
+Worker 1 finished: 57 pages, 71.2% efficiency, 1748.21s processing, 705.50s waiting
+Worker 2 finished: 31 pages, 77.7% efficiency, 1936.57s processing, 556.24s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2493.9s
+Total entities processed: 113
+Average processing rate: 0.05 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p1210p1330.bz2 in 2493.47 seconds, 2.37 GB, 113 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p3494p5244.bz2
+Progress: 241 entities read, 0.2 entities/sec, queue: 1/150
+Revision 1511092902 of entity 2577 cleaned the entity
+The revision 1511092905 of entity 2577 is a redirect
+Revision 482961072 of entity 1379 cleaned the entity
+The revision 482961077 of entity 1379 is a redirect
+Revision 1689889672 of entity 1379 cleaned the entity
+Progress: 32 entities read, 0.0 entities/sec, queue: 1/150
+Revision 1486269107 of entity 1974 cleaned the entity
+The revision 1486269110 of entity 1974 is a redirect
+The revision 1730781333 of entity 1974 is a redirect
+Revision 1486266805 of entity 1979 cleaned the entity
+The revision 1486266808 of entity 1979 is a redirect
+The revision 1730783170 of entity 1979 is a redirect
+Progress: 338 entities read, 0.3 entities/sec, queue: 1/150
+Revision 178524829 of entity 2630 cleaned the entity
+Revision 1771027117 of entity 2058 cleaned the entity
+The revision 1771027120 of entity 2058 is a redirect
+Revision 160641 of entity 2128 cleaned the entity
+Progress: 302 entities read, 0.5 entities/sec, queue: 1/150
+Progress: 353 entities read, 0.2 entities/sec, queue: 1/150
+Progress: 559 entities read, 0.3 entities/sec, queue: 7/150
+Progress: 49 entities read, 0.0 entities/sec, queue: 1/150
+Revision 1510684814 of entity 2469 cleaned the entity
+The revision 1510684819 of entity 2469 is a redirect
+Worker 0 finished: 44 pages, 73.6% efficiency, 1731.66s processing, 620.73s waiting
+Worker 2 finished: 21 pages, 79.7% efficiency, 1890.62s processing, 481.88s waiting
+Progress: 627 entities read, 0.5 entities/sec, queue: 7/150
+Worker 0 finished: 164 pages, 66.8% efficiency, 1597.42s processing, 794.65s waiting
+Worker 1 finished: 200 pages, 69.8% efficiency, 1672.67s processing, 724.70s waiting
+Worker 1 finished: 42 pages, 73.3% efficiency, 1782.47s processing, 650.70s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2433.4s
+Total entities processed: 107
+Average processing rate: 0.04 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p1331p1461.bz2 in 2433.27 seconds, 2.31 GB, 107 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p5245p7050.bz2
+Worker 2 finished: 156 pages, 66.8% efficiency, 1612.10s processing, 800.01s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2412.9s
+Total entities processed: 520
+Average processing rate: 0.22 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p1462p2110.bz2 in 2412.55 seconds, 1.72 GB, 520 entities
+Revision 296718361 of entity 4391 cleaned the entity
+The revision 296718364 of entity 4391 is a redirect
+Worker 2 finished: 244 pages, 67.7% efficiency, 1608.89s processing, 765.91s waiting
+Worker 0 finished: 301 pages, 67.5% efficiency, 1603.45s processing, 773.57s waiting
+Worker 1 finished: 317 pages, 64.7% efficiency, 1542.28s processing, 842.58s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2387.9s
+Total entities processed: 862
+Average processing rate: 0.36 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p2111p3493.bz2 in 2385.59 seconds, 1.70 GB, 862 entities
+Revision 1511106213 of entity 4647 cleaned the entity
+The revision 1511106216 of entity 4647 is a redirect
+The revision 2135921201 of entity 4647 is a redirect
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Revision 441049100 of entity 4975 cleaned the entity
+Progress: 1188 entities read, 0.6 entities/sec, queue: 1/150
+Added worker 5 due to queue size, total workers: 6
+Progress: 703 entities read, 1.2 entities/sec, queue: 1/150
+Revision 1952913271 of entity 5120 cleaned the entity
+The revision 1952913273 of entity 5120 is a redirect
+Revision 1927259740 of entity 5409 cleaned the entity
+The revision 1927259744 of entity 5409 is a redirect
+Worker 2 finished: 557 pages, 71.2% efficiency, 1744.08s processing, 705.07s waiting
+Worker 1 finished: 569 pages, 71.6% efficiency, 1754.60s processing, 695.62s waiting
+Worker 0 finished: 519 pages, 72.9% efficiency, 1787.11s processing, 664.01s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2451.8s
+Total entities processed: 1645
+Average processing rate: 0.67 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p3494p5244.bz2 in 2451.19 seconds, 1.37 GB, 1645 entities
+Progress: 1072 entities read, 0.9 entities/sec, queue: 1/150
+Revision 697604336 of entity 5641 cleaned the entity
+The revision 699720952 of entity 5641 is a redirect
+Progress: 1275 entities read, 0.7 entities/sec, queue: 1/150
+Progress: 1545 entities read, 0.6 entities/sec, queue: 1/150
+Worker 1 finished: 312 pages, 48.4% efficiency, 1162.12s processing, 1239.85s waiting
+Worker 4 finished: 168 pages, 43.0% efficiency, 826.83s processing, 1094.53s waiting
+Worker 2 finished: 336 pages, 43.7% efficiency, 1050.34s processing, 1352.32s waiting
+Worker 3 finished: 187 pages, 40.7% efficiency, 781.95s processing, 1140.69s waiting
+Worker 0 finished: 358 pages, 48.3% efficiency, 1161.51s processing, 1242.17s waiting
+Worker 5 finished: 185 pages, 39.9% efficiency, 772.78s processing, 1161.87s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2416.0s
+Total entities processed: 1546
+Average processing rate: 0.64 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p5245p7050.bz2 in 2415.79 seconds, 1.66 GB, 1546 entities
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1p154.bz2 (3.58 GB, 40 entities) in 3259.9078118801117 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p155p284.bz2 (3.61 GB, 97 entities) in 3847.1323494911194 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p285p366.bz2 (3.46 GB, 75 entities) in 3617.1158154010773 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p367p411.bz2 (2.71 GB, 34 entities) in 2423.6277043819427 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p412p461.bz2 (3.00 GB, 25 entities) in 2205.2453846931458 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p462p703.bz2 (2.43 GB, 171 entities) in 2787.989116668701 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p704p1002.bz2 (2.73 GB, 232 entities) in 3761.3592352867126 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1003p1106.bz2 (2.42 GB, 90 entities) in 3564.6118421554565 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1107p1209.bz2 (2.70 GB, 91 entities) in 2843.402102470398 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1210p1330.bz2 (2.37 GB, 113 entities) in 2493.470737218857 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1331p1461.bz2 (2.31 GB, 107 entities) in 2433.265014410019 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p1462p2110.bz2 (1.72 GB, 520 entities) in 2412.5496690273285 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p2111p3493.bz2 (1.70 GB, 862 entities) in 2385.590062856674 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p3494p5244.bz2 (1.37 GB, 1645 entities) in 2451.1858570575714 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p5245p7050.bz2 (1.66 GB, 1546 entities) in 2415.791520357132 seconds
+Processed 15 new files this batch. Accumulated: 15 / 30
+Batch finished — restarting...
+Starting a new batch at Sat Oct 18 12:42:44 CEST 2025
+PID: 23754
+Found 15 files that have already been processed
+Creating DB schema from /home/carolina.cortes/wikidata-edit-history/change_schema.sql...
+Found 2110 unprocessed .bz2 files in ../../../san2/data/wikidata-history-dumps, processing up to 15 files with 4 workers in parallel.
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p7051p8649.bz2
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p8650p10215.bz2
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p11795p13802.bz2
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p10216p11794.bz2
+Revision 247346210 of entity 9005 cleaned the entity
+The revision 247346212 of entity 9005 is a redirect
+Revision 157854579 of entity 7545 cleaned the entity
+Revision 721289554 of entity 7593 cleaned the entity
+The revision 721289558 of entity 7593 is a redirect
+Progress: 643 entities read, 1.1 entities/sec, queue: 1/150
+Progress: 518 entities read, 0.9 entities/sec, queue: 94/150
+Progress: 387 entities read, 0.6 entities/sec, queue: 5/150
+Progress: 314 entities read, 0.5 entities/sec, queue: 1/150
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Revision 704579680 of entity 7813 cleaned the entity
+The revision 704579687 of entity 7813 is a redirect
+Revision 704639626 of entity 7813 cleaned the entity
+Revision 528501124 of entity 11066 cleaned the entity
+Revision 270084537 of entity 11173 cleaned the entity
+The revision 270084539 of entity 11173 is a redirect
+Revision 2314879349 of entity 11168 cleaned the entity
+Revision 1510711620 of entity 11202 cleaned the entity
+The revision 1510711623 of entity 11202 is a redirect
+Revision 1894307581 of entity 9391 cleaned the entity
+The revision 1894307586 of entity 9391 is a redirect
+Revision 942411722 of entity 6825 cleaned the entity
+The revision 942411738 of entity 6825 is a redirect
+Revision 528501195 of entity 11477 cleaned the entity
+Added worker 5 due to queue size, total workers: 6
+Progress: 1038 entities read, 0.9 entities/sec, queue: 1/150
+Progress: 1140 entities read, 0.9 entities/sec, queue: 21/150
+Progress: 681 entities read, 0.6 entities/sec, queue: 17/150
+Progress: 638 entities read, 0.5 entities/sec, queue: 4/150
+Revision 528501039 of entity 8163 cleaned the entity
+Revision 528501105 of entity 8166 cleaned the entity
+Revision 528501087 of entity 8173 cleaned the entity
+Revision 528501066 of entity 8176 cleaned the entity
+Revision 357781396 of entity 11853 cleaned the entity
+The revision 357781398 of entity 11853 is a redirect
+Progress: 1526 entities read, 0.8 entities/sec, queue: 17/150
+Progress: 1183 entities read, 0.7 entities/sec, queue: 1/150
+Progress: 1281 entities read, 0.7 entities/sec, queue: 1/150
+Progress: 937 entities read, 0.5 entities/sec, queue: 57/150
+Revision 1215834026 of entity 7313 cleaned the entity
+The revision 1215834040 of entity 7313 is a redirect
+Revision 1172469267 of entity 8715 cleaned the entity
+The revision 1172469272 of entity 8715 is a redirect
+Added worker 3 due to queue size, total workers: 4
+Worker 0 finished: 508 pages, 82.3% efficiency, 1978.00s processing, 426.79s waiting
+Worker 3 finished: 51 pages, 98.5% efficiency, 118.62s processing, 1.75s waiting
+Worker 1 finished: 394 pages, 81.1% efficiency, 1951.45s processing, 455.07s waiting
+Worker 4 finished: 47 pages, 98.7% efficiency, 119.13s processing, 1.51s waiting
+Worker 2 finished: 482 pages, 82.7% efficiency, 1991.50s processing, 415.46s waiting
+Added worker 4 due to queue size, total workers: 5
+
+=== FINAL STATISTICS ===
+Total runtime: 2407.0s
+Total entities processed: 1482
+Average processing rate: 0.62 entities/sec
+Workers used: 5
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p10216p11794.bz2 in 2407.03 seconds, 1.51 GB, 1482 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p13803p15595.bz2
+Revision 1145847222 of entity 12223 cleaned the entity
+The revision 1145847233 of entity 12223 is a redirect
+Worker 1 finished: 494 pages, 81.1% efficiency, 1953.42s processing, 455.96s waiting
+Worker 2 finished: 487 pages, 79.6% efficiency, 1920.24s processing, 491.42s waiting
+Worker 4 finished: 198 pages, 42.6% efficiency, 767.79s processing, 1034.41s waiting
+Worker 5 finished: 157 pages, 44.3% efficiency, 797.93s processing, 1003.75s waiting
+Worker 1 finished: 386 pages, 57.3% efficiency, 1385.27s processing, 1031.41s waiting
+Worker 0 finished: 277 pages, 46.7% efficiency, 1128.98s processing, 1288.59s waiting
+Worker 3 finished: 163 pages, 35.4% efficiency, 639.23s processing, 1164.62s waiting
+Worker 0 finished: 620 pages, 87.1% efficiency, 2107.99s processing, 312.55s waiting
+Worker 1 finished: 587 pages, 87.2% efficiency, 2112.95s processing, 309.05s waiting
+Worker 0 finished: 465 pages, 79.1% efficiency, 1928.53s processing, 508.36s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2437.0s
+Total entities processed: 1446
+Average processing rate: 0.59 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p8650p10215.bz2 in 2436.95 seconds, 1.57 GB, 1446 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p15596p17970.bz2
+Revision 1678275182 of entity 12287 cleaned the entity
+The revision 1678275190 of entity 12287 is a redirect
+Worker 2 finished: 275 pages, 51.2% efficiency, 1290.58s processing, 1231.46s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2522.1s
+Total entities processed: 1456
+Average processing rate: 0.58 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p7051p8649.bz2 in 2522.14 seconds, 1.52 GB, 1456 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p17971p21200.bz2
+Worker 2 finished: 606 pages, 88.1% efficiency, 2223.80s processing, 299.65s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2523.6s
+Total entities processed: 1813
+Average processing rate: 0.72 entities/sec
+Workers used: 3
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p11795p13802.bz2 in 2523.66 seconds, 1.26 GB, 1813 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p21201p25122.bz2
+Revision 1511225129 of entity 15828 cleaned the entity
+The revision 1511225132 of entity 15828 is a redirect
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Progress: 437 entities read, 0.7 entities/sec, queue: 4/150
+Progress: 250 entities read, 0.4 entities/sec, queue: 2/150
+Revision 358403 of entity 16101 cleaned the entity
+Progress: 512 entities read, 0.9 entities/sec, queue: 55/150
+Added worker 5 due to queue size, total workers: 6
+Progress: 746 entities read, 1.2 entities/sec, queue: 1/150
+Revision 1631986985 of entity 12695 cleaned the entity
+The revision 1631986988 of entity 12695 is a redirect
+Revision 937305428 of entity 19108 cleaned the entity
+The revision 937305434 of entity 19108 is a redirect
+Revision 708485432 of entity 19118 cleaned the entity
+The revision 708485436 of entity 19118 is a redirect
+Revision 1105320341 of entity 13994 cleaned the entity
+The revision 1112873817 of entity 13994 is a redirect
+Revision 1510736729 of entity 14024 cleaned the entity
+The revision 1510736732 of entity 14024 is a redirect
+Revision 1511092846 of entity 14033 cleaned the entity
+The revision 1511092848 of entity 14033 is a redirect
+Revision 528501152 of entity 14171 cleaned the entity
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Revision 187314720 of entity 16514 cleaned the entity
+The revision 187314725 of entity 16514 is a redirect
+Progress: 647 entities read, 0.5 entities/sec, queue: 27/150
+Revision 877384351 of entity 19670 cleaned the entity
+The revision 877384367 of entity 19670 is a redirect
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Added worker 5 due to queue size, total workers: 6
+Progress: 736 entities read, 0.6 entities/sec, queue: 111/150
+Revision 1510710784 of entity 14346 cleaned the entity
+The revision 1510710788 of entity 14346 is a redirect
+Revision 1535520992 of entity 14362 cleaned the entity
+The revision 1535520996 of entity 14362 is a redirect
+Revision 1576409235 of entity 14362 cleaned the entity
+Progress: 1538 entities read, 1.3 entities/sec, queue: 1/150
+Added worker 5 due to queue size, total workers: 6
+Progress: 904 entities read, 0.7 entities/sec, queue: 1/150
+Revision 1943480326 of entity 14545 cleaned the entity
+The revision 1943480330 of entity 14545 is a redirect
+Revision 698137596 of entity 12974 cleaned the entity
+The revision 698137599 of entity 12974 is a redirect
+Revision 528501173 of entity 14590 cleaned the entity
+Revision 357550439 of entity 20429 cleaned the entity
+The revision 357552126 of entity 20429 is a redirect
+Added worker 3 due to queue size, total workers: 4
+Progress: 1101 entities read, 0.6 entities/sec, queue: 80/150
+Progress: 1360 entities read, 0.8 entities/sec, queue: 24/150
+Revision 698156394 of entity 20873 cleaned the entity
+The revision 698156400 of entity 20873 is a redirect
+Progress: 2641 entities read, 1.5 entities/sec, queue: 47/150
+Revision 346515950 of entity 13383 cleaned the entity
+The revision 346515953 of entity 13383 is a redirect
+Progress: 1508 entities read, 0.8 entities/sec, queue: 1/150
+Revision 325132083 of entity 15172 cleaned the entity
+The revision 325132087 of entity 15172 is a redirect
+Revision 2329845845 of entity 21038 cleaned the entity
+The revision 2329845850 of entity 21038 is a redirect
+Revision 1149424821 of entity 15220 cleaned the entity
+The revision 1149424825 of entity 15220 is a redirect
+Revision 231698571 of entity 15237 cleaned the entity
+The revision 231705179 of entity 15237 is a redirect
+Revision 371797 of entity 17724 cleaned the entity
+Progress: 1406 entities read, 0.6 entities/sec, queue: 1/150
+Worker 2 finished: 368 pages, 84.6% efficiency, 2027.37s processing, 370.41s waiting
+Worker 0 finished: 452 pages, 84.2% efficiency, 2019.93s processing, 378.08s waiting
+Worker 3 finished: 249 pages, 74.6% efficiency, 898.26s processing, 306.09s waiting
+Worker 5 finished: 287 pages, 73.5% efficiency, 882.79s processing, 318.37s waiting
+Worker 1 finished: 358 pages, 87.8% efficiency, 2108.30s processing, 292.18s waiting
+Worker 4 finished: 240 pages, 75.4% efficiency, 909.50s processing, 296.73s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2402.3s
+Total entities processed: 1954
+Average processing rate: 0.81 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p15596p17970.bz2 in 2402.18 seconds, 1.33 GB, 1954 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p25123p28276.bz2
+Worker 2 finished: 418 pages, 85.5% efficiency, 2078.69s processing, 353.66s waiting
+Worker 1 finished: 416 pages, 84.0% efficiency, 2044.79s processing, 389.16s waiting
+Worker 3 finished: 162 pages, 77.0% efficiency, 708.28s processing, 211.35s waiting
+Worker 3 finished: 490 pages, 79.0% efficiency, 1717.44s processing, 456.81s waiting
+Worker 0 finished: 618 pages, 79.3% efficiency, 1903.19s processing, 496.25s waiting
+Worker 4 finished: 525 pages, 79.6% efficiency, 1730.59s processing, 443.79s waiting
+Worker 5 finished: 569 pages, 79.7% efficiency, 1733.78s processing, 441.15s waiting
+Worker 1 finished: 636 pages, 79.9% efficiency, 1918.17s processing, 483.07s waiting
+Worker 2 finished: 642 pages, 78.6% efficiency, 1888.55s processing, 513.36s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2402.0s
+Total entities processed: 3480
+Average processing rate: 1.45 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p21201p25122.bz2 in 2401.98 seconds, 1.14 GB, 3480 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p28277p30529.bz2
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Progress: 2526 entities read, 1.0 entities/sec, queue: 73/150
+Revision 190387800 of entity 24974 cleaned the entity
+The revision 190387805 of entity 24974 is a redirect
+Worker 5 finished: 352 pages, 74.0% efficiency, 1155.38s processing, 406.10s waiting
+Worker 1 finished: 557 pages, 80.4% efficiency, 2018.21s processing, 491.29s waiting
+Worker 2 finished: 555 pages, 83.3% efficiency, 2090.57s processing, 419.18s waiting
+Worker 0 finished: 461 pages, 86.1% efficiency, 2161.02s processing, 348.90s waiting
+Worker 3 finished: 287 pages, 70.7% efficiency, 1105.96s processing, 457.58s waiting
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Worker 4 finished: 315 pages, 72.9% efficiency, 1166.19s processing, 432.88s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2547.0s
+Total entities processed: 2527
+Average processing rate: 0.99 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p17971p21200.bz2 in 2546.94 seconds, 1.41 GB, 2527 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p30530p33924.bz2
+Revision 528501017 of entity 27228 cleaned the entity
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Worker 0 finished: 413 pages, 86.6% efficiency, 2504.15s processing, 386.72s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2891.2s
+Total entities processed: 1409
+Average processing rate: 0.49 entities/sec
+Workers used: 4
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p13803p15595.bz2 in 2891.12 seconds, 1.56 GB, 1409 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p33925p37667.bz2
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Added worker 5 due to queue size, total workers: 6
+Progress: 860 entities read, 1.4 entities/sec, queue: 41/150
+Revision 222023054 of entity 31315 cleaned the entity
+The revision 222023055 of entity 31315 is a redirect
+Revision 280369666 of entity 27721 cleaned the entity
+The revision 280369668 of entity 27721 is a redirect
+Added worker 5 due to queue size, total workers: 6
+Progress: 463 entities read, 0.8 entities/sec, queue: 1/150
+Revision 170335585 of entity 27777 cleaned the entity
+Revision 245657684 of entity 27801 cleaned the entity
+The revision 245657690 of entity 27801 is a redirect
+Added worker 5 due to queue size, total workers: 6
+Progress: 816 entities read, 1.4 entities/sec, queue: 1/150
+Revision 313138868 of entity 31693 cleaned the entity
+The revision 313138870 of entity 31693 is a redirect
+Revision 52620939 of entity 22759 cleaned the entity
+Revision 498173288 of entity 31831 cleaned the entity
+The revision 498173291 of entity 31831 is a redirect
+Added worker 5 due to queue size, total workers: 6
+Progress: 1229 entities read, 2.0 entities/sec, queue: 136/150
+Revision 624120426 of entity 23113 cleaned the entity
+The revision 624120429 of entity 23113 is a redirect
+Progress: 1489 entities read, 1.2 entities/sec, queue: 34/150
+Progress: 951 entities read, 0.8 entities/sec, queue: 39/150
+Revision 152464515 of entity 23411 cleaned the entity
+Revision 1106317137 of entity 28545 cleaned the entity
+The revision 1106317138 of entity 28545 is a redirect
+Progress: 1419 entities read, 1.2 entities/sec, queue: 25/150
+Revision 358632471 of entity 32941 cleaned the entity
+The revision 358632473 of entity 32941 is a redirect
+Revision 2086651973 of entity 33012 cleaned the entity
+The revision 2086651977 of entity 33012 is a redirect
+The revision 2089338339 of entity 33012 is a redirect
+Revision 2190551541 of entity 33012 cleaned the entity
+Revision 587227142 of entity 26104 cleaned the entity
+The revision 587227143 of entity 26104 is a redirect
+Revision 64598784 of entity 33104 cleaned the entity
+Revision 358632517 of entity 33101 cleaned the entity
+The revision 358632520 of entity 33101 is a redirect
+Revision 341151073 of entity 23540 cleaned the entity
+The revision 341151076 of entity 23540 is a redirect
+Revision 700547804 of entity 28775 cleaned the entity
+The revision 700547810 of entity 28775 is a redirect
+Revision 724143124 of entity 28791 cleaned the entity
+The revision 724143131 of entity 28791 is a redirect
+Progress: 2305 entities read, 1.9 entities/sec, queue: 123/150
+Revision 2171217505 of entity 23589 cleaned the entity
+The revision 2171217512 of entity 23589 is a redirect
+Revision 744715624 of entity 26411 cleaned the entity
+The revision 744715634 of entity 26411 is a redirect
+Progress: 1823 entities read, 1.0 entities/sec, queue: 1/150
+Revision 699653805 of entity 29134 cleaned the entity
+The revision 699653807 of entity 29134 is a redirect
+Revision 169032608 of entity 26465 cleaned the entity
+The revision 169032611 of entity 26465 is a redirect
+Revision 257374914 of entity 29143 cleaned the entity
+The revision 257374920 of entity 29143 is a redirect
+The revision 296512598 of entity 29143 is a redirect
+Progress: 1622 entities read, 0.9 entities/sec, queue: 2/150
+Progress: 2266 entities read, 1.2 entities/sec, queue: 35/150
+Revision 586214575 of entity 24197 cleaned the entity
+The revision 586214577 of entity 24197 is a redirect
+Progress: 2840 entities read, 1.6 entities/sec, queue: 1/150
+Revision 842910452 of entity 30101 cleaned the entity
+The revision 844032109 of entity 30101 is a redirect
+Progress: 2628 entities read, 1.1 entities/sec, queue: 9/150
+Revision 417984 of entity 30365 cleaned the entity
+Revision 179656106 of entity 26995 cleaned the entity
+The revision 179656117 of entity 26995 is a redirect
+Revision 1888610540 of entity 26995 cleaned the entity
+Progress: 2143 entities read, 0.9 entities/sec, queue: 10/150
+Worker 3 finished: 352 pages, 74.0% efficiency, 1764.69s processing, 619.73s waiting
+Worker 2 finished: 361 pages, 75.7% efficiency, 1853.60s processing, 594.70s waiting
+Worker 0 finished: 361 pages, 74.4% efficiency, 1822.27s processing, 626.29s waiting
+Worker 1 finished: 371 pages, 75.5% efficiency, 1848.55s processing, 601.25s waiting
+Worker 4 finished: 383 pages, 75.3% efficiency, 1799.20s processing, 588.73s waiting
+Worker 5 finished: 362 pages, 78.2% efficiency, 1867.59s processing, 520.08s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2454.8s
+Total entities processed: 2190
+Average processing rate: 0.89 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p28277p30529.bz2 in 2454.75 seconds, 1.24 GB, 2190 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p37668p40447.bz2
+Progress: 3151 entities read, 1.3 entities/sec, queue: 7/150
+Worker 1 finished: 566 pages, 80.2% efficiency, 2154.93s processing, 530.86s waiting
+Worker 3 finished: 479 pages, 76.3% efficiency, 1883.31s processing, 583.91s waiting
+Worker 2 finished: 480 pages, 80.3% efficiency, 2158.13s processing, 528.73s waiting
+Worker 0 finished: 560 pages, 81.3% efficiency, 2199.52s processing, 505.60s waiting
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Worker 5 finished: 500 pages, 77.0% efficiency, 1916.18s processing, 573.06s waiting
+Worker 4 finished: 577 pages, 90.0% efficiency, 2177.26s processing, 243.08s waiting
+Worker 1 finished: 594 pages, 90.8% efficiency, 2340.87s processing, 238.29s waiting
+Worker 2 finished: 516 pages, 90.0% efficiency, 2323.65s processing, 258.20s waiting
+Worker 0 finished: 580 pages, 90.4% efficiency, 2343.84s processing, 247.51s waiting
+Worker 3 finished: 522 pages, 91.5% efficiency, 2234.19s processing, 206.88s waiting
+Worker 5 finished: 505 pages, 93.7% efficiency, 2288.65s processing, 154.33s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2602.0s
+Total entities processed: 3294
+Average processing rate: 1.27 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p30530p33924.bz2 in 2601.99 seconds, 1.18 GB, 3294 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p40448p43436.bz2
+Progress: 3331 entities read, 1.4 entities/sec, queue: 1/150
+Worker 4 finished: 419 pages, 76.8% efficiency, 2064.58s processing, 622.81s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2908.9s
+Total entities processed: 3004
+Average processing rate: 1.03 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p25123p28276.bz2 in 2908.87 seconds, 1.29 GB, 3004 entities
+Processing: /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p43437p45326.bz2
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Revision 588192821 of entity 35630 cleaned the entity
+The revision 588192822 of entity 35630 is a redirect
+Revision 426500 of entity 34773 cleaned the entity
+Added worker 5 due to queue size, total workers: 6
+Progress: 781 entities read, 1.3 entities/sec, queue: 25/150
+Revision 1437377584 of entity 41261 cleaned the entity
+The revision 1437377593 of entity 41261 is a redirect
+Worker 3 finished: 605 pages, 82.8% efficiency, 2280.76s processing, 473.20s waiting
+Worker 1 finished: 599 pages, 84.8% efficiency, 2406.54s processing, 432.53s waiting
+Worker 4 finished: 553 pages, 87.3% efficiency, 2404.36s processing, 349.99s waiting
+Worker 5 finished: 614 pages, 83.3% efficiency, 2291.45s processing, 459.27s waiting
+Worker 2 finished: 626 pages, 84.9% efficiency, 2413.39s processing, 428.25s waiting
+Worker 0 finished: 651 pages, 81.9% efficiency, 2329.34s processing, 513.25s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2842.8s
+Total entities processed: 3648
+Average processing rate: 1.28 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p33925p37667.bz2 in 2842.53 seconds, 1.28 GB, 3648 entities
+Revision 1978915871 of entity 38715 cleaned the entity
+The revision 1978915874 of entity 38715 is a redirect
+Added worker 5 due to queue size, total workers: 6
+Progress: 870 entities read, 1.4 entities/sec, queue: 130/150
+Revision 1374204574 of entity 38806 cleaned the entity
+The revision 1374204609 of entity 38806 is a redirect
+Progress: 369 entities read, 0.6 entities/sec, queue: 98/150
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, total workers: 5
+Revision 476624120 of entity 36330 cleaned the entity
+The revision 476624126 of entity 36330 is a redirect
+Revision 477000176 of entity 36330 cleaned the entity
+Progress: 1322 entities read, 1.1 entities/sec, queue: 14/150
+Revision 813721419 of entity 41590 cleaned the entity
+The revision 813721430 of entity 41590 is a redirect
+Revision 358632765 of entity 36506 cleaned the entity
+The revision 358632767 of entity 36506 is a redirect
+Revision 698155040 of entity 39599 cleaned the entity
+The revision 698155045 of entity 39599 is a redirect
+Revision 1510688354 of entity 36530 cleaned the entity
+The revision 1510688356 of entity 36530 is a redirect
+Progress: 1628 entities read, 1.4 entities/sec, queue: 28/150
+Revision 1312875679 of entity 36647 cleaned the entity
+The revision 1312875683 of entity 36647 is a redirect
+Revision 1846708016 of entity 39742 cleaned the entity
+The revision 1846708019 of entity 39742 is a redirect
+Added worker 5 due to queue size, total workers: 6
+Progress: 847 entities read, 0.7 entities/sec, queue: 48/150
+Revision 2195248752 of entity 42034 cleaned the entity
+The revision 2195248761 of entity 42034 is a redirect
+Revision 2195251197 of entity 42034 cleaned the entity
+Revision 260700797 of entity 36767 cleaned the entity
+The revision 260700802 of entity 36767 is a redirect
+Revision 1086908948 of entity 39798 cleaned the entity
+The revision 1086909008 of entity 39798 is a redirect
+Revision 142504329 of entity 39888 cleaned the entity
+Revision 1057924700 of entity 37044 cleaned the entity
+The revision 1057924706 of entity 37044 is a redirect
+Progress: 1924 entities read, 1.1 entities/sec, queue: 6/150
+Revision 1305396133 of entity 40089 cleaned the entity
+The revision 1305396136 of entity 40089 is a redirect
+Revision 1101357890 of entity 37226 cleaned the entity
+The revision 1101357902 of entity 37226 is a redirect
+Progress: 2186 entities read, 1.2 entities/sec, queue: 1/150
+Progress: 1288 entities read, 0.7 entities/sec, queue: 20/150
+Progress: 2638 entities read, 1.1 entities/sec, queue: 115/150
+Revision 1994795330 of entity 40694 cleaned the entity
+The revision 1994795335 of entity 40694 is a redirect
+Worker 1 finished: 479 pages, 84.8% efficiency, 2146.21s processing, 384.25s waiting
+Worker 0 finished: 444 pages, 85.1% efficiency, 2152.70s processing, 378.25s waiting
+Worker 3 finished: 450 pages, 84.5% efficiency, 1999.66s processing, 367.24s waiting
+Worker 2 finished: 471 pages, 85.7% efficiency, 2171.38s processing, 361.65s waiting
+Worker 5 finished: 407 pages, 84.9% efficiency, 2008.08s processing, 358.07s waiting
+Worker 4 finished: 461 pages, 86.3% efficiency, 2057.50s processing, 325.58s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2550.1s
+Total entities processed: 2712
+Average processing rate: 1.06 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p37668p40447.bz2 in 2550.05 seconds, 1.46 GB, 2712 entities
+Progress: 2739 entities read, 1.1 entities/sec, queue: 1/150
+Progress: 1820 entities read, 0.8 entities/sec, queue: 1/150
+Worker 0 finished: 413 pages, 86.9% efficiency, 2148.55s processing, 324.27s waiting
+Worker 1 finished: 395 pages, 85.4% efficiency, 2112.69s processing, 360.60s waiting
+Worker 3 finished: 211 pages, 86.2% efficiency, 1429.49s processing, 229.71s waiting
+Worker 5 finished: 267 pages, 81.5% efficiency, 1351.69s processing, 306.38s waiting
+Worker 4 finished: 235 pages, 81.9% efficiency, 1359.90s processing, 299.55s waiting
+Worker 2 finished: 351 pages, 85.5% efficiency, 2119.44s processing, 359.99s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2479.7s
+Total entities processed: 1872
+Average processing rate: 0.75 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p43437p45326.bz2 in 2479.55 seconds, 1.36 GB, 1872 entities
+Worker 2 finished: 515 pages, 87.6% efficiency, 2334.30s processing, 331.16s waiting
+Worker 0 finished: 517 pages, 88.5% efficiency, 2361.34s processing, 306.86s waiting
+Worker 5 finished: 472 pages, 86.9% efficiency, 2142.62s processing, 322.34s waiting
+Worker 1 finished: 533 pages, 87.7% efficiency, 2346.96s processing, 330.06s waiting
+Worker 3 finished: 486 pages, 87.4% efficiency, 2162.74s processing, 311.61s waiting
+Worker 4 finished: 430 pages, 88.8% efficiency, 2202.30s processing, 277.34s waiting
+
+=== FINAL STATISTICS ===
+Total runtime: 2684.4s
+Total entities processed: 2953
+Average processing rate: 1.10 entities/sec
+Workers used: 6
+Processed wikidatawiki-20250601-pages-meta-history1.xml-p40448p43436.bz2 in 2684.42 seconds, 1.36 GB, 2953 entities
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p7051p8649.bz2 (1.52 GB, 1456 entities) in 2522.1394197940826 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p8650p10215.bz2 (1.57 GB, 1446 entities) in 2436.945841550827 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p10216p11794.bz2 (1.51 GB, 1482 entities) in 2407.0251438617706 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p11795p13802.bz2 (1.26 GB, 1813 entities) in 2523.658121109009 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p13803p15595.bz2 (1.56 GB, 1409 entities) in 2891.1189663410187 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p15596p17970.bz2 (1.33 GB, 1954 entities) in 2402.184049129486 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p17971p21200.bz2 (1.41 GB, 2527 entities) in 2546.9431924819946 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p21201p25122.bz2 (1.14 GB, 3480 entities) in 2401.976829767227 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p25123p28276.bz2 (1.29 GB, 3004 entities) in 2908.866949081421 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p28277p30529.bz2 (1.24 GB, 2190 entities) in 2454.7460944652557 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p30530p33924.bz2 (1.18 GB, 3294 entities) in 2601.988081932068 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p33925p37667.bz2 (1.28 GB, 3648 entities) in 2842.5336604118347 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p37668p40447.bz2 (1.46 GB, 2712 entities) in 2550.0496487617493 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p40448p43436.bz2 (1.36 GB, 2953 entities) in 2684.4214260578156 seconds
+Finished processing /san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history1.xml-p43437p45326.bz2 (1.36 GB, 1872 entities) in 2479.5473749637604 seconds
+Processed 15 new files this batch. Accumulated: 30 / 30
+Finished. Processed 30 new files (total now: 30) at Sat Oct 18 15:35:22 CEST 2025
