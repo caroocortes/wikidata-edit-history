@@ -9,26 +9,16 @@ from const import PROPERTY_LABELS_PATH, ENTITY_LABEL_ALIAS_PATH, SUBCLASS_OF_PAT
 def copy_from_csv(conn, csv_file_path, table_name, columns, pk_cols):
     with conn.cursor() as cur:
 
-        cur.execute(f"SELECT COALESCE(MAX(id), 0) FROM {table_name};")
-        last_id = cur.fetchone()[0] or 0
-        print(f"Last inserted ID in table: {last_id}")
-
         cur.execute("SET synchronous_commit = OFF;")
         cols = ','.join(columns)
         with open(csv_file_path, 'r', encoding='utf-8') as f:
             next(f)  # skip header
-            # skip lines until last_id
-            for line in f:
-                if int(line.split(',')[0]) > last_id:
-                    # start copy from here
-                    buffer = io.StringIO(line + f.read())
-                    
-                    cur.copy_expert(f"""
-                        COPY {table_name} ({cols})
-                        FROM STDIN
-                        WITH (FORMAT csv, HEADER FALSE, QUOTE '"', ESCAPE '"');
-                    """, buffer)
-                    break
+            
+            cur.copy_expert(f"""
+                COPY {table_name} ({cols})
+                FROM STDIN
+                WITH (FORMAT csv, HEADER FALSE, QUOTE '"', ESCAPE '"');
+            """, f)
 
         conn.commit()
 
@@ -38,6 +28,7 @@ def copy_from_csv(conn, csv_file_path, table_name, columns, pk_cols):
         pk_cols_str = ','.join(pk_cols)
         cur.execute(f"ALTER TABLE {table_name} ADD PRIMARY KEY ({pk_cols_str});")
         conn.commit()
+        print('Finished copy from csv')
 
 def update_value_change_entity_labels(conn, table_name):
     """
@@ -204,7 +195,7 @@ if "__main__":
     update_value_change_entity_labels(conn, 'value_change_sample_30')
 
     # Update property label
-    update_property_label(conn, 'value_change_sample_30', 'property_id', 'property_label') 
+    # update_property_label(conn, 'value_change_sample_30', 'property_id', 'property_label') 
 
     # Update entity type
     load_entity_type(conn)
