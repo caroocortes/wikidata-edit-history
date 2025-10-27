@@ -189,10 +189,21 @@ def load_entity_type(conn):
     conn.commit()
 
     if not exists_p279:
-        copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id', 'class_label'], ['entity_id', 'class_id'], ',')
+        copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
 
     if not exists_p31:
-        copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id', 'class_label'], None, ',') # set to None so it doesn't create the PK again
+        copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
+
+    with conn.cursor() as cur:
+
+        cur.execute("""
+            ALTER TABLE entity_type_p279
+                    ADD COLUMN class_label VARCHAR DEFAULT NULL;
+            ALTER TABLE entity_type_p31
+                    ADD COLUMN class_label VARCHAR DEFAULT NULL; 
+        """)
+        
+    conn.commit()
 
     # # Update columns in entity_type table
     with conn.cursor() as cur:
