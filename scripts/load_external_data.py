@@ -37,9 +37,14 @@ def update_value_change_entity_labels(conn, table_name):
 
     with conn.cursor() as cur:
         cur.execute(f"CREATE TABLE IF NOT EXISTS entity_labels_aliases (id VARCHAR, label VARCHAR, alias VARCHAR);")
+        
+        cur.execute("SELECT COUNT(*) FROM entity_labels_aliases;")
+        count = cur.fetchone()[0]
+        
     conn.commit()
     
-    copy_from_csv(conn, ENTITY_LABEL_ALIAS_PATH, 'entity_labels_aliases', ['id', 'label', 'alias'], ['id'], ';')
+    if count == 0: # only load if there's no data
+        copy_from_csv(conn, ENTITY_LABEL_ALIAS_PATH, 'entity_labels_aliases', ['id', 'label', 'alias'], ['id'], ';')
 
     with conn.cursor() as cur:
         cur.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS new_value_label VARCHAR DEFAULT NULL;")
@@ -60,10 +65,11 @@ def update_value_change_entity_labels(conn, table_name):
             UPDATE {table_name} vc
             SET  
             --  if the label is empty, use the alias
-                CASE 
-                    WHEN el.label IS NOT NULL and el.label <> '' THEN new_value_label = el.label 
-                    ELSE new_value_label = el.alias 
-                END
+                new_value_label =
+                    CASE 
+                        WHEN el.label IS NOT NULL and el.label <> '' THEN  el.label 
+                        ELSE new_value_label = el.alias 
+                    END
             FROM entity_labels_aliases el
             WHERE
                 vc.new_value_label IS NULL AND -- only update the ones that don't have a label yet
@@ -75,15 +81,16 @@ def update_value_change_entity_labels(conn, table_name):
             UPDATE {table_name} vc
             SET 
             --  if the label is empty, use the alias
-                CASE 
-                    WHEN el.label IS NOT NULL and el.label <> '' THEN old_value_label = el.label
-                    ELSE new_value_label = el.alias 
-                END
+                old_value_label =
+                    CASE 
+                        WHEN el.label IS NOT NULL and el.label <> '' THEN el.label
+                        ELSE new_value_label = el.alias 
+                    END
             FROM entity_labels_aliases el
             WHERE 
                 vc.old_value_label IS NULL AND -- only update the ones that don't have a label yet
                 vc.old_value->>0 LIKE 'Q%' AND
-                vc.old_value->>0 = el.id
+                vc.old_value->>0 = el.id;
         """)
     conn.commit()
 
@@ -100,13 +107,17 @@ def update_property_label(conn, table_name, property_id_column, property_label_c
 
     with conn.cursor() as cur:
         cur.execute(f"CREATE TABLE IF NOT EXISTS property_labels (id VARCHAR, label VARCHAR);")
+        cur.execute("SELECT COUNT(*) FROM property_labels;")
+        count = cur.fetchone()[0]
+        
     conn.commit()
 
     with conn.cursor() as cur:
         cur.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {property_label_column} VARCHAR DEFAULT NULL;")
     conn.commit()
     
-    copy_from_csv(conn, PROPERTY_LABELS_PATH, 'property_labels', ['id', 'label'], ['id'], ',')
+    if count == 0:
+        copy_from_csv(conn, PROPERTY_LABELS_PATH, 'property_labels', ['id', 'label'], ['id'], ',')
 
     with conn.cursor() as cur:
         cur.execute(f"""
