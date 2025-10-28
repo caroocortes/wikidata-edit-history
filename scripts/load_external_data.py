@@ -212,7 +212,11 @@ def load_entity_type(conn):
             ON entity_type_p279 (class_id);
 
             UPDATE entity_type_p279 et
-            SET  class_label = el.label 
+            SET  class_label = 
+                    CASE 
+                        WHEN el.label IS NOT NULL and el.label <> '' THEN el.label
+                        ELSE el.alias 
+                    END
             FROM entity_labels_aliases el
             WHERE
                 et.class_label IS NULL  -- only update the ones that don't have a label yet
@@ -223,7 +227,11 @@ def load_entity_type(conn):
             ON entity_type_p31 (class_id);
 
             UPDATE entity_type_p31 et
-            SET  class_label = el.label 
+            SET  class_label = 
+                    CASE 
+                        WHEN el.label IS NOT NULL and el.label <> '' THEN el.label
+                        ELSE el.alias 
+                    END
             FROM entity_labels_aliases el
             WHERE
                 et.class_label IS NULL  -- only update the ones that don't have a label yet
