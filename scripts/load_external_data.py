@@ -198,9 +198,9 @@ def load_entity_type(conn):
 
         cur.execute("""
             ALTER TABLE entity_type_p279
-                    ADD COLUMN class_label VARCHAR DEFAULT NULL;
+                    ADD COLUMN IF NOT EXISTS class_label VARCHAR DEFAULT NULL;
             ALTER TABLE entity_type_p31
-                    ADD COLUMN class_label VARCHAR DEFAULT NULL; 
+                    ADD COLUMN IF NOT EXISTS class_label VARCHAR DEFAULT NULL; 
         """)
         
     conn.commit()
