@@ -1,13 +1,11 @@
 import psycopg2
 from dotenv import load_dotenv
 import os
-import csv
 
 from const import PROPERTY_LABELS_PATH, ENTITY_LABEL_ALIAS_PATH, SUBCLASS_OF_PATH, INSTANCE_OF_PATH
 
 def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimiter=','):
     temp_table = f"{table_name}_temp"
-
 
     with conn.cursor() as cur:
         cols_definition = ', '.join([f"{col} VARCHAR" for col in columns])
@@ -34,7 +32,7 @@ def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimi
     
     conn.commit()
 
-def update_value_change_entity_labels(conn, table_name):
+def update_entity_labels(conn, table_name):
     """
         Updates the column "old_value_label" and "new_value_label" in the "value_change", for values that refer to Q-ids
         Creates a table entity_labels from a csv file (csv_file_path) which contains a list of Q-ids, Labels for all entities in WD.
@@ -189,10 +187,10 @@ def load_entity_type(conn):
     conn.commit()
 
     if not exists_p279:
-        copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id'], ['entity_id', 'class_id'], ',')
+        copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id', 'rank'], ['entity_id', 'class_id'], ',')
 
     if not exists_p31:
-        copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id'], None, ',') # set to None so it doesn't create the PK again
+        copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id', 'rank'], None, ',') # set to None so it doesn't create the PK again
 
     with conn.cursor() as cur:
 
@@ -214,7 +212,7 @@ def load_entity_type(conn):
             UPDATE entity_type_p279 et
             SET  class_label = 
                     CASE 
-                        WHEN el.label IS NOT NULL and el.label <> '' THEN el.label
+                        WHEN (el.label IS NOT NULL and el.label <> '') THEN el.label
                         ELSE el.alias 
                     END
             FROM entity_labels_aliases el
@@ -229,7 +227,7 @@ def load_entity_type(conn):
             UPDATE entity_type_p31 et
             SET  class_label = 
                     CASE 
-                        WHEN el.label IS NOT NULL and el.label <> '' THEN el.label
+                        WHEN (el.label IS NOT NULL and el.label <> '') THEN el.label
                         ELSE el.alias 
                     END
             FROM entity_labels_aliases el
@@ -268,12 +266,23 @@ if "__main__":
     )
     
     # Update new_value_label + old_value_label
-    # update_value_change_entity_labels(conn, 'value_change_sample_30')
+    update_entity_labels(conn, 'value_change_sample_30')
+
+    # update_entity_labels(conn, 'reference_change')
+
+    # update_entity_labels(conn, 'qualifier_change')
 
     # Update property label
-    # update_property_label(conn, 'value_change_sample_30', 'property_id', 'property_label') 
+    update_property_label(conn, 'value_change_sample_30', 'property_id', 'property_label') 
 
-    # Update entity type
+    # update_property_label(conn, 'reference_change', 'property_id', 'property_label') 
+
+    # # Update qualifier property label + reference property label
+    # update_property_label(conn, 'reference_change', 'ref_property_id', 'ref_property_label') 
+
+    # update_property_label(conn, 'qualifier_change', 'qual_property_id', 'qual_property_label') 
+
+    # Load entity type
     load_entity_type(conn)
     
     conn.close() 
