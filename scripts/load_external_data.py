@@ -266,7 +266,7 @@ if "__main__":
     )
     
     # Update new_value_label + old_value_label
-    update_entity_labels(conn, 'value_change_sample_30')
+    # update_entity_labels(conn, 'value_change_sample_30')
 
     # update_entity_labels(conn, 'reference_change')
 
