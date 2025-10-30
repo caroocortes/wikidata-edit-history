@@ -4,7 +4,7 @@ import os
 
 from const import PROPERTY_LABELS_PATH, ENTITY_LABEL_ALIAS_PATH, SUBCLASS_OF_PATH, INSTANCE_OF_PATH
 
-def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimiter=','):
+def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimiter=';'):
     temp_table = f"{table_name}_temp"
 
     with conn.cursor() as cur:
@@ -13,7 +13,7 @@ def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimi
         
         cols = ','.join(columns)
         with open(csv_file_path, 'r', encoding='utf-8') as f:
-            next(f)  # skip header
+            # next(f)  # skip header
             cur.copy_expert(f"""
                 COPY {temp_table} ({cols})
                 FROM STDIN
@@ -131,7 +131,7 @@ def update_property_label(conn, table_name, property_id_column, property_label_c
     conn.commit()
     
     if not exists:
-        copy_from_csv(conn, PROPERTY_LABELS_PATH, 'property_labels', ['id', 'label'], ['id'], ',')
+        copy_from_csv(conn, PROPERTY_LABELS_PATH, 'property_labels', ['id', 'label'], ['id'], ';')
 
     with conn.cursor() as cur:
         cur.execute(f"""
@@ -187,10 +187,10 @@ def load_entity_type(conn):
     conn.commit()
 
     if not exists_p279:
-        copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id', 'rank'], ['entity_id', 'class_id'], ',')
+        copy_from_csv(conn, SUBCLASS_OF_PATH, 'entity_type_p279', ['entity_id', 'class_id', 'rank'], ['entity_id', 'class_id'], ';')
 
     if not exists_p31:
-        copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id', 'rank'], None, ',') # set to None so it doesn't create the PK again
+        copy_from_csv(conn, INSTANCE_OF_PATH, 'entity_type_p31', ['entity_id', 'class_id', 'rank'], None, ';') # set to None so it doesn't create the PK again
 
     with conn.cursor() as cur:
 
