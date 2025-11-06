@@ -149,7 +149,7 @@ def update_property_label(conn, table_name, property_id_column, property_label_c
             UPDATE {table_name} vc
             SET property_label = pl.label
             FROM property_labels pl
-            WHERE (vc.{property_label_column} IS NULL or vc.{property_label_column} = '') AND vc.{property_id_column} = pl.id;
+            WHERE (vc.{property_label_column} IS NULL or vc.{property_label_column} = '') AND 'P' || vc.property_id_column::VARCHAR = pl.id;
 
             UPDATE {table_name} vc
             SET property_label = 'label'
