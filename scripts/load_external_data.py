@@ -24,10 +24,20 @@ def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimi
         print(f"Loaded data into temp table. Removing duplicates...")
         
         cur.execute(f"CREATE TABLE IF NOT EXISTS {table_name} AS SELECT DISTINCT * FROM {temp_table};")
-        
+
         # add PK
         if primary_keys:
+            
             pk_cols_str = ', '.join(primary_keys)
+            # remove duplicates based on primary key columns
+            print("Removing duplicates...")
+            cur.execute(f"""
+                DELETE FROM {table_name} a
+                USING {table_name} b
+                WHERE a.ctid < b.ctid
+                AND {' AND '.join([f'a.{col} = b.{col}' for col in primary_keys])};
+            """)
+
             print("Adding PK")
             cur.execute(f"ALTER TABLE {table_name} ADD PRIMARY KEY ({pk_cols_str});")
     
@@ -272,7 +282,7 @@ if "__main__":
     # update_entity_labels(conn, 'qualifier_change')
 
     # Update property label
-    update_property_label(conn, 'value_change', 'property_id', 'property_label') 
+    # update_property_label(conn, 'value_change', 'property_id', 'property_label') 
     # update_property_label(conn, 'reference_change', 'property_id', 'property_label') 
     # update_property_label(conn, 'qualifier_change', 'property_id', 'property_label') 
 
