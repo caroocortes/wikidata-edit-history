@@ -4,6 +4,28 @@ import os
 
 from const import PROPERTY_LABELS_PATH, ENTITY_LABEL_ALIAS_PATH, SUBCLASS_OF_PATH, INSTANCE_OF_PATH
 
+import csv
+
+def preprocess_csv(input_file, output_file, delimiter=';'):
+    """
+    Read CSV with mixed quotes and write with standardized double quotes
+    """
+    with open(input_file, 'r', encoding='utf-8') as infile, \
+         open(output_file, 'w', encoding='utf-8', newline='') as outfile:
+        
+        # Read with Python's csv module (handles mixed quotes)
+        reader = csv.reader(infile, delimiter=delimiter)
+        
+        # Write with standard double quotes
+        writer = csv.writer(outfile, delimiter=delimiter, quotechar='"', 
+                          quoting=csv.QUOTE_MINIMAL)
+        
+        for row in reader:
+            writer.writerow(row)
+    
+    print(f"Preprocessed CSV saved to {output_file}")
+
+
 def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimiter=';'):
     temp_table = f"{table_name}_temp"
 
@@ -14,11 +36,11 @@ def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimi
         
         cols = ','.join(columns)
         with open(csv_file_path, 'r', encoding='utf-8') as f:
-            next(f)  # skip header
+            # next(f)  # skip header
             cur.copy_expert(f"""
                 COPY {temp_table} ({cols})
                 FROM STDIN
-                WITH (FORMAT csv, HEADER FALSE, DELIMITER '{delimiter}', QUOTE '''');
+                WITH (FORMAT csv, HEADER FALSE, DELIMITER '{delimiter}', QUOTE '"');
             """, f)
         
         print(f"Loaded data into temp table. Removing duplicates...")
@@ -110,6 +132,28 @@ def update_entity_labels(conn, table_name):
                 (vc.old_value_label IS NULL or vc.old_value_label = '') AND -- only update the ones that don't have a label yet
                 vc.old_value->>0 LIKE 'Q%' AND
                 vc.old_value->>0 = el.id;
+        """)
+    conn.commit()
+
+    #Add update fro redirected entities
+    with conn.cursor() as cur:
+        cur.execute(f"""
+            INSERT INTO entity_labels_aliases (id, label, alias)
+            SELECT DISTINCT
+                r.entity_id as entity_id,  -- redirected Q-id
+                ela.label,
+                ela.alias
+            FROM revision r
+            -- target Q-id (second Q-id from comment)
+            CROSS JOIN LATERAL (
+                SELECT REGEXP_REPLACE(SPLIT_PART(r.comment, '|', 4), '[^Q0-9]', '', 'g') as target_qid
+            ) extracted
+            -- label + alias from target entity
+            JOIN entity_labels_aliases ela 
+                ON ela.id = extracted.target_qid
+            WHERE r.redirect = TRUE
+            -- for duplicates
+            ON CONFLICT (id) DO NOTHING;  
         """)
     conn.commit()
 
