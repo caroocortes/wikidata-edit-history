@@ -95,6 +95,28 @@ def update_entity_labels(conn, table_name):
         cur.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS old_value_label VARCHAR DEFAULT NULL;")
     conn.commit()
 
+    #Add update fro redirected entities
+    with conn.cursor() as cur:
+        cur.execute(f"""
+            INSERT INTO entity_labels_aliases (id, label, alias)
+            SELECT DISTINCT
+                r.entity_id as entity_id,  -- redirected Q-id
+                ela.label,
+                ela.alias
+            FROM revision r
+            -- target Q-id (second Q-id from comment)
+            CROSS JOIN LATERAL (
+                SELECT REGEXP_REPLACE(SPLIT_PART(r.comment, '|', 4), '[^Q0-9]', '', 'g') as target_qid
+            ) extracted
+            -- label + alias from target entity
+            JOIN entity_labels_aliases ela 
+                ON ela.id = extracted.target_qid
+            WHERE r.redirect = TRUE
+            -- for duplicates
+            ON CONFLICT (id) DO NOTHING;  
+        """)
+    conn.commit()
+
     # # Update columns in change table
     with conn.cursor() as cur:
         cur.execute(f"""
@@ -132,28 +154,6 @@ def update_entity_labels(conn, table_name):
                 (vc.old_value_label IS NULL or vc.old_value_label = '') AND -- only update the ones that don't have a label yet
                 vc.old_value->>0 LIKE 'Q%' AND
                 vc.old_value->>0 = el.id;
-        """)
-    conn.commit()
-
-    #Add update fro redirected entities
-    with conn.cursor() as cur:
-        cur.execute(f"""
-            INSERT INTO entity_labels_aliases (id, label, alias)
-            SELECT DISTINCT
-                r.entity_id as entity_id,  -- redirected Q-id
-                ela.label,
-                ela.alias
-            FROM revision r
-            -- target Q-id (second Q-id from comment)
-            CROSS JOIN LATERAL (
-                SELECT REGEXP_REPLACE(SPLIT_PART(r.comment, '|', 4), '[^Q0-9]', '', 'g') as target_qid
-            ) extracted
-            -- label + alias from target entity
-            JOIN entity_labels_aliases ela 
-                ON ela.id = extracted.target_qid
-            WHERE r.redirect = TRUE
-            -- for duplicates
-            ON CONFLICT (id) DO NOTHING;  
         """)
     conn.commit()
 
