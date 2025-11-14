@@ -1,13 +1,8 @@
-import xml.sax
 import sys
 import multiprocessing as mp
 import time
 import queue
 from lxml import etree
-import os
-import psutil
-import threading
-from collections import deque
 
 from scripts.page_parser import PageParser
 from scripts.const import *

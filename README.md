@@ -199,9 +199,12 @@ This class processes a latest-all.json.bz2 dump from WD and creates the followin
     </plugins>
 </build>
 ```
+- Set the value of the variable PATH_TO_EXTRA_DATA in the .env file to the desired path
 - Run the extraction with Maven inside `wdtk-examples/`:
 ```bash
 mvn clean
 mvn package
 nohup java -jar target/NAME_OF_JAR.jar > dump_extract_output.log 2>&1 &
 ```
+
+Run `python3 ./scripts/load_external_data.py` to load the data into the DB.
