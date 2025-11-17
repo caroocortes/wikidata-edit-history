@@ -65,43 +65,51 @@ public class ExtractExtraData {
 
                 // Aliases (en)
                 List<MonolingualTextValue> aliases = item.getAliases().get("en");
+                String alias = "";
                 if (aliases != null && !aliases.isEmpty()) {
-                    MonolingualTextValue firstAlias = aliases.get(0);
-                    // Save label + alias to same file
-                    try (FileWriter fw = new FileWriter(labelsFile, true)) {
-                        fw.write(qid + "," + label + "," + firstAlias.getText().replace(",", " ") + "\n");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    alias = aliases.get(0).getText().replace(";", " ");
+                }
+
+                // Write label and alias 
+                try (FileWriter fw = new FileWriter(labelsFile, true)) {
+                    fw.write(qid + ";" + label.replace(";", " ") + ";" + alias + "\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
                 // P31 (instance of)
                 item.getStatementGroups().stream()
-                .filter(sg -> "P31".equals(sg.getProperty().getId()))
-                .flatMap(sg -> sg.getStatements().stream())
-                .map(st -> st.getValue())
-                .filter(value -> value instanceof EntityIdValue)
-                .map(value -> ((EntityIdValue) value).getId())
-                .forEach(p31Id -> {
-                    try (FileWriter fw = new FileWriter(p31File, true)) {
-                        fw.write(qid + "," + p31Id + "\n");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
+                    .filter(sg -> "P31".equals(sg.getProperty().getId()))
+                    .flatMap(sg -> sg.getStatements().stream())
+                    .forEach(statement -> {
+                        Value value = statement.getValue();
+                        if (value instanceof EntityIdValue) {
+                            String p31Id = ((EntityIdValue) value).getId();
+                            String rank = statement.getRank().toString(); // NORMAL, PREFERRED, or DEPRECATED
+                            
+                            try (FileWriter fw = new FileWriter(p31File, true)) {
+                                fw.write(qid + ";" + p31Id + ";" + rank + "\n");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
 
-                // P279 (subclass of)
-                item.getStatementGroups().stream()
+            // P279 (subclass of) 
+            item.getStatementGroups().stream()
                 .filter(sg -> "P279".equals(sg.getProperty().getId()))
                 .flatMap(sg -> sg.getStatements().stream())
-                .map(st -> st.getValue())
-                .filter(value -> value instanceof EntityIdValue)
-                .map(value -> ((EntityIdValue) value).getId())
-                .forEach(p279Id -> {
-                    try (FileWriter fw = new FileWriter(p279File, true)) {
-                        fw.write(qid + "," + p279Id + "\n");
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                .forEach(statement -> {
+                    Value value = statement.getValue();
+                    if (value instanceof EntityIdValue) {
+                        String p279Id = ((EntityIdValue) value).getId();
+                        String rank = statement.getRank().toString(); // NORMAL, PREFERRED, or DEPRECATED
+                        
+                        try (FileWriter fw = new FileWriter(p279File, true)) {
+                            fw.write(qid + ";" + p279Id + ";" + rank + "\n");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
 
@@ -125,7 +133,7 @@ public class ExtractExtraData {
                 
                 // Write to file
                 try (FileWriter fw = new FileWriter(propertyLabelsFile, true)) {
-                    fw.write(pid + "," + label.replace(",", " ") + "\n");
+                    fw.write(pid + ";" + label.replace(";", " ") + "\n");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
