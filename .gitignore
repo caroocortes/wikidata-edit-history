@@ -8,3 +8,8 @@ scripts/__pycache__/*
 *.pyd
 .env
 .DS_STORE
+logs/*
+!logs/processed_files.txt
+!logs/parser_log_files.json
+!logs/dowload.log
+!logs/nohup_output_log.log

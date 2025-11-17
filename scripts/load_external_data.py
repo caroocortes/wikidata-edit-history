@@ -1,47 +1,77 @@
 import psycopg2
 from dotenv import load_dotenv
 import os
+import csv
+import tempfile
 
 from const import PROPERTY_LABELS_PATH, ENTITY_LABEL_ALIAS_PATH, SUBCLASS_OF_PATH, INSTANCE_OF_PATH
 
 def copy_from_csv(conn, csv_file_path, table_name, columns, primary_keys, delimiter=';'):
     temp_table = f"{table_name}_temp"
 
-
-    with conn.cursor() as cur:
-        cols_definition = ', '.join([f"{col} VARCHAR" for col in columns])
-        cur.execute(f"CREATE TEMP TABLE {temp_table} ({cols_definition});")
-        
-        cols = ','.join(columns)
-        with open(csv_file_path, 'r', encoding='utf-8') as f:
-            next(f)  # skip header
-            cur.copy_expert(f"""
-                COPY {temp_table} ({cols})
-                FROM STDIN
-                WITH (FORMAT csv, HEADER FALSE, DELIMITER '{delimiter}', QUOTE '''');
-            """, f)
-        
-        print(f"Loaded data into temp table. Removing duplicates...")
-        
-        cur.execute(f"CREATE TABLE IF NOT EXISTS {table_name} AS SELECT DISTINCT * FROM {temp_table};")
-
-        # add PK
-        if primary_keys:
-            
-            pk_cols_str = ', '.join(primary_keys)
-            # remove duplicates based on primary key columns
-            print("Removing duplicates...")
-            cur.execute(f"""
-                DELETE FROM {table_name} a
-                USING {table_name} b
-                WHERE a.ctid < b.ctid
-                AND {' AND '.join([f'a.{col} = b.{col}' for col in primary_keys])};
-            """)
-
-            print("Adding PK")
-            cur.execute(f"ALTER TABLE {table_name} ADD PRIMARY KEY ({pk_cols_str});")
+    print("Preprocessing CSV file (standardize quotes '\")", flush=True)
+    temp_csv_fd, temp_csv_path = tempfile.mkstemp(suffix='.csv', text=True)
     
-    conn.commit()
+    try:
+        # Preprocess: standardize the CSV format
+        with open(csv_file_path, 'r', encoding='utf-8') as infile, \
+             os.fdopen(temp_csv_fd, 'w', encoding='utf-8', newline='') as outfile:
+            
+            # Read with Python's intelligent CSV parser
+            reader = csv.reader(infile, delimiter=delimiter)
+            
+            # Write with proper escaping - QUOTE_ALL ensures all fields are quoted
+            # and internal quotes are properly escaped as ""
+            writer = csv.writer(outfile, delimiter=delimiter, 
+                              quotechar='"', 
+                              quoting=csv.QUOTE_ALL,  # Quote everything
+                              doublequote=True)  # Escape " as ""
+            
+            next(reader)  # Skip header in input
+            for row in reader:
+                writer.writerow(row)
+        
+        print("CSV preprocessing complete. Loading into database...", flush=True)
+        
+
+        with conn.cursor() as cur:
+            cols_definition = ', '.join([f"{col} VARCHAR" for col in columns])
+            cur.execute(f"CREATE TEMP TABLE {temp_table} ({cols_definition});")
+            
+            cols = ','.join(columns)
+            with open(temp_csv_path, 'r', encoding='utf-8') as f:
+                next(f)  # skip header
+                cur.copy_expert(f"""
+                    COPY {temp_table} ({cols})
+                    FROM STDIN
+                    WITH (FORMAT csv, HEADER FALSE, DELIMITER '{delimiter}', QUOTE '"');
+                """, f)
+            
+            print(f"Loaded data into temp table. Removing duplicates...", flush=True)
+            
+            cur.execute(f"CREATE TABLE IF NOT EXISTS {table_name} AS SELECT DISTINCT * FROM {temp_table};")
+
+            # add PK
+            if primary_keys:
+                
+                pk_cols_str = ', '.join(primary_keys)
+                # remove duplicates based on primary key columns
+                print("Removing duplicates...")
+                cur.execute(f"""
+                    DELETE FROM {table_name} a
+                    USING {table_name} b
+                    WHERE a.ctid < b.ctid
+                    AND {' AND '.join([f'a.{col} = b.{col}' for col in primary_keys])};
+                """)
+
+                print("Adding PK")
+                cur.execute(f"ALTER TABLE {table_name} ADD PRIMARY KEY ({pk_cols_str});")
+        
+        conn.commit()
+    
+    finally:
+        if os.path.exists(temp_csv_path):
+            os.unlink(temp_csv_path)
 
 def update_entity_labels(conn, table_name):
     """
@@ -277,18 +307,18 @@ if "__main__":
     )
     
     # Update new_value_label + old_value_label
-    # update_entity_labels(conn, 'value_change')
-    # update_entity_labels(conn, 'reference_change')
-    # update_entity_labels(conn, 'qualifier_change')
+    update_entity_labels(conn, 'value_change')
+    update_entity_labels(conn, 'reference_change')
+    update_entity_labels(conn, 'qualifier_change')
 
     # Update property label
-    # update_property_label(conn, 'value_change', 'property_id', 'property_label') 
-    # update_property_label(conn, 'reference_change', 'property_id', 'property_label') 
-    # update_property_label(conn, 'qualifier_change', 'property_id', 'property_label') 
+    update_property_label(conn, 'value_change', 'property_id', 'property_label') 
+    update_property_label(conn, 'reference_change', 'property_id', 'property_label') 
+    update_property_label(conn, 'qualifier_change', 'property_id', 'property_label') 
 
     # Update qualifier property label + reference property label
-    # update_property_label(conn, 'reference_change', 'ref_property_id', 'ref_property_label') 
-    # update_property_label(conn, 'qualifier_change', 'qual_property_id', 'qual_property_label') 
+    update_property_label(conn, 'reference_change', 'ref_property_id', 'ref_property_label') 
+    update_property_label(conn, 'qualifier_change', 'qual_property_id', 'qual_property_label') 
 
     # Load entity type
     load_entity_type(conn)
