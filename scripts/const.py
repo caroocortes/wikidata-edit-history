@@ -1,6 +1,13 @@
-WIKIDATA_SERVICE_URL = "https://dumps.wikimedia.org/wikidatawiki/20250601/"
+from dotenv import load_dotenv
+from pathlib import Path
+import os
 
-PATH_TO_EXTRA_DATA = '../../../san2/data/wdtk-output'
+dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path)
+
+PATH_TO_EXTRA_DATA = os.environ.get("PATH_TO_EXTRA_DATA")
+
+WIKIDATA_SERVICE_URL = "https://dumps.wikimedia.org/wikidatawiki/20250601/"
 
 # Paths
 DOWNLOAD_LINKS_FILE_PATH = 'data/xml_download_links.txt'
