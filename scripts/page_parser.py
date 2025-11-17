@@ -1115,10 +1115,10 @@ class PageParser():
                         )
 
                 # qualifier changes
-                _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                _ = self._handle_qualifier_changes(property_id, value_id, prev_stmt=None, curr_stmt=stmt)
 
                 # references changes
-                _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                _ = self._handle_reference_changes(property_id, value_id, prev_stmt=None, curr_stmt=stmt)
 
         # If there's no description or label, the revisions shows them as []
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
@@ -1188,10 +1188,10 @@ class PageParser():
                         )
 
                 # qualifier changes
-                _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                _ = self._handle_qualifier_changes(property_id, value_id, prev_stmt=None, curr_stmt=stmt)
 
                 # references changes
-                _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                _ = self._handle_reference_changes(property_id, value_id, prev_stmt=None, curr_stmt=stmt)
 
         # If there's no description or label, the revisions shows them as []
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
