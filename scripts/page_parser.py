@@ -1667,10 +1667,11 @@ class PageParser():
                     }
 
                     # decode content inside <text></text>
-                    revision_text = (revision_text_elem.text).strip()
-                    current_revision = self._parse_json_revision(rev_elem, revision_text)
+                    if revision_text_elem.text:
+                        revision_text = (revision_text_elem.text).strip()
+                        current_revision = self._parse_json_revision(rev_elem, revision_text)
                     
-                    if current_revision is None:
+                    if current_revision is None or revision_text_elem.text is None:
                         # The json parsing for the revision text failed.
                         change = False
                     else:
