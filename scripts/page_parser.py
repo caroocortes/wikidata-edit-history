@@ -1546,7 +1546,6 @@ class PageParser():
 
             if 'redirect' in current_revision:
                 self.current_revision_redirect = True
-                print(f'The revision {self.revision_meta['revision_id']} of entity {self.revision_meta['entity_id']} is a redirect')
                 return True
 
             if not curr_claims and not curr_label and not curr_desc:
