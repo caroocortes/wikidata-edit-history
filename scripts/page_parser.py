@@ -20,10 +20,10 @@ def batch_insert(conn, revision, changes, change_metadata, qualifier_changes, re
     
     try:
         insert_rows(conn, 'revision', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'redirect'])
-        insert_rows(conn, 'value_change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash'])
+        insert_rows(conn, 'value_change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash'])
         insert_rows(conn, 'value_change_metadata', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
-        insert_rows(conn, 'qualifier_change', qualifier_changes, ['revision_id', 'property_id', 'value_id', 'qual_property_id', 'value_hash', 'old_value', 'new_value', 'datatype', 'change_target', 'action', 'target'])
-        insert_rows(conn, 'reference_change', reference_changes, ['revision_id', 'property_id', 'value_id', 'ref_property_id', 'ref_hash', 'value_hash', 'old_value', 'new_value', 'datatype', 'change_target', 'action', 'target'])
+        insert_rows(conn, 'qualifier_change', qualifier_changes, ['revision_id', 'property_id', 'value_id', 'qual_property_id', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target'])
+        insert_rows(conn, 'reference_change', reference_changes, ['revision_id', 'property_id', 'value_id', 'ref_property_id', 'ref_hash', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target'])
     
     except Exception as e:
         print(f'There was an error when batch inserting revisions and changes: {e}')
@@ -278,7 +278,7 @@ class PageParser():
         elif old_value and new_value and old_value != new_value:
             return UPDATE_PROPERTY_VALUE
 
-    def save_changes(self, property_id, value_id, old_value, new_value, datatype, change_target, change_type, change_magnitude=None, old_hash=None, new_hash=None):
+    def save_changes(self, property_id, value_id, old_value, new_value, old_datatype, new_datatype, change_target, change_type, change_magnitude=None, old_hash=None, new_hash=None):
         """
             Store value + datatype metadata (of property value) + rank changes
         """
@@ -293,7 +293,8 @@ class PageParser():
             value_id,
             old_value,
             new_value,
-            datatype,
+            old_datatype,
+            new_datatype,
             change_target if change_target else '', # can't be None since change_target is part of the key of the table
             action,
             target,
@@ -315,7 +316,7 @@ class PageParser():
             )
             self.changes_metadata.append(change_metadata)
         
-    def save_qualifier_changes(self, property_id, value_id, qual_property_id, value_hash, old_value, new_value, datatype, change_target, change_type):
+    def save_qualifier_changes(self, property_id, value_id, qual_property_id, value_hash, old_value, new_value, old_datatype, new_datatype, change_target, change_type):
         """
             Store reference/qualifier changes
         """
@@ -332,7 +333,8 @@ class PageParser():
             value_hash,
             old_value,
             new_value,
-            datatype,
+            old_datatype,
+            new_datatype,
             change_target if change_target else '', # can't be None since change_target is part of the key of the table
             action,
             target
@@ -340,7 +342,7 @@ class PageParser():
 
         self.qualifier_changes.append(change)
 
-    def save_reference_changes(self, property_id, value_id, ref_property_id, ref_hash, value_hash, old_value, new_value, datatype, change_target, change_type):
+    def save_reference_changes(self, property_id, value_id, ref_property_id, ref_hash, value_hash, old_value, new_value, old_datatype, new_datatype, change_target, change_type):
         """
             Store reference changes
         """
@@ -358,7 +360,8 @@ class PageParser():
             value_hash,
             old_value,
             new_value,
-            datatype,
+            old_datatype,
+            new_datatype,
             change_target if change_target else '', # can't be None since change_target is part of the key of the table
             action,
             target
@@ -381,7 +384,8 @@ class PageParser():
                             value_id=value_id,
                             old_value=old_meta,
                             new_value=None,
-                            datatype=old_datatype,
+                            old_datatype=old_datatype,
+                            new_datatype=new_datatype,
                             change_target=key,
                             change_type=change_type, 
                             old_hash=old_hash,
@@ -395,7 +399,8 @@ class PageParser():
                         value_hash=value_hash,
                         old_value=old_meta,
                         new_value=None,
-                        datatype=old_datatype,  # Use old_datatype, not new_datatype
+                        old_datatype=old_datatype,
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type
                     )
@@ -408,7 +413,8 @@ class PageParser():
                         value_hash=value_hash,
                         old_value=old_meta,
                         new_value=None,
-                        datatype=old_datatype,  # Use old_datatype, not new_datatype
+                        old_datatype=old_datatype,  # Use old_datatype, not new_datatype
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type
                     )
@@ -427,7 +433,8 @@ class PageParser():
                             value_id=value_id,
                             old_value=None,
                             new_value=new_meta,
-                            datatype=new_datatype,
+                            new_datatype=new_datatype,
+                            old_datatype=old_datatype,
                             change_target=key,
                             change_type=change_type, 
                             old_hash=None,
@@ -441,7 +448,8 @@ class PageParser():
                         value_hash=value_hash,
                         old_value=None,
                         new_value=new_meta,
-                        datatype=new_datatype,
+                        new_datatype=new_datatype,
+                        old_datatype=old_datatype,
                         change_target=key,
                         change_type=change_type
                     )
@@ -454,7 +462,8 @@ class PageParser():
                         value_hash=value_hash,
                         old_value=None,
                         new_value=new_meta,
-                        datatype=new_datatype,
+                        old_datatype=old_datatype,
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type
                     )
@@ -485,7 +494,8 @@ class PageParser():
                             value_id=value_id,
                             old_value=old_meta,
                             new_value=new_meta,
-                            datatype=new_datatype,
+                            old_datatype=old_datatype,
+                            new_datatype=new_datatype,
                             change_target=key,
                             change_type=change_type, 
                             change_magnitude=change_magnitude,
@@ -500,6 +510,7 @@ class PageParser():
                             value_hash=value_hash,
                             old_value=old_meta,
                             new_value=new_meta,
+                            old_datatype=old_datatype,
                             datatype=new_datatype,
                             change_target=key,
                             change_type=change_type
@@ -513,7 +524,8 @@ class PageParser():
                             value_hash=value_hash,
                             old_value=old_meta,
                             new_value=new_meta,
-                            datatype=new_datatype,
+                            old_datatype=old_datatype,
+                            new_datatype=new_datatype,
                             change_target=key,
                             change_type=change_type
                         )
@@ -569,7 +581,8 @@ class PageParser():
                         value_id=value_id,
                         old_value=old_meta,
                         new_value=new_meta,
-                        datatype=new_datatype,
+                        old_datatype=old_datatype,
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type,
                         old_hash=old_hash,
@@ -583,7 +596,8 @@ class PageParser():
                         value_hash=value_hash,
                         old_value=old_meta,
                         new_value=new_meta,
-                        datatype=new_datatype,
+                        old_datatype=old_datatype,
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type
                     )
@@ -596,7 +610,8 @@ class PageParser():
                         value_hash=value_hash,
                         old_value=old_meta,
                         new_value=new_meta,
-                        datatype=new_datatype,
+                        old_datatype=old_datatype,
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type
                     )
@@ -623,7 +638,8 @@ class PageParser():
                         value_id=value_id,
                         old_value=old_meta,
                         new_value=new_meta,
-                        datatype=old_datatype,
+                        old_datatype=old_datatype,
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type,
                         old_hash=old_hash,
@@ -637,7 +653,8 @@ class PageParser():
                         value_hash=value_hash,
                         old_value=old_meta,
                         new_value=new_meta,
-                        datatype=old_datatype,
+                        old_datatype=old_datatype,
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type
                     )
@@ -651,19 +668,21 @@ class PageParser():
                         ref_hash=ref_hash,
                         old_value=old_meta,
                         new_value=new_meta,
-                        datatype=old_datatype,
+                        old_datatype=old_datatype,
+                        new_datatype=new_datatype,
                         change_target=key,
                         change_type=change_type
                     )
     
-    def _handle_value_changes(self, new_datatype, new_value, old_value, value_id, property_id, change_type, old_hash, new_hash, change_magnitude=None):
+    def _handle_value_changes(self, old_datatype, new_datatype, new_value, old_value, value_id, property_id, change_type, old_hash, new_hash, change_magnitude=None):
 
         self.save_changes(
             id_to_int(property_id), 
             value_id=value_id,
             old_value=old_value,
             new_value=new_value,
-            datatype=new_datatype,
+            old_datatype=old_datatype,
+            new_datatype=new_datatype,
             change_target=None,
             change_type=change_type,
             change_magnitude=change_magnitude,
@@ -854,7 +873,8 @@ class PageParser():
                 value_hash=value_hash,
                 old_value=prev_val,
                 new_value=None,
-                datatype=prev_dtype,
+                old_datatype=prev_dtype,
+                new_datatype=None,
                 change_target='',
                 change_type=DELETE_REFERENCE
             )
@@ -895,7 +915,8 @@ class PageParser():
                 value_hash=value_hash,
                 old_value=None,
                 new_value=curr_val,
-                datatype=curr_dtype,
+                old_datatype=None,
+                new_datatype=curr_dtype,
                 change_target='',
                 change_type=CREATE_REFERENCE
             )
@@ -1011,7 +1032,8 @@ class PageParser():
                     value_hash=h,
                     old_value=prev_val,
                     new_value=None,
-                    datatype=prev_dtype,
+                    old_datatype=prev_dtype,
+                    new_datatype=None,
                     change_target='',
                     change_type=DELETE_QUALIFIER
                 )
@@ -1049,7 +1071,8 @@ class PageParser():
                     value_hash=h,
                     old_value=None,
                     new_value=curr_val,
-                    datatype=curr_dtype,
+                    old_datatype=None,
+                    new_datatype=curr_dtype,
                     change_target='',
                     change_type=CREATE_QUALIFIER
                 )
@@ -1163,7 +1186,8 @@ class PageParser():
                     value_id=value_id,
                     old_value=old_value,
                     new_value=new_value,
-                    datatype=datatype,
+                    old_datatype=datatype,
+                    new_datatype=None,
                     change_target=None,
                     change_type=DELETE_PROPERTY,
                     old_hash=None,
@@ -1180,7 +1204,8 @@ class PageParser():
                             value_id=value_id,
                             old_value=old_value,
                             new_value=new_value,
-                            datatype=datatype,
+                            old_datatype=datatype,
+                            new_datatype=None,
                             change_target=k,
                             change_type=DELETE_PROPERTY,
                             old_hash=None,
@@ -1209,7 +1234,8 @@ class PageParser():
                     value_id='label' if pid == LABEL_PROP_ID else 'description',
                     old_value=old_value if not isinstance(old_value, dict) else None, # _safe_get_nested returns {} instead of None (?why)
                     new_value=new_value if not isinstance(new_value, dict) else None,
-                    datatype='string',
+                    old_datatype='string',
+                    new_datatype=None,
                     change_target=None,
                     change_type=DELETE_PROPERTY,
                     old_hash='',
@@ -1290,7 +1316,7 @@ class PageParser():
                 old_hash = None
                 new_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
 
-                self._handle_value_changes(new_datatype, new_value, None, value_id, new_pid, CREATE_PROPERTY, old_hash, new_hash)
+                self._handle_value_changes(None, new_datatype, new_value, None, value_id, new_pid, CREATE_PROPERTY, old_hash, new_hash)
 
                 if new_datatype_metadata:
                     self._handle_datatype_metadata_changes(None, new_datatype_metadata, value_id, None, new_datatype, new_pid, CREATE_PROPERTY, old_hash, new_hash)
@@ -1302,7 +1328,8 @@ class PageParser():
                     value_id=value_id,
                     old_value=None,
                     new_value=curr_rank,
-                    datatype=new_datatype,
+                    old_datatype=None,
+                    new_datatype=new_datatype,
                     change_target='rank',
                     change_type=CREATE_PROPERTY,
                     old_hash=None,
@@ -1330,7 +1357,7 @@ class PageParser():
                 new_hash = None
                 old_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
 
-                self._handle_value_changes(None, None, old_value, value_id, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
+                self._handle_value_changes(old_datatype, None, None, old_value, value_id, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
 
                 if old_datatype_metadata:
                     self._handle_datatype_metadata_changes(old_datatype_metadata, {}, value_id, old_datatype, None, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
@@ -1342,7 +1369,8 @@ class PageParser():
                     value_id=value_id,
                     old_value=prev_rank,
                     new_value=None,
-                    datatype=None,
+                    old_datatype=old_datatype,
+                    new_datatype=None,
                     change_target='rank',
                     change_type=DELETE_PROPERTY,
                     old_hash=old_hash,
@@ -1363,6 +1391,7 @@ class PageParser():
         new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
 
         _, new_datatype, _ = PageParser._parse_datavalue(curr_stmt)
+        _, old_datatype, _ = PageParser._parse_datavalue(prev_stmt)
 
         change_detected = False
         if not prev_stmt:
@@ -1372,7 +1401,8 @@ class PageParser():
                 value_id=sid,
                 old_value=None,
                 new_value=curr_rank,
-                datatype=new_datatype,
+                old_datatype=old_datatype,
+                new_datatype=new_datatype,
                 change_target='rank',
                 change_type=CREATE_PROPERTY_VALUE,
                 old_hash=None,
@@ -1385,7 +1415,8 @@ class PageParser():
                 value_id=sid,
                 old_value=prev_rank,
                 new_value=None,
-                datatype=None,
+                old_datatype=old_datatype,
+                new_datatype=new_datatype,
                 change_target='rank',
                 change_type=DELETE_PROPERTY_VALUE,
                 old_hash=old_hash,
@@ -1398,7 +1429,8 @@ class PageParser():
                 value_id=sid,
                 old_value=prev_rank,
                 new_value=curr_rank,
-                datatype=new_datatype,
+                old_datatype=old_datatype,
+                new_datatype=new_datatype,
                 change_target='rank',
                 change_type=UPDATE_RANK,
                 old_hash=old_hash,
@@ -1474,7 +1506,7 @@ class PageParser():
                 if prev_stmt and not curr_stmt:
                     change_detected = True
                     # Property value was removed -> the datatype is the datatype of the old_value
-                    self._handle_value_changes(old_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE, old_hash, new_hash)
+                    self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE, old_hash, new_hash)
 
                     if old_datatype_metadata:
                         # Add change record for the datatype_metadata fields
@@ -1483,7 +1515,7 @@ class PageParser():
                 elif curr_stmt and not prev_stmt:
                     change_detected = True
                     # Property value was created
-                    self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, CREATE_PROPERTY_VALUE, old_hash, new_hash)
+                    self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, CREATE_PROPERTY_VALUE, old_hash, new_hash)
 
                     if new_datatype_metadata:
                         # Add change record for the datatype_metadata fields
@@ -1507,9 +1539,9 @@ class PageParser():
                             old_value_cleaned = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', old_value)
                             new_value_cleaned = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', new_value)
                             if old_value_cleaned != new_value_cleaned:
-                                self._handle_value_changes(new_datatype, new_value_cleaned, old_value_cleaned, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
+                                self._handle_value_changes(old_datatype, new_datatype, new_value_cleaned, old_value_cleaned, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
                         else:
-                            self._handle_value_changes(new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
+                            self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
 
                     if (old_datatype != new_datatype) or (old_datatype_metadata != new_datatype_metadata):
                         # Datatype change imples a datatype_metadata change
