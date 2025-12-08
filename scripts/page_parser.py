@@ -1138,10 +1138,10 @@ class PageParser():
                         )
 
                 # qualifier changes
-                _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                _ = self._handle_qualifier_changes(property_id, value_id, prev_stmt=None, curr_stmt=stmt)
 
                 # references changes
-                _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                _ = self._handle_reference_changes(property_id, value_id, prev_stmt=None, curr_stmt=stmt)
 
         # If there's no description or label, the revisions shows them as []
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
@@ -1213,10 +1213,10 @@ class PageParser():
                         )
 
                 # qualifier changes
-                _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                _ = self._handle_qualifier_changes(property_id, value_id, prev_stmt=None, curr_stmt=stmt)
 
                 # references changes
-                _ = self._handle_reference_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                _ = self._handle_reference_changes(property_id, value_id, prev_stmt=None, curr_stmt=stmt)
 
         # If there's no description or label, the revisions shows them as []
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
@@ -1578,7 +1578,6 @@ class PageParser():
 
             if 'redirect' in current_revision:
                 self.current_revision_redirect = True
-                print(f'The revision {self.revision_meta['revision_id']} of entity {self.revision_meta['entity_id']} is a redirect')
                 return True
 
             if not curr_claims and not curr_label and not curr_desc:
@@ -1699,10 +1698,11 @@ class PageParser():
                     }
 
                     # decode content inside <text></text>
-                    revision_text = (revision_text_elem.text).strip()
-                    current_revision = self._parse_json_revision(rev_elem, revision_text)
+                    if revision_text_elem.text:
+                        revision_text = (revision_text_elem.text).strip()
+                        current_revision = self._parse_json_revision(rev_elem, revision_text)
                     
-                    if current_revision is None:
+                    if current_revision is None or revision_text_elem.text is None:
                         # The json parsing for the revision text failed.
                         change = False
                     else:
