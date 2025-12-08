@@ -19,7 +19,7 @@ def batch_insert(conn, revision, changes, change_metadata, qualifier_changes, re
     """Function to insert into DB in parallel."""
     
     try:
-        insert_rows(conn, 'revision', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'entity_label', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'redirect'])
+        insert_rows(conn, 'revision', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'redirect', 'entity_label'])
         insert_rows(conn, 'value_change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash'])
         insert_rows(conn, 'value_change_metadata', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
         insert_rows(conn, 'qualifier_change', qualifier_changes, ['revision_id', 'property_id', 'value_id', 'qual_property_id', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target'])
@@ -1755,14 +1755,14 @@ class PageParser():
                     
                     # Batch insert (changes >= revision because one revision can have multiple changes)
                     
-                    if len(self.changes) >= self.batch_size:
-                        self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata, self.qualifier_changes, self.reference_changes)
-                        # remove already stored changes + revisions to avoid duplicates
-                        self.changes = []
-                        self.revision = []
-                        self.changes_metadata = []
-                        self.qualifier_changes = []
-                        self.reference_changes = []
+                    # if len(self.changes) >= self.batch_size:
+                    #     self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata, self.qualifier_changes, self.reference_changes)
+                    #     # remove already stored changes + revisions to avoid duplicates
+                    #     self.changes = []
+                    #     self.revision = []
+                    #     self.changes_metadata = []
+                    #     self.qualifier_changes = []
+                    #     self.reference_changes = []
                 else: # revision was deleted
                     prev_revision_deleted = True
 
@@ -1770,16 +1770,21 @@ class PageParser():
             rev_elem.clear()
         
         # Insert remaining changes + revision + changes_metadata in case the batch size was not reached
-        if self.changes:
-            batch_insert(self.conn, self.revision, self.changes, self.changes_metadata, self.qualifier_changes, self.reference_changes)
-            self.changes = []
-            self.revision = []
-            self.changes_metadata = []
-            self.qualifier_changes = []
-            self.reference_changes = []
+        # if self.changes:
+        #     batch_insert(self.conn, self.revision, self.changes, self.changes_metadata, self.qualifier_changes, self.reference_changes)
+        #     self.changes = []
+        #     self.revision = []
+        #     self.changes_metadata = []
+        #     self.qualifier_changes = []
+        #     self.reference_changes = []
 
-        # Update entity label with last existing label
-        update_entity_label(self.conn, entity_id, entity_label)
+        # # Update entity label with last existing label
+        # update_entity_label(self.conn, entity_id, entity_label)
+
+        for i, r in enumerate(self.revision):
+            self.revision[i] = r + (entity_label,)
+
+        self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata, self.qualifier_changes, self.reference_changes)
 
         # Clear element to free memory
         self.page_elem.clear()
