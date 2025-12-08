@@ -1,0 +1,143 @@
+PID: 1195372
+nohup: ignoring input
+Found 107 files that have already been processed
+Creating DB schema from /home/carolina.cortes/wikidata-edit-history/change_schema.sql...
+Processing: ../../../san2/data/wikidata-history-dumps/wikidatawiki-20250601-pages-meta-history27.xml-p106201964p106272172.bz2
+Added worker 3 due to queue size, total workers: 4
+Added worker 4 due to queue size, totaProcess Process-3:
+Traceback (most recent call last):
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 86, in _worker
+    process_page_xml(page_elem_str, self.file_path, self.config)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 23, in process_page_xml
+    raise e
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 19, in process_page_xml
+    parser.process_page()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1683, in process_page
+    change = self.get_changes_from_revisions(current_revision, previous_revision)
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1539, in get_changes_from_revisions
+    self._changes_created_entity(current_revision)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1118, in _changes_created_entity
+    _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                                       ^^^
+UnboundLocalError: cannot access local variable 'pid' where it is not associated with a value
+Error in page parser
+cannot access local variable 'pid' where it is not associated with a value
+Process Process-5:
+Traceback (most recent call last):
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 86, in _worker
+    process_page_xml(page_elem_str, self.file_path, self.config)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 23, in process_page_xml
+    raise e
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 19, in process_page_xml
+    parser.process_page()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1683, in process_page
+    change = self.get_changes_from_revisions(current_revision, previous_revision)
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1539, in get_changes_from_revisions
+    self._changes_created_entity(current_revision)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1118, in _changes_created_entity
+    _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                                       ^^^
+UnboundLocalError: cannot access local variable 'pid' where it is not associated with a value
+Error in page parser
+cannot access local variable 'pid' where it is not associated with a value
+Added worker 5 due to queue size, total workers: 6
+Progress: 205 entities read, 0.3 entities/sec, queue: 150/150
+Process Process-1:
+Traceback (most recent call last):
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 86, in _worker
+    process_page_xml(page_elem_str, self.file_path, self.config)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 23, in process_page_xml
+    raise e
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 19, in process_page_xml
+    parser.process_page()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1683, in process_page
+    change = self.get_changes_from_revisions(current_revision, previous_revision)
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1539, in get_changes_from_revisions
+    self._changes_created_entity(current_revision)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1118, in _changes_created_entity
+    _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                                       ^^^
+UnboundLocalError: cannot access local variable 'pid' where it is not associated with a value
+Error in page parser
+cannot access local variable 'pid' where it is not associated with a value
+Process Process-2:
+Traceback (most recent call last):
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 86, in _worker
+    process_page_xml(page_elem_str, self.file_path, self.config)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 23, in process_page_xml
+    raise e
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 19, in process_page_xml
+    parser.process_page()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1683, in process_page
+    change = self.get_changes_from_revisions(current_revision, previous_revision)
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1539, in get_changes_from_revisions
+    self._changes_created_entity(current_revision)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1118, in _changes_created_entity
+    _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                                       ^^^
+UnboundLocalError: cannot access local variable 'pid' where it is not associated with a value
+Error in page parser
+cannot access local variable 'pid' where it is not associated with a value
+Process Process-6:
+Traceback (most recent call last):
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 313, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/home/carolina.cortes/miniconda3/lib/python3.13/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 86, in _worker
+    process_page_xml(page_elem_str, self.file_path, self.config)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 23, in process_page_xml
+    raise e
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/dump_parser.py", line 19, in process_page_xml
+    parser.process_page()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1683, in process_page
+    change = self.get_changes_from_revisions(current_revision, previous_revision)
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1539, in get_changes_from_revisions
+    self._changes_created_entity(current_revision)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/carolina.cortes/wikidata-edit-history/scripts/page_parser.py", line 1118, in _changes_created_entity
+    _ = self._handle_qualifier_changes(pid, value_id, prev_stmt=None, curr_stmt=stmt)
+                                       ^^^
+UnboundLocalError: cannot access local variable 'pid' where it is not associated with a value
+Error in page parser
+cannot access local variable 'pid' where it is not associated with a value

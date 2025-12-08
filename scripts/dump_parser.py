@@ -104,6 +104,15 @@ class DumpParser():
             Each page is stored in a queue which is accessed by processes in parallel that extract the changes from the revisions
         """
 
+        # get file size
+        start_time = time.time()
+        print(f'Started getting file size')
+        file_obj.seek(0, 2)
+        total_size = file_obj.tell()
+        file_obj.seek(0)
+        print(f'Finished getting file size, took: {time.time()-start_time:.2f}s')
+        print(f'File size: {total_size/1e9:.2f}GB')
+
         ns = "http://www.mediawiki.org/xml/export-0.11/"
         page_tag = f"{{{ns}}}page"
         title_tag = f"{{{ns}}}title"
@@ -138,7 +147,15 @@ class DumpParser():
             if time.time() - last_report > 600:  # Every 10 min
                 rate = self.num_entities / (time.time() - self.start_time)
                 queue_size = self.page_queue.qsize()
+                
+                current_pos = file_obj.tell()
+                progress_pct = (current_pos / total_size) * 100
+                bytes_remaining = total_size - current_pos
+
                 print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/{QUEUE_SIZE}")
+                print(f"File: {progress_pct:.1f}% complete ({current_pos/1e9:.2f}GB / {total_size/1e9:.2f}GB)")
+                print(f"Remaining: {bytes_remaining/1e9:.2f}GB")
+                
                 sys.stdout.flush()
                 last_report = time.time()
 
