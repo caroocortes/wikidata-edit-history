@@ -1,4 +1,6 @@
-# MP2025-WikiWatch
+# Wikidata's change history parsers
+
+This code provides a parser to extract changes (diff between revisions) from WD's xml dumps and store them in a DB.
 
 ## Getting Started
 
@@ -17,7 +19,17 @@ A `.env` template file is provided with the necessary variables to connect to th
 - `qualifier_change`
 - `value_change_metadata`
 
-**Important**: Update the `.env` file with your database credentials.
+**Important**: Create a `db_config.json` file, at the root, with your database credentials as shown below.
+
+```
+{
+    "DB_USER": DB_USER,
+    "DB_PASS": DB_PASS,
+    "DB_NAME": DB_NAME,
+    "DB_PORT": DB_PORT,
+    "DB_HOST": DB_HOST
+}
+```
 
 **Note**: Table schemas are automatically created when running the parsers. The DB needs to be created manually.
 
@@ -28,9 +40,11 @@ A `.env` template file is provided with the necessary variables to connect to th
 │   ├── dump_parser.py              # Processes XML files, extracts pages
 │   ├── page_parser.py              # Processes a page (all edit history for an entity)
 │   ├── utils.py                    # Auxiliary methods 
+│   ├── const.py                    # Constants
 │   └── load_external_data.py  # Loads data extracted from a full dump (entity labels, property labels, types of entities - subclass and instance of)
 ├── download/       # Script for downloading XML files + list of download links for the dump of 20250601
 └── test/           # Test XML files, testing scripts, and example revision texts
+└── wdtk/           # Files needed to extract extra data from a WD full dump (uses WD Toolkit)
 ```
 
 ## Running the Parser
@@ -69,10 +83,11 @@ The `config.json` file contains the following parameters:
  | Parameter | Description | Default | 
  | - | - | - | 
  | language | Language for labels/descriptionsen | (English) | 
- | files_in_parallel |  Number of XML files to process simultaneously | 4 | 
- | pages_in_parallel | Number of pages per XML file to process simultaneously | 4 | 
- | batch_changes_store | Batch size for storing changes in DB |  10000 | 
- | max_files | Maximum number of files to process | - (use 2125 for all files) | 
+ | files_in_parallel |  Number of XML files to process simultaneously | 16 | 
+ | pages_in_parallel | Number of pages per XML file to process simultaneously | 3 | 
+ | max_pages_in_parallel | Maximum number of pages per XML file to process simultaneously (is increased from pages_in_parallel) | 7 | 
+ | max_files | Maximum number of files to process | 2125 (dump of june 2025) | 
+ | files_directory | Path to directory that stores the dump's files | - |
 
 ## Batch Processing
 ### Running Multiple Files Until Limit
@@ -127,7 +142,7 @@ This class processes a latest-all.json.bz2 dump from WD and creates the followin
 
 **Process to obtain files:**
 - Clone Wikidata Toolkit from [Wikidata Toolkit](https://github.com/Wikidata-Toolkit/Wikidata-Toolkit).
-- Download a `latest-all.json.bz2` from WD and store it in `Wikidata-Toolkit/dumpfiles/wikidatawiki/json-YYYYMMdd` where YYYYMMdd is the date when the dump was downloaded (The toolkit expects this format). Note that the downloaded dump needs to be in .json format.
+- Download a `latest-all.json.bz2` from WD and store it in `Wikidata-Toolkit/dumpfiles/wikidatawiki/json-YYYYMMdd` where YYYYMMdd is the date when the dump was downloaded (The toolkit expects this format). Note that the downloaded dump needs to be in .json format and has to be stored in that specific folder, if not, the toolkit won't find it.
 - See Wikidata Toolkit requirements for Java versions
 - Add the file `ExtractExtraData.java` in `wdtk/` to the folder `Wikidata-Toolkit/wdtk-examples/src/main/java/org/wikidata/wdtk/examples`.
     Change the following variables to store the correct path:
