@@ -3,13 +3,16 @@ import multiprocessing as mp
 import time
 import queue
 from lxml import etree
+import json
+from pathlib import Path
+import psycopg2
 
 from scripts.page_parser import PageParser
 from scripts.const import *
 
 
-def process_page_xml(page_elem_str, file_path, config):
-    parser = PageParser(file_path=file_path, page_elem_str=page_elem_str, config=config)
+def process_page_xml(page_elem_str, file_path, config, conn):
+    parser = PageParser(file_path=file_path, page_elem_str=page_elem_str, config=config, connection=conn)
     try:
         parser.process_page()
     except Exception as e:
@@ -24,7 +27,8 @@ class DumpParser():
         self.file_path = file_path
         self.num_entities = 0  
         
-        self.num_workers = config.get('pages_in_parallel', 3) # processes that process pages in parallel
+        self.num_workers = config.get('pages_in_parallel', 4) # processes that process pages in parallel
+        self.max_workers = config.get('max_pages_in_parallel', 24)
         self.page_queue = mp.Queue(maxsize=QUEUE_SIZE) # queue that stores pages as they are read
         self.stop_event = mp.Event()
 
@@ -61,6 +65,23 @@ class DumpParser():
             Process started in init
             Gets pages from queue and calls process_page_xml which processes the page (entity)
         """
+
+        # one connection per worker
+        SCRIPT_DIR = Path(__file__).parent
+        CONFIG_PATH = SCRIPT_DIR.parent / 'db_config.json'
+        with open(CONFIG_PATH) as f:
+            db_config = json.load(f)
+        
+        conn = psycopg2.connect(
+            dbname=db_config["DB_NAME"],
+            user=db_config["DB_USER"],
+            password=db_config["DB_PASS"],
+            host=db_config["DB_HOST"],
+            port=db_config["DB_PORT"],
+            connect_timeout=30,
+            gssencmode='disable'
+        )
+
         pages_processed = 0
         total_wait_time = 0
         total_process_time = 0
@@ -78,7 +99,7 @@ class DumpParser():
                     break
                 
                 process_start = time.time()
-                process_page_xml(page_elem_str, self.file_path, self.config)
+                process_page_xml(page_elem_str, self.file_path, self.config, conn)
                 
                 # ---- stats ----
                 process_time = time.time() - process_start
@@ -104,15 +125,6 @@ class DumpParser():
             Each page is stored in a queue which is accessed by processes in parallel that extract the changes from the revisions
         """
 
-        # get file size
-        start_time = time.time()
-        print(f'Started getting file size')
-        file_obj.seek(0, 2)
-        total_size = file_obj.tell()
-        file_obj.seek(0)
-        print(f'Finished getting file size, took: {time.time()-start_time:.2f}s')
-        print(f'File size: {total_size/1e9:.2f}GB')
-
         ns = "http://www.mediawiki.org/xml/export-0.11/"
         page_tag = f"{{{ns}}}page"
         title_tag = f"{{{ns}}}title"
@@ -135,7 +147,7 @@ class DumpParser():
             if keep:
 
                 fullness = self.page_queue.qsize() / QUEUE_SIZE
-                if fullness > 0.7 and self.num_workers < 6: # go up to max 5 workers
+                if fullness > 0.7 and self.num_workers < self.max_workers:
                     self._add_worker()
 
                 # Serialize the page element
@@ -148,13 +160,7 @@ class DumpParser():
                 rate = self.num_entities / (time.time() - self.start_time)
                 queue_size = self.page_queue.qsize()
                 
-                current_pos = file_obj.tell()
-                progress_pct = (current_pos / total_size) * 100
-                bytes_remaining = total_size - current_pos
-
                 print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_size}/{QUEUE_SIZE}")
-                print(f"File: {progress_pct:.1f}% complete ({current_pos/1e9:.2f}GB / {total_size/1e9:.2f}GB)")
-                print(f"Remaining: {bytes_remaining/1e9:.2f}GB")
                 
                 sys.stdout.flush()
                 last_report = time.time()

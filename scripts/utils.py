@@ -12,7 +12,8 @@ import json
 import hashlib
 from urllib.parse import urljoin
 from scripts.const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
- 
+import io
+import sys
 
 """
     Helper methods for magnitude of change calculation
@@ -118,17 +119,6 @@ def update_entity_label(conn, entity_id, entity_label):
 def insert_rows(conn, table_name, rows, columns):
     if not rows:
         return
-    
-    if table_name == 'entity':
-        # check if entity exists
-        query_select = "SELECT entity_id FROM entity WHERE entity_id = %s"
-
-        with conn.cursor() as cur:
-            cur.execute(query_select, (rows[0][0],))
-            exists = cur.fetchone() is not None
-            if exists:
-                # will skip this entity
-                return 0
 
     col_names = ', '.join(columns)
     placeholders = ', '.join(['%s'] * len(columns))
@@ -177,6 +167,27 @@ def insert_rows(conn, table_name, rows, columns):
                         print(f"Error checking for existing row: {select_err}")
 
 
+def insert_rows_copy(conn, table_name, rows, columns):
+    if not rows:
+        return
+    
+    cursor = conn.cursor()
+    
+    try:
+        placeholders = ', '.join(['%s'] * len(columns))
+        column_names = ', '.join(columns)
+        query = f"INSERT INTO {table_name} ({column_names}) VALUES ({placeholders})"
+        
+        cursor.executemany(query, rows)
+        conn.commit()
+        
+    except Exception as e:
+        conn.rollback()
+        print(f"Insert failed for {table_name}: {e}")
+        raise
+    finally:
+        cursor.close()
+
 def create_db_schema():
     base_dir = Path(__file__).resolve().parent.parent
     
@@ -188,21 +199,25 @@ def create_db_schema():
     
     try:
 
-        dotenv_path = Path(__file__).resolve().parent.parent / ".env"
-        load_dotenv(dotenv_path)
+        # dotenv_path = Path(__file__).resolve().parent.parent / ".env"
+        # load_dotenv(dotenv_path)
 
-        DB_USER = os.environ.get("DB_USER")
-        DB_PASS = os.environ.get("DB_PASS")
-        DB_NAME = os.environ.get("DB_NAME")
-        DB_HOST = os.environ.get("DB_HOST")
-        DB_PORT = os.environ.get("DB_PORT")
+        # DB_USER = os.environ.get("DB_USER")
+        # DB_PASS = os.environ.get("DB_PASS")
+        # DB_NAME = os.environ.get("DB_NAME")
+        # DB_HOST = os.environ.get("DB_HOST")
+        # DB_PORT = os.environ.get("DB_PORT")
+        SCRIPT_DIR = Path(__file__).parent
+        CONFIG_PATH = SCRIPT_DIR.parent / 'db_config.json'
+        with open(CONFIG_PATH) as f:
+            config = json.load(f)
 
         conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS, 
-            host=DB_HOST,
-            port=DB_PORT
+            dbname=config["DB_NAME"],
+            user=config["DB_USER"],
+            password=config["DB_PASS"], 
+            host=config["DB_HOST"],
+            port=config["DB_PORT"]
         )
 
         cursor = conn.cursor()
@@ -214,6 +229,7 @@ def create_db_schema():
 
     except Exception as e:
         print(f'Error when saving or connecting to DB: {e}')
+        sys.exit(1)
 
 
 """ Other utility methods """

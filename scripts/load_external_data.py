@@ -149,6 +149,7 @@ def update_entity_labels(conn, table_name):
 
     # # Update columns in change table
     with conn.cursor() as cur:
+        # NOTE: change here because of the datatype check, now with old_datatype
         cur.execute(f"""
             CREATE INDEX IF NOT EXISTS idx_value_change_qid
             ON {table_name} ((new_value->>0))
@@ -182,7 +183,7 @@ def update_entity_labels(conn, table_name):
             FROM entity_labels_aliases el
             WHERE 
                 (vc.old_value_label IS NULL or vc.old_value_label = '') AND -- only update the ones that don't have a label yet
-                vc.old_value->>0 LIKE 'Q%' AND
+                vc.old_value->>0 LIKE 'Q%' AND 
                 vc.old_value->>0 = el.id;
         """)
     conn.commit()
