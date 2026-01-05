@@ -1,8 +1,8 @@
 {
     "language": "en",
-    "files_in_parallel": 1,
+    "files_in_parallel": 16,
     "pages_in_parallel": 3,
-    "batch_changes_store": 10000,
-    "max_files": 1,
-    "files_directory": "/sc/projects/sci-naumann/mpws2025fn1/wd-dumps-202506/"
+    "max_pages_in_parallel": 7,
+    "max_files": 200,
+    "files_directory": "/sc/projects/sci-naumann/mpws2025fn1/wd-dump-202506/"
 }

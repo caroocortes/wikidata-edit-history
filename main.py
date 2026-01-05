@@ -16,8 +16,12 @@ def log_file_process(process_time, num_entities, file_path, size):
     if not isinstance(file_path, Path):
         file_path = Path(file_path) 
     print(f"Finished processing {file_path} ({size}, {num_entities} entities) in {process_time} seconds") 
-    with open(PROCESSED_FILES_PATH, "a") as f: 
-        f.write(f"{file_path.resolve()}\n") 
+
+    try:
+        with open(PROCESSED_FILES_PATH, "a") as f: 
+            f.write(f"{file_path.resolve()}\n") 
+    except Exception as e:
+        print(f"Error logging processed file to processed_files.txt {file_path}: {e}")
 
 def process_file(file_path, config):
     """
@@ -58,6 +62,8 @@ def process_file(file_path, config):
             "process_time_sec": f"{process_time:.2f}"
         }
         f.write(json.dumps(json_line) + "\n")
+    
+    log_file_process(process_time, parser.num_entities, file_path, size_hr)
 
     return process_time, parser.num_entities, file_path, size_hr
 
@@ -121,7 +127,11 @@ if  __name__ == "__main__":
                 max_workers = max_files
 
             print(f"Found {len(files_to_parse)} unprocessed .bz2 files in {dump_dir}, processing up to {max_files} files with {max_workers} workers in parallel.")
-
+            
+            if len(files_to_parse) == 0:
+                print("No new files to process. Exiting.")
+                raise SystemExit(0)
+                
             files_to_parse = files_to_parse[:max_files]
             executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
             try:
@@ -130,7 +140,7 @@ if  __name__ == "__main__":
                     if process_time == 0:
                         print(f"Error processing {file_path}, skipping logging.")
                     else:
-                        log_file_process(process_time, num_entities, file_path, size)
+                        print(f"Finished processing {file_path}")
             except Exception as e:
                 print("Error in executor:", e)
             finally:

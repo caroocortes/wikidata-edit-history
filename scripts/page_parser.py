@@ -11,32 +11,64 @@ from lxml import etree
 import re
 import hashlib
 
-from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label, id_to_int
+from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label, id_to_int, insert_rows_copy
 from scripts.const import *
 
-def batch_insert(conn, revision, changes, change_metadata, qualifier_changes, reference_changes):
-    # NOTE: copy may be faster
+def batch_insert(
+    conn, 
+    revision, changes, change_metadata, qualifier_changes, reference_changes, datatype_metadata_changes, datatype_metadata_changes_metadata,
+    is_scholarly_article=False
+    ):
+
     """Function to insert into DB in parallel."""
     
     try:
-        insert_rows(conn, 'revision', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'redirect', 'entity_label'])
-        insert_rows(conn, 'value_change', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash'])
-        insert_rows(conn, 'value_change_metadata', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
-        insert_rows(conn, 'qualifier_change', qualifier_changes, ['revision_id', 'property_id', 'value_id', 'qual_property_id', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target'])
-        insert_rows(conn, 'reference_change', reference_changes, ['revision_id', 'property_id', 'value_id', 'ref_property_id', 'ref_hash', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target'])
-    
+        # filter scholarly types
+        if is_scholarly_article:
+            table_suffix = '_sa'
+        else:
+            table_suffix = ''
+
+        if len(revision) > 0:
+            insert_rows(conn, f'revision{table_suffix}', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'redirect', 'entity_label'])
+        
+        if len(changes) > 0:
+            insert_rows(conn, f'value_change{table_suffix}', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash', 'timestamp', 'entity_id'])
+            
+        if len(change_metadata) > 0:
+            insert_rows(conn, f'value_change_metadata{table_suffix}', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
+        
+        if len(qualifier_changes) > 0:
+            insert_rows(conn, f'qualifier_change{table_suffix}', qualifier_changes, ['revision_id', 'property_id', 'value_id', 'qual_property_id', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'timestamp', 'entity_id'])
+        
+        if len(reference_changes) > 0:
+            insert_rows(conn, f'reference_change{table_suffix}', reference_changes, ['revision_id', 'property_id', 'value_id', 'ref_property_id', 'ref_hash', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'timestamp', 'entity_id'])
+        
+        if len(datatype_metadata_changes) > 0:
+            insert_rows(conn, f'datatype_metadata_change{table_suffix}', datatype_metadata_changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash', 'timestamp', 'entity_id'])
+
+        if len(datatype_metadata_changes_metadata) > 0:
+            insert_rows(conn, f'datatype_metadata_change_metadata{table_suffix}', datatype_metadata_changes_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
+
     except Exception as e:
         print(f'There was an error when batch inserting revisions and changes: {e}')
         sys.stdout.flush()
+        raise e
 
 class PageParser():
-    def __init__(self, file_path, page_elem_str, config):
+    def __init__(self, file_path, page_elem_str, config, connection):
         
         self.changes = []
         self.revision = []
         self.changes_metadata = []
         self.qualifier_changes = []
         self.reference_changes = []
+        self.datatype_metadata_changes = []
+        self.datatype_metadata_changes_metadata = []
+
+        # store entity types 
+        # handles removed types
+        self.entity_types_31 = set()
 
         self.config = config
 
@@ -47,27 +79,7 @@ class PageParser():
         self.file_path = file_path # file_path of XML where the page is stored
         self.page_elem = etree.fromstring(page_elem_str) # XML page for the entity
 
-        self.db_executor = ThreadPoolExecutor(max_workers=1)  # db executor thread for DB inserts, so the parser can keep working
-
-        self.batch_size = int(self.config.get('batch_changes_store', 10000))
-
-        dotenv_path = Path(__file__).resolve().parent.parent / ".env"
-        load_dotenv(dotenv_path)
-
-        # credentials for DB connection
-        DB_USER = os.environ.get("DB_USER")
-        DB_PASS = os.environ.get("DB_PASS")
-        DB_NAME = os.environ.get("DB_NAME")
-        DB_HOST = os.environ.get("DB_HOST")
-        DB_PORT = os.environ.get("DB_PORT")
-
-        self.conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS, 
-            host=DB_HOST,
-            port=DB_PORT
-        )
+        self.conn = connection
 
     def _parse_json_revision(self, revision_elem, revision_text):
         # TODO: remove revision_elem from args - only for debugging
@@ -92,7 +104,7 @@ class PageParser():
             return json.loads(revision_text.strip())
         except json.JSONDecodeError:
 
-            print(f'Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}: {e}. Revision skipped. See {ERROR_REVISION_TEXT_PATH} for details.')
+            print(f"Error decoding JSON in revision {self.revision_meta['revision_id']} for entity {self.revision_meta['entity_id']}: {e}. Revision skipped. See {ERROR_REVISION_TEXT_PATH} for details.")
             
             with open(ERROR_REVISION_TEXT_PATH, "a") as f:
                 f.write(f"-------------------------------------------\n")
@@ -299,7 +311,9 @@ class PageParser():
             action,
             target,
             old_hash if old_hash else '',
-            new_hash if new_hash else ''
+            new_hash if new_hash else '',
+            self.revision_meta['timestamp'],
+            self.revision_meta['entity_id']
         )
 
         self.changes.append(change)
@@ -316,6 +330,47 @@ class PageParser():
             )
             self.changes_metadata.append(change_metadata)
         
+    def save_datatype_metadata_changes(self, property_id, value_id, old_value, new_value, old_datatype, new_datatype, change_target, change_type, change_magnitude=None, old_hash=None, new_hash=None):
+        """
+            Store value + datatype metadata (of property value) + rank changes
+        """
+        old_value = json.dumps(old_value) if old_value else '{}' # in the DB can't be NULL because null = null is NULL in postgresql
+        new_value = json.dumps(new_value) if new_value else '{}'
+
+        action, target = PageParser.get_target_action_from_change_type(change_type)
+
+        change = (
+            self.revision_meta['revision_id'],
+            property_id,
+            value_id,
+            old_value,
+            new_value,
+            old_datatype,
+            new_datatype,
+            change_target if change_target else '', # can't be None since change_target is part of the key of the table
+            action,
+            target,
+            old_hash if old_hash else '',
+            new_hash if new_hash else '',
+            self.revision_meta['timestamp'],
+            self.revision_meta['entity_id']
+        )
+
+        self.datatype_metadata_changes.append(change)
+
+        change_metadata = ()
+        if change_magnitude is not None:
+            change_metadata = (
+                self.revision_meta['revision_id'],
+                property_id,
+                value_id,
+                change_target if change_target else '', # can't be None since change_target is part of the key of the table
+                'CHANGE_MAGNITUDE',
+                change_magnitude
+            )
+            self.datatype_metadata_changes_metadata.append(change_metadata)
+    
+    
     def save_qualifier_changes(self, property_id, value_id, qual_property_id, value_hash, old_value, new_value, old_datatype, new_datatype, change_target, change_type):
         """
             Store reference/qualifier changes
@@ -337,7 +392,9 @@ class PageParser():
             new_datatype,
             change_target if change_target else '', # can't be None since change_target is part of the key of the table
             action,
-            target
+            target,
+            self.revision_meta['timestamp'],
+            self.revision_meta['entity_id']
         )
 
         self.qualifier_changes.append(change)
@@ -364,7 +421,9 @@ class PageParser():
             new_datatype,
             change_target if change_target else '', # can't be None since change_target is part of the key of the table
             action,
-            target
+            target,
+            self.revision_meta['timestamp'],
+            self.revision_meta['entity_id']
         )
 
         self.reference_changes.append(change)
@@ -379,7 +438,7 @@ class PageParser():
                     old_meta = old_meta.split('/')[-1]
                 
                 if type_ == 'value':
-                    self.save_changes(
+                    self.save_datatype_metadata_changes(
                             id_to_int(property_id),
                             value_id=value_id,
                             old_value=old_meta,
@@ -391,33 +450,33 @@ class PageParser():
                             old_hash=old_hash,
                             new_hash=None
                         )
-                elif type_ == 'qualifier':
-                    self.save_qualifier_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        qual_property_id=id_to_int(rq_property_id),
-                        value_hash=value_hash,
-                        old_value=old_meta,
-                        new_value=None,
-                        old_datatype=old_datatype,
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type
-                    )
-                elif type_ == 'reference':
-                    self.save_reference_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        ref_property_id=id_to_int(rq_property_id),
-                        ref_hash=ref_hash,
-                        value_hash=value_hash,
-                        old_value=old_meta,
-                        new_value=None,
-                        old_datatype=old_datatype,  # Use old_datatype, not new_datatype
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type
-                    )
+                # elif type_ == 'qualifier':
+                #     self.save_qualifier_changes(
+                #         id_to_int(property_id),
+                #         value_id=value_id,
+                #         qual_property_id=id_to_int(rq_property_id),
+                #         value_hash=value_hash,
+                #         old_value=old_meta,
+                #         new_value=None,
+                #         old_datatype=old_datatype,
+                #         new_datatype=new_datatype,
+                #         change_target=key,
+                #         change_type=change_type
+                #     )
+                # elif type_ == 'reference':
+                #     self.save_reference_changes(
+                #         id_to_int(property_id),
+                #         value_id=value_id,
+                #         ref_property_id=id_to_int(rq_property_id),
+                #         ref_hash=ref_hash,
+                #         value_hash=value_hash,
+                #         old_value=old_meta,
+                #         new_value=None,
+                #         old_datatype=old_datatype,  # Use old_datatype, not new_datatype
+                #         new_datatype=new_datatype,
+                #         change_target=key,
+                #         change_type=change_type
+                #     )
             return
         
         if new_datatype_metadata and not old_datatype_metadata: # creation
@@ -428,7 +487,7 @@ class PageParser():
                     new_meta = new_meta.split('/')[-1]
                 
                 if type_ == 'value':
-                    self.save_changes(
+                    self.save_datatype_metadata_changes(
                             id_to_int(property_id),
                             value_id=value_id,
                             old_value=None,
@@ -440,33 +499,33 @@ class PageParser():
                             old_hash=None,
                             new_hash=new_hash
                         )
-                elif type_ == 'qualifier':
-                    self.save_qualifier_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        qual_property_id=id_to_int(rq_property_id),
-                        value_hash=value_hash,
-                        old_value=None,
-                        new_value=new_meta,
-                        new_datatype=new_datatype,
-                        old_datatype=old_datatype,
-                        change_target=key,
-                        change_type=change_type
-                    )
-                elif type_ == 'reference':
-                    self.save_reference_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        ref_property_id=id_to_int(rq_property_id),
-                        ref_hash=ref_hash,
-                        value_hash=value_hash,
-                        old_value=None,
-                        new_value=new_meta,
-                        old_datatype=old_datatype,
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type
-                    )
+                # elif type_ == 'qualifier':
+                #     self.save_qualifier_changes(
+                #         id_to_int(property_id),
+                #         value_id=value_id,
+                #         qual_property_id=id_to_int(rq_property_id),
+                #         value_hash=value_hash,
+                #         old_value=None,
+                #         new_value=new_meta,
+                #         new_datatype=new_datatype,
+                #         old_datatype=old_datatype,
+                #         change_target=key,
+                #         change_type=change_type
+                #     )
+                # elif type_ == 'reference':
+                #     self.save_reference_changes(
+                #         id_to_int(property_id),
+                #         value_id=value_id,
+                #         ref_property_id=id_to_int(rq_property_id),
+                #         ref_hash=ref_hash,
+                #         value_hash=value_hash,
+                #         old_value=None,
+                #         new_value=new_meta,
+                #         old_datatype=old_datatype,
+                #         new_datatype=new_datatype,
+                #         change_target=key,
+                #         change_type=change_type
+                #     )
             return
 
         if old_datatype == new_datatype:
@@ -489,7 +548,7 @@ class PageParser():
                 if old_meta != new_meta: # save only what changed
                     
                     if type_ == 'value':
-                        self.save_changes(
+                        self.save_datatype_metadata_changes(
                             id_to_int(property_id),
                             value_id=value_id,
                             old_value=old_meta,
@@ -502,33 +561,33 @@ class PageParser():
                             old_hash=old_hash,
                             new_hash=new_hash
                         )
-                    elif type_ == 'qualifier':
-                        self.save_qualifier_changes(
-                            id_to_int(property_id),
-                            value_id=value_id,
-                            qual_property_id=id_to_int(rq_property_id),
-                            value_hash=value_hash,
-                            old_value=old_meta,
-                            new_value=new_meta,
-                            old_datatype=old_datatype,
-                            datatype=new_datatype,
-                            change_target=key,
-                            change_type=change_type
-                        )
-                    elif type_ == 'reference':
-                        self.save_reference_changes(
-                            id_to_int(property_id),
-                            value_id=value_id,
-                            ref_property_id=id_to_int(rq_property_id),
-                            ref_hash=ref_hash,
-                            value_hash=value_hash,
-                            old_value=old_meta,
-                            new_value=new_meta,
-                            old_datatype=old_datatype,
-                            new_datatype=new_datatype,
-                            change_target=key,
-                            change_type=change_type
-                        )
+                    # elif type_ == 'qualifier':
+                    #     self.save_qualifier_changes(
+                    #         id_to_int(property_id),
+                    #         value_id=value_id,
+                    #         qual_property_id=id_to_int(rq_property_id),
+                    #         value_hash=value_hash,
+                    #         old_value=old_meta,
+                    #         new_value=new_meta,
+                    #         old_datatype=old_datatype,
+                    #         new_datatype=new_datatype,
+                    #         change_target=key,
+                    #         change_type=change_type
+                    #     )
+                    # elif type_ == 'reference':
+                    #     self.save_reference_changes(
+                    #         id_to_int(property_id),
+                    #         value_id=value_id,
+                    #         ref_property_id=id_to_int(rq_property_id),
+                    #         ref_hash=ref_hash,
+                    #         value_hash=value_hash,
+                    #         old_value=old_meta,
+                    #         new_value=new_meta,
+                    #         old_datatype=old_datatype,
+                    #         new_datatype=new_datatype,
+                    #         change_target=key,
+                    #         change_type=change_type
+                    #     )
 
         else: # different datatypes
 
@@ -576,7 +635,7 @@ class PageParser():
                         keys_to_skip.add(new_meta_key)
                 
                 if type_ == 'value':
-                    self.save_changes(
+                    self.save_datatype_metadata_changes(
                         id_to_int(property_id),
                         value_id=value_id,
                         old_value=old_meta,
@@ -588,33 +647,33 @@ class PageParser():
                         old_hash=old_hash,
                         new_hash=new_hash
                     )
-                elif type_ == 'qualifier':
-                    self.save_qualifier_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        qual_property_id=id_to_int(rq_property_id),
-                        value_hash=value_hash,
-                        old_value=old_meta,
-                        new_value=new_meta,
-                        old_datatype=old_datatype,
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type
-                    )
-                elif type_ == 'reference':
-                    self.save_reference_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        ref_property_id=id_to_int(rq_property_id),
-                        ref_hash=ref_hash,
-                        value_hash=value_hash,
-                        old_value=old_meta,
-                        new_value=new_meta,
-                        old_datatype=old_datatype,
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type
-                    )
+                # elif type_ == 'qualifier':
+                #     self.save_qualifier_changes(
+                #         id_to_int(property_id),
+                #         value_id=value_id,
+                #         qual_property_id=id_to_int(rq_property_id),
+                #         value_hash=value_hash,
+                #         old_value=old_meta,
+                #         new_value=new_meta,
+                #         old_datatype=old_datatype,
+                #         new_datatype=new_datatype,
+                #         change_target=key,
+                #         change_type=change_type
+                #     )
+                # elif type_ == 'reference':
+                #     self.save_reference_changes(
+                #         id_to_int(property_id),
+                #         value_id=value_id,
+                #         ref_property_id=id_to_int(rq_property_id),
+                #         ref_hash=ref_hash,
+                #         value_hash=value_hash,
+                #         old_value=old_meta,
+                #         new_value=new_meta,
+                #         old_datatype=old_datatype,
+                #         new_datatype=new_datatype,
+                #         change_target=key,
+                #         change_type=change_type
+                #     )
             
             remaining_keys = big_set - keys_to_skip
             for key in remaining_keys:
@@ -633,7 +692,7 @@ class PageParser():
                     old_meta = None
                 
                 if type_ == 'value':
-                    self.save_changes(
+                    self.save_datatype_metadata_changes(
                         id_to_int(property_id),
                         value_id=value_id,
                         old_value=old_meta,
@@ -645,34 +704,34 @@ class PageParser():
                         old_hash=old_hash,
                         new_hash=new_hash
                     )
-                elif type_ == 'qualifier':
-                    self.save_qualifier_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        qual_property_id=id_to_int(rq_property_id),
-                        value_hash=value_hash,
-                        old_value=old_meta,
-                        new_value=new_meta,
-                        old_datatype=old_datatype,
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type
-                    )
+                # elif type_ == 'qualifier':
+                #     self.save_qualifier_changes(
+                #         id_to_int(property_id),
+                #         value_id=value_id,
+                #         qual_property_id=id_to_int(rq_property_id),
+                #         value_hash=value_hash,
+                #         old_value=old_meta,
+                #         new_value=new_meta,
+                #         old_datatype=old_datatype,
+                #         new_datatype=new_datatype,
+                #         change_target=key,
+                #         change_type=change_type
+                #     )
 
-                elif type_ == 'reference':
-                    self.save_reference_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        ref_property_id=id_to_int(rq_property_id),
-                        value_hash=value_hash,
-                        ref_hash=ref_hash,
-                        old_value=old_meta,
-                        new_value=new_meta,
-                        old_datatype=old_datatype,
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type
-                    )
+                # elif type_ == 'reference':
+                #     self.save_reference_changes(
+                #         id_to_int(property_id),
+                #         value_id=value_id,
+                #         ref_property_id=id_to_int(rq_property_id),
+                #         value_hash=value_hash,
+                #         ref_hash=ref_hash,
+                #         old_value=old_meta,
+                #         new_value=new_meta,
+                #         old_datatype=old_datatype,
+                #         new_datatype=new_datatype,
+                #         change_target=key,
+                #         change_type=change_type
+                #     )
     
     def _handle_value_changes(self, old_datatype, new_datatype, new_value, old_value, value_id, property_id, change_type, old_hash, new_hash, change_magnitude=None):
 
@@ -715,7 +774,7 @@ class PageParser():
             # however, I've found revisions where the id is not present but the numeric-id is
             # therefore, I normalize and keep only 'id' or generate it from numeric-id
             if not 'id' in prop_val['datavalue']['value']:
-                prop_val['datavalue']['value']['id'] = f'Q{prop_val['datavalue']['value']['numeric-id']}'
+                prop_val['datavalue']['value']['id'] = f"Q{prop_val['datavalue']['value']['numeric-id']}"
             
             # remove numeric-id, only keep id
             prop_val['datavalue']['value'].pop("numeric-id", None)
@@ -820,11 +879,15 @@ class PageParser():
             for ref in refs:
                 # Create a stable "content hash" for the whole reference
                 ref_snaks = []
-                for pid, vals in sorted(ref['snaks'].items()):
-                    for prop_val in vals:
-                        hom_prop_val = PageParser.homogenize_datavalue(prop_val)
-                        value_hash = PageParser.generate_value_hash(hom_prop_val)
-                        ref_snaks.append((pid, value_hash))
+                if isinstance(ref['snaks'], dict):
+
+                    for pid, vals in ref['snaks'].items():
+                        for prop_val in vals:
+                            hom_prop_val = PageParser.homogenize_datavalue(prop_val)
+                            value_hash = PageParser.generate_value_hash(hom_prop_val)
+                            ref_snaks.append((pid, value_hash))
+                else: 
+                    continue
                 
                 # Sort and hash to get a stable reference-level id
                 ref_content_hash = hashlib.sha1(
@@ -832,12 +895,15 @@ class PageParser():
                 ).hexdigest()
 
                 # Now map each snak individually
-                for pid, vals in ref['snaks'].items():
-                    for prop_val in vals:
-                        hom_prop_val = PageParser.homogenize_datavalue(prop_val)
-                        value_hash = PageParser.generate_value_hash(hom_prop_val)
-                        hom_prop_val['hash'] = value_hash
-                        hash_map[(ref_content_hash, pid, value_hash)] = hom_prop_val
+                if isinstance(ref['snaks'], dict):
+                    for pid, vals in ref['snaks'].items():
+                        for prop_val in vals:
+                            hom_prop_val = PageParser.homogenize_datavalue(prop_val)
+                            value_hash = PageParser.generate_value_hash(hom_prop_val)
+                            hom_prop_val['hash'] = value_hash
+                            hash_map[(ref_content_hash, pid, value_hash)] = hom_prop_val
+                else: 
+                    continue
                         
             return hash_map
 
@@ -879,21 +945,21 @@ class PageParser():
                 change_type=DELETE_REFERENCE
             )
 
-            if old_datatype_metadata:
+            # if old_datatype_metadata:
 
-                self._handle_datatype_metadata_changes(
-                    old_datatype_metadata=old_datatype_metadata,
-                    new_datatype_metadata=None,
-                    value_id=stmt_value_id,
-                    old_datatype=prev_dtype,
-                    new_datatype=None,
-                    property_id=stmt_pid,
-                    change_type=DELETE_REFERENCE,
-                    type_='reference',
-                    rq_property_id=pid,
-                    value_hash=value_hash,
-                    ref_hash=ref_hash
-                )
+            #     self._handle_datatype_metadata_changes(
+            #         old_datatype_metadata=old_datatype_metadata,
+            #         new_datatype_metadata=None,
+            #         value_id=stmt_value_id,
+            #         old_datatype=prev_dtype,
+            #         new_datatype=None,
+            #         property_id=stmt_pid,
+            #         change_type=DELETE_REFERENCE,
+            #         type_='reference',
+            #         rq_property_id=pid,
+            #         value_hash=value_hash,
+            #         ref_hash=ref_hash
+            #     )
 
         # creations
         for ref_hash, pid, value_hash in created:
@@ -921,21 +987,21 @@ class PageParser():
                 change_type=CREATE_REFERENCE
             )
 
-            if new_datatype_metadata:
+            # if new_datatype_metadata:
         
-                self._handle_datatype_metadata_changes(
-                    old_datatype_metadata=None,
-                    new_datatype_metadata=new_datatype_metadata,
-                    value_id=stmt_value_id,
-                    old_datatype=None,
-                    new_datatype=curr_dtype,
-                    property_id=stmt_pid,
-                    change_type=CREATE_REFERENCE,
-                    type_='reference',
-                    rq_property_id=pid,
-                    value_hash=value_hash,
-                    ref_hash=ref_hash
-                )
+            #     self._handle_datatype_metadata_changes(
+            #         old_datatype_metadata=None,
+            #         new_datatype_metadata=new_datatype_metadata,
+            #         value_id=stmt_value_id,
+            #         old_datatype=None,
+            #         new_datatype=curr_dtype,
+            #         property_id=stmt_pid,
+            #         change_type=CREATE_REFERENCE,
+            #         type_='reference',
+            #         rq_property_id=pid,
+            #         value_hash=value_hash,
+            #         ref_hash=ref_hash
+            #     )
         
         sys.stdout.flush()
 
@@ -1038,19 +1104,19 @@ class PageParser():
                     change_type=DELETE_QUALIFIER
                 )
 
-                if old_datatype_metadata:
-                    self._handle_datatype_metadata_changes(
-                        old_datatype_metadata=old_datatype_metadata, 
-                        new_datatype_metadata=None, 
-                        value_id=stmt_value_id, 
-                        old_datatype=prev_dtype, 
-                        new_datatype=None, 
-                        property_id=stmt_pid, 
-                        change_type=DELETE_QUALIFIER, 
-                        type_='qualifier', 
-                        rq_property_id=pid, 
-                        value_hash=h
-                    )
+                # if old_datatype_metadata:
+                #     self._handle_datatype_metadata_changes(
+                #         old_datatype_metadata=old_datatype_metadata, 
+                #         new_datatype_metadata=None, 
+                #         value_id=stmt_value_id, 
+                #         old_datatype=prev_dtype, 
+                #         new_datatype=None, 
+                #         property_id=stmt_pid, 
+                #         change_type=DELETE_QUALIFIER, 
+                #         type_='qualifier', 
+                #         rq_property_id=pid, 
+                #         value_hash=h
+                #     )
 
             # --- Added values ---
             for h in added:
@@ -1077,19 +1143,19 @@ class PageParser():
                     change_type=CREATE_QUALIFIER
                 )
 
-                if new_datatype_metadata:
-                    self._handle_datatype_metadata_changes(
-                        old_datatype_metadata=None, 
-                        new_datatype_metadata=new_datatype_metadata, 
-                        value_id=stmt_value_id, 
-                        old_datatype=None, 
-                        new_datatype=curr_dtype, 
-                        property_id=stmt_pid, 
-                        change_type=CREATE_QUALIFIER, 
-                        type_='qualifier', 
-                        rq_property_id=pid, 
-                        value_hash=h
-                    )
+                # if new_datatype_metadata:
+                #     self._handle_datatype_metadata_changes(
+                #         old_datatype_metadata=None, 
+                #         new_datatype_metadata=new_datatype_metadata, 
+                #         value_id=stmt_value_id, 
+                #         old_datatype=None, 
+                #         new_datatype=curr_dtype, 
+                #         property_id=stmt_pid, 
+                #         change_type=CREATE_QUALIFIER, 
+                #         type_='qualifier', 
+                #         rq_property_id=pid, 
+                #         value_hash=h
+                #     )
 
         return change_detected
             
@@ -1104,6 +1170,9 @@ class PageParser():
                 value, datatype, datatype_metadata = PageParser._parse_datavalue(stmt)
                 new_hash = PageParser._get_property_mainsnak(stmt, 'hash') if stmt else None
                 value_id = stmt.get('id', None)
+
+                if property_id == 'P31':
+                    self.entity_types_31.add((value_id, value))
                 
                 old_value = None
                 new_value = value
@@ -1126,7 +1195,7 @@ class PageParser():
                         old_value = None
                         new_value = v
                         
-                        self.save_changes(
+                        self.save_datatype_metadata_changes(
                             id_to_int(property_id),
                             value_id=value_id,
                             old_value=old_value,
@@ -1180,6 +1249,9 @@ class PageParser():
                 value, datatype, datatype_metadata = PageParser._parse_datavalue(stmt)
                 new_hash = PageParser._get_property_mainsnak(stmt, 'hash') if stmt else None
                 value_id = stmt.get('id', None)
+
+                if property_id == 'P31':
+                    self.entity_types_31.remove((value_id, value))
                 
                 old_value = value
                 new_value = None
@@ -1202,7 +1274,7 @@ class PageParser():
                         old_value = v
                         new_value = None
                         
-                        self.save_changes(
+                        self.save_datatype_metadata_changes(
                             id_to_int(property_id),
                             value_id=value_id,
                             old_value=old_value,
@@ -1271,7 +1343,8 @@ class PageParser():
                 value_id='label',
                 old_value=old_value,
                 new_value=new_value,
-                datatype='string',
+                old_datatype='string' if old_value is not None else None,
+                new_datatype='string' if new_value is not None else None,
                 change_target=None,
                 change_type=PageParser._description_label_change_type(prev_label, curr_label),
                 change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string'),
@@ -1296,7 +1369,8 @@ class PageParser():
                 value_id='description',
                 old_value=old_value,
                 new_value=new_value,
-                datatype='string',
+                old_datatype='string' if old_value is not None else None,
+                new_datatype='string' if new_value is not None else None,
                 change_target=None,
                 change_type=PageParser._description_label_change_type(prev_desc, curr_desc),
                 change_magnitude=PageParser.magnitude_of_change(old_value, new_value, 'string'),
@@ -1306,6 +1380,12 @@ class PageParser():
 
         return change_detected
     
+    def _handle_type_change():
+        """
+            Handles changes in the entity type between two revisions.
+        """
+        pass
+
     def _handle_new_pids(self, new_pids, curr_claims):
         """
             Handles new properties (P-IDs) in the current revision.
@@ -1315,6 +1395,10 @@ class PageParser():
             for s in curr_statements:
                 new_value, new_datatype, new_datatype_metadata = PageParser._parse_datavalue(s)
                 value_id = s.get('id', None)
+
+                # add new type, if it's duplicated it will not be duplicated because we save a set
+                if new_pid == 'P31':
+                    self.entity_types_31.add((value_id, new_value))
 
                 old_hash = None
                 new_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
@@ -1354,8 +1438,11 @@ class PageParser():
 
             for s in prev_statements:
                 old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(s)
-
                 value_id = s.get('id', None)
+
+                # add new type, if it's duplicated it will not be duplicated because we save a set
+                if removed_pid == 'P31':
+                    self.entity_types_31.remove((value_id, old_value))
 
                 new_hash = None
                 old_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
@@ -1509,6 +1596,10 @@ class PageParser():
                 if prev_stmt and not curr_stmt:
                     change_detected = True
                     # Property value was removed -> the datatype is the datatype of the old_value
+
+                    if pid == 'P31':
+                        self.entity_types_31.remove((sid, old_value))
+
                     self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE, old_hash, new_hash)
 
                     if old_datatype_metadata:
@@ -1518,6 +1609,10 @@ class PageParser():
                 elif curr_stmt and not prev_stmt:
                     change_detected = True
                     # Property value was created
+
+                    if pid == 'P31':
+                        self.entity_types_31.add((sid, new_value))
+
                     self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, CREATE_PROPERTY_VALUE, old_hash, new_hash)
 
                     if new_datatype_metadata:
@@ -1545,6 +1640,10 @@ class PageParser():
                                 self._handle_value_changes(old_datatype, new_datatype, new_value_cleaned, old_value_cleaned, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
                         else:
                             self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
+
+                        if pid == 'P31':
+                            self.entity_types_31.remove((sid, old_value))
+                            self.entity_types_31.add((sid, new_value))
 
                     if (old_datatype != new_datatype) or (old_datatype_metadata != new_datatype_metadata):
                         # Datatype change imples a datatype_metadata change
@@ -1596,7 +1695,7 @@ class PageParser():
                 # completely empty revision -> the item was cleaned, probably because of a merge
                 # the following revision is probably a redirect
                 if not curr_aliases and not curr_sitelinks:
-                    print(f'Revision {self.revision_meta['revision_id']} of entity {self.revision_meta['entity_id']} cleaned the entity')
+                    # print(f"Revision {self.revision_meta['revision_id']} of entity {self.revision_meta['entity_id']} cleaned the entity")
                     self._changes_cleaned_entity(current_revision)
                     return True
             
@@ -1653,7 +1752,7 @@ class PageParser():
             entity_id = (title_elem.text or '').strip()
 
         entity_id = id_to_int(entity_id) # convert Q-ID to integer (remove the 'Q')
-
+        
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
 
@@ -1730,7 +1829,6 @@ class PageParser():
                             prev_rev_id,
                             self.revision_meta['revision_id'],
                             self.revision_meta['entity_id'],
-                            self.revision_meta['entity_label'],
                             self.revision_meta['timestamp'],
                             self.revision_meta['user_id'],
                             self.revision_meta['username'],
@@ -1753,38 +1851,42 @@ class PageParser():
                     if current_revision is not None:
                         previous_revision = current_revision
                     
-                    # Batch insert (changes >= revision because one revision can have multiple changes)
-                    
-                    # if len(self.changes) >= self.batch_size:
-                    #     self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata, self.qualifier_changes, self.reference_changes)
-                    #     # remove already stored changes + revisions to avoid duplicates
-                    #     self.changes = []
-                    #     self.revision = []
-                    #     self.changes_metadata = []
-                    #     self.qualifier_changes = []
-                    #     self.reference_changes = []
                 else: # revision was deleted
                     prev_revision_deleted = True
 
             # free memory
             rev_elem.clear()
-        
-        # Insert remaining changes + revision + changes_metadata in case the batch size was not reached
-        # if self.changes:
-        #     batch_insert(self.conn, self.revision, self.changes, self.changes_metadata, self.qualifier_changes, self.reference_changes)
-        #     self.changes = []
-        #     self.revision = []
-        #     self.changes_metadata = []
-        #     self.qualifier_changes = []
-        #     self.reference_changes = []
-
-        # # Update entity label with last existing label
-        # update_entity_label(self.conn, entity_id, entity_label)
 
         for i, r in enumerate(self.revision):
             self.revision[i] = r + (entity_label,)
 
-        self.db_executor.submit(batch_insert, self.conn, self.revision, self.changes, self.changes_metadata, self.qualifier_changes, self.reference_changes)
+        SCHOLARLY_ARTICLE_TYPES = [
+            'Q13442814', # scholarly article
+            'Q191067',     # article (generic)
+            'Q18918145',   # academic journal article
+            'Q591041',    # scientific publication
+            'Q1266946',    # thesis
+            'Q187685',     # doctoral thesis
+            'Q1907875',    # master's thesis
+            'Q580922',     # preprint
+            'Q10885494',   # academic conference paper
+            'Q23927052',   # proceedings article
+            'Q591041',     # scientific publication
+            'Q7318358' # review article
+        ]
+
+        is_scholarly_article = False
+        if len(self.entity_types_31) > 0:
+            for et in self.entity_types_31:
+                if et[1] in SCHOLARLY_ARTICLE_TYPES: # get the value of P31
+                    is_scholarly_article = True
+                    break
+
+        batch_insert(self.conn, 
+                    self.revision, self.changes, self.changes_metadata, 
+                    self.qualifier_changes, self.reference_changes, self.datatype_metadata_changes,
+                    self.datatype_metadata_changes_metadata, 
+                    is_scholarly_article)
 
         # Clear element to free memory
         self.page_elem.clear()
