@@ -1,0 +1,7 @@
+{
+    "DB_USER": "postgres",
+    "DB_PASS": "postgres",
+    "DB_NAME": "wikidata",
+    "DB_PORT": 5433,
+    "DB_HOST": "10.130.31.18"
+}

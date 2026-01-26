@@ -1,74 +1,38 @@
 import html
 import json
 import Levenshtein
-from concurrent.futures import ThreadPoolExecutor
-import psycopg2
-import os
-import sys
-from dotenv import load_dotenv
-from pathlib import Path
 from lxml import etree
+import sys
 import re
 import hashlib
+import time
+from datetime import datetime
+from collections import defaultdict
 
-from scripts.utils import haversine_metric, get_time_dict, gregorian_to_julian, insert_rows, update_entity_label, id_to_int, insert_rows_copy
+from scripts.feature_creation import FeatureCreation
+from scripts.utils import get_time_feature, haversine_metric, get_time_dict, gregorian_to_julian, id_to_int
 from scripts.const import *
 
-def batch_insert(
-    conn, 
-    revision, changes, change_metadata, qualifier_changes, reference_changes, datatype_metadata_changes, datatype_metadata_changes_metadata,
-    is_scholarly_article=False
-    ):
-
-    """Function to insert into DB in parallel."""
-    
-    try:
-        # filter scholarly types
-        if is_scholarly_article:
-            table_suffix = '_sa'
-        else:
-            table_suffix = ''
-
-        if len(revision) > 0:
-            insert_rows(conn, f'revision{table_suffix}', revision, ['prev_revision_id', 'revision_id', 'entity_id', 'timestamp', 'user_id', 'username', 'comment', 'file_path', 'redirect', 'entity_label'])
-        
-        if len(changes) > 0:
-            insert_rows(conn, f'value_change{table_suffix}', changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash', 'timestamp', 'entity_id'])
-            
-        if len(change_metadata) > 0:
-            insert_rows(conn, f'value_change_metadata{table_suffix}', change_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
-        
-        if len(qualifier_changes) > 0:
-            insert_rows(conn, f'qualifier_change{table_suffix}', qualifier_changes, ['revision_id', 'property_id', 'value_id', 'qual_property_id', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'timestamp', 'entity_id'])
-        
-        if len(reference_changes) > 0:
-            insert_rows(conn, f'reference_change{table_suffix}', reference_changes, ['revision_id', 'property_id', 'value_id', 'ref_property_id', 'ref_hash', 'value_hash', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'timestamp', 'entity_id'])
-        
-        if len(datatype_metadata_changes) > 0:
-            insert_rows(conn, f'datatype_metadata_change{table_suffix}', datatype_metadata_changes, ['revision_id', 'property_id', 'value_id', 'old_value', 'new_value', 'old_datatype', 'new_datatype', 'change_target', 'action', 'target', 'old_hash', 'new_hash', 'timestamp', 'entity_id'])
-
-        if len(datatype_metadata_changes_metadata) > 0:
-            insert_rows(conn, f'datatype_metadata_change_metadata{table_suffix}', datatype_metadata_changes_metadata, ['revision_id', 'property_id', 'value_id', 'change_target', 'change_metadata', 'value'])
-
-    except Exception as e:
-        print(f'There was an error when batch inserting revisions and changes: {e}')
-        sys.stdout.flush()
-        raise e
-
 class PageParser():
-    def __init__(self, file_path, page_elem_str, config, connection):
+    def __init__(self, file_path, page_elem_str, config, 
+                 connection, property_labels, astronomical_object_types, scholarly_article_types):
         
+        # Change storage
         self.changes = []
         self.revision = []
-        self.changes_metadata = []
+        # self.changes_metadata = []
         self.qualifier_changes = []
         self.reference_changes = []
         self.datatype_metadata_changes = []
-        self.datatype_metadata_changes_metadata = []
+        # self.datatype_metadata_changes_metadata = []
 
-        # store entity types 
-        # handles removed types
-        self.entity_types_31 = set()
+        # Feature storage
+        self.quantity_features = []
+        self.time_features = []
+        self.entity_features = []
+        self.text_features = []
+        self.globecoordinate_features = []
+        self.property_replacement_features = []
 
         self.config = config
 
@@ -76,11 +40,247 @@ class PageParser():
 
         self.revision_meta = {}
 
+        self.entity_data = {
+            'label': '',
+            'alias': '',
+            'description': '',
+            'p31_types': set(),
+            'p279_types': set(),
+            'p31_labels_list': '',
+            'p279_labels_list': ''
+        }
+
         self.file_path = file_path # file_path of XML where the page is stored
         self.page_elem = etree.fromstring(page_elem_str) # XML page for the entity
 
         self.conn = connection
 
+        self.feature_creation = FeatureCreation(connection)
+
+        self.PROPERTY_LABELS = property_labels
+        self.ASTRONOMICAL_OBJECT_TYPES = astronomical_object_types
+        self.SCHOLARLY_ARTICLE_TYPES = scholarly_article_types
+
+        # FOR REVERTED EDIT TAGGING
+        self.changes_by_pv = defaultdict(list)  # (property, value) -> [changes]
+
+        # FOR ML FEATURES FRO PROPERTY_REPLACEMENT
+        self.property_replacement_changes = []  # property replacement changes
+
+
+        self.pending_changes = defaultdict(lambda: {'CREATE': None, 'DELETE': None})  # value_hash -> {'CREATE': change, 'DELETE': change}
+
+        self.entity_stats = {
+            'entity_id': None,
+            'entity_label': '',
+            'entity_types_31': '',
+
+            'num_revisions': 0,
+            
+            'num_value_changes': 0, # this includes all changes to property values (creates, deletes, updates) 
+            'num_value_change_creates': 0,
+            'num_value_change_deletes': 0,
+            'num_value_change_updates': 0,
+
+            'num_rank_changes': 0,
+            'num_rank_creates': 0,
+            'num_rank_deletes': 0,
+            'num_rank_updates': 0,
+
+            'num_qualifier_changes': 0,
+            'num_reference_changes': 0,
+
+            'num_datatype_metadata_changes': 0,
+            'num_datatype_metadata_creates': 0,
+            'num_datatype_metadata_deletes': 0,
+            'num_datatype_metadata_updates': 0,
+            
+            'first_revision_timestamp': None,  # For calculating entity age
+            'last_revision_timestamp': None,
+            
+            'num_bot_edits': 0, 
+            'num_anonymous_edits': 0,
+            'num_human_edits': 0
+        }
+
+        self.entity_property_time = defaultdict(lambda: {
+            'num_value_changes': 0,
+            'num_value_additions': 0,
+            'num_value_deletions': 0,
+            'num_value_updates': 0,
+
+            'num_rank_changes': 0,
+            'num_rank_creates': 0,
+            'num_rank_deletes': 0,
+            'num_rank_updates': 0,
+
+            'num_reference_additions': 0,
+            'num_reference_deletions': 0,
+            'num_qualifier_additions': 0,
+            'num_qualifier_deletions': 0,
+
+            'num_statement_additions': 0,
+            'num_statement_deletions': 0,
+            'num_soft_insertions': 0,
+            'num_soft_deletions': 0,
+
+            'revisions': set(),
+            'revisions_bot': set(),
+            'revisions_human': set(),
+            'revisions_anonymous': set(),
+            'unique_editors': set()
+        })
+
+    def calculate_entity_property_time_period_stats(
+        self,
+        entity_id,
+        property_id,
+        timestamp,
+        revision_id,
+        user_id,
+        user_type,
+        action,
+        target,
+        change_target,
+        label,
+        time_granularity='year_month'
+    ):
+        """
+        Aggregate change statistics per (entity, property, time_period).
+        """
+
+        # Compute time bucket
+        time_period = get_time_feature(timestamp, time_granularity)
+
+        key = (entity_id, property_id, time_period)
+        stats = self.entity_property_time[key]
+
+        # --- revision + editor tracking ---
+        stats['revisions'].add(revision_id)
+        stats['unique_editors'].add(user_id)
+
+        if user_type == 'bot':
+            stats['revisions_bot'].add(revision_id)
+        elif user_type == 'anonymous':
+            stats['revisions_anonymous'].add(revision_id)
+        else:
+            stats['revisions_human'].add(revision_id)
+
+        if label in ('value_insertion', 'value_deletion', 'value_update'):
+            stats['num_value_changes'] += 1
+
+        # --- value-level changes ---
+        if label == 'value_insertion':
+            stats['num_value_additions'] += 1
+
+        elif label == 'value_deletion':
+            stats['num_value_deletions'] += 1
+
+        elif label == 'value_update':
+            stats['num_value_updates'] += 1
+        
+        elif label == 'statement_deletion':
+            stats['num_statement_deletions'] += 1
+        
+        elif label == 'statement_insertion':
+            stats['num_statement_additions'] += 1
+
+        elif label == 'soft_insertion':
+            stats['num_soft_insertions'] += 1
+
+        elif label == 'soft_deletion':
+            stats['num_soft_deletions'] += 1
+
+        # --- rank changes ---
+        if change_target == 'rank':
+            stats['num_rank_changes'] += 1
+
+            if change_target == 'rank' and action == 'CREATE':
+                stats['num_rank_creates'] += 1
+            elif change_target == 'rank' and action == 'DELETE':
+                stats['num_rank_deletes'] += 1
+            elif change_target == 'rank' and action == 'UPDATE':
+                stats['num_rank_updates'] += 1
+
+        # --- reference changes ---
+        if target == 'REFERENCE':
+            if action == 'CREATE':
+                stats['num_reference_additions'] += 1
+            elif action == 'DELETE':
+                stats['num_reference_deletions'] += 1
+
+        # --- qualifier changes ---
+        if target == 'QUALIFIER':
+            if action == 'CREATE':
+                stats['num_qualifier_additions'] += 1
+            elif action == 'DELETE':
+                stats['num_qualifier_deletions'] += 1
+
+    def update_entity_stats(self, change_target, action):
+        if change_target == '':
+            self.entity_stats['num_value_changes'] += 1
+
+            if action == 'CREATE':
+                self.entity_stats['num_value_change_creates'] += 1
+            
+            elif action == 'DELETE':
+                self.entity_stats['num_value_change_deletes'] += 1
+            
+            elif action == 'UPDATE':
+                self.entity_stats['num_value_change_updates'] += 1
+
+        if change_target == 'rank':
+            self.entity_stats['num_rank_changes'] += 1
+            if action == 'CREATE':
+                self.entity_stats['num_rank_creates'] += 1
+            elif action == 'DELETE':
+                self.entity_stats['num_rank_deletes'] += 1
+            elif action == 'UPDATE':
+                self.entity_stats['num_rank_updates'] += 1
+
+    def finalize_entity_property_time_stats(self):
+        entity_property_time_stats = []
+        for key in self.entity_property_time:
+            self.entity_property_time[key]['num_revisions_anonymous'] = len(self.entity_property_time[key]['revisions_anonymous'])
+            self.entity_property_time[key]['num_revisions_human'] = len(self.entity_property_time[key]['revisions_human'])
+            self.entity_property_time[key]['num_unique_editors'] = len(self.entity_property_time[key]['unique_editors'])
+            self.entity_property_time[key]['num_revisions'] = len(self.entity_property_time[key]['revisions'])
+            self.entity_property_time[key]['num_revisions_bot'] = len(self.entity_property_time[key]['revisions_bot'])
+        
+            del self.entity_property_time[key]['revisions_anonymous']
+            del self.entity_property_time[key]['revisions_human']
+            del self.entity_property_time[key]['unique_editors']
+            del self.entity_property_time[key]['revisions']
+            del self.entity_property_time[key]['revisions_bot']
+
+            entity_property_time_stats.append((
+                key[0], # entity_id
+                key[1], # property_id
+                key[2], # time_period
+                self.entity_property_time[key]['num_value_changes'],
+                self.entity_property_time[key]['num_value_additions'],
+                self.entity_property_time[key]['num_value_deletions'],
+                self.entity_property_time[key]['num_value_updates'],
+                self.entity_property_time[key]['num_statement_additions'],
+                self.entity_property_time[key]['num_statement_deletions'],
+                self.entity_property_time[key]['num_soft_insertions'],
+                self.entity_property_time[key]['num_soft_deletions'],
+                self.entity_property_time[key]['num_rank_changes'],
+                self.entity_property_time[key]['num_rank_creates'],
+                self.entity_property_time[key]['num_rank_deletes'],
+                self.entity_property_time[key]['num_rank_updates'],
+                self.entity_property_time[key]['num_reference_additions'],
+                self.entity_property_time[key]['num_reference_deletions'],
+                self.entity_property_time[key]['num_qualifier_additions'],
+                self.entity_property_time[key]['num_qualifier_deletions'],
+                self.entity_property_time[key]['num_revisions'],
+                self.entity_property_time[key]['num_revisions_bot'],
+                self.entity_property_time[key]['num_revisions_human'],
+                self.entity_property_time[key]['num_revisions_anonymous'],
+                self.entity_property_time[key]['num_unique_editors'],
+            ))
+        return entity_property_time_stats
+    
     def _parse_json_revision(self, revision_elem, revision_text):
         # TODO: remove revision_elem from args - only for debugging
         """
@@ -216,10 +416,19 @@ class PageParser():
         else:
             return current
     
-    def get_label(self, revision):
+    def get_label_alias_description(self, revision):
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
         label = PageParser._safe_get_nested(revision, 'labels', lang, 'value') 
-        return label if not isinstance(label, dict) else ''
+
+        description = PageParser._safe_get_nested(revision, 'descriptions', lang, 'value')
+        
+        if isinstance(revision.get('aliases', None), dict): # there can be multiple aliases for a single language
+            aliases_list = revision['aliases'].get(lang, [])
+            alias = aliases_list[0]['value'] if len(aliases_list) > 0 else ''
+        else:
+            alias = ''
+
+        return label if not isinstance(label, dict) else '', alias, description if not isinstance(description, dict) else ''
     
     @staticmethod
     def parse_datavalue_json(value_json, datatype):
@@ -290,6 +499,80 @@ class PageParser():
         elif old_value and new_value and old_value != new_value:
             return UPDATE_PROPERTY_VALUE
 
+    def process_pair_changes(self, change):
+        """Track and immediately process pairs
+        for property replacement features"""
+        
+        action = change[11] # action
+        if action == 'DELETE':
+            value_hash = change[13] # old_hash is not None
+            opposite_action = 'CREATE'
+        else:
+            value_hash = change[14] # new_hash is not None
+            opposite_action = 'DELETE'
+        
+        if self.pending_changes[value_hash][opposite_action] is not None:
+            opposite_change = self.pending_changes[value_hash][opposite_action]
+            
+            if (opposite_change[1] != change[1]): # different property_id and same value since I get it with value_hash
+                
+                features = self.feature_creation.create_property_replacement_features(change, opposite_change)
+
+                self.property_replacement_features.append(features) # already has all columns needed
+                
+                # Clear the oldest one, so the most recent one can be compared to future ones
+                timestamp_change = datetime.strptime(change[15].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                timestamp_opposite_change = datetime.strptime(opposite_change[15].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                if timestamp_change < timestamp_opposite_change and action == 'DELETE':
+                    self.pending_changes[value_hash]['DELETE'] = None
+                else:
+                    self.pending_changes[value_hash]['CREATE'] = None
+                
+        # No match - store as pending 
+        self.pending_changes[value_hash][action] = change
+    
+    def calculate_features(self, revision_id, property_id, value_id, old_value, new_value, old_datatype, new_datatype, change_target, action):
+        base_cols = (
+            revision_id,
+            property_id,
+            value_id,
+            change_target,
+            new_datatype,
+            old_datatype,
+            action,
+            old_value,
+            new_value,
+        )
+
+        if  new_datatype == 'quantity':
+            features = self.feature_creation.create_quantity_features(old_value, new_value)
+            self.quantity_features.append(
+                base_cols + features
+            ) 
+        if new_datatype == 'globecoordinate':
+            features = self.feature_creation.create_globe_coordinate_features(old_value, new_value)
+            self.globecoordinate_features.append(
+                base_cols + features
+            )
+
+        if new_datatype == 'time':
+            features = self.feature_creation.create_time_features(old_value, new_value)
+            self.time_features.append(
+                base_cols + features
+            )
+        
+        if new_datatype in WD_STRING_TYPES:
+            features = self.feature_creation.create_text_features('text', old_value, new_value)
+            self.text_features.append(
+                base_cols + features
+            )
+
+        if new_datatype in WD_ENTITY_TYPES:
+            features  = self.feature_creation.create_entity_features(old_value, new_value)
+            self.entity_features.append(
+                base_cols + features
+            )
+
     def save_changes(self, property_id, value_id, old_value, new_value, old_datatype, new_datatype, change_target, change_type, change_magnitude=None, old_hash=None, new_hash=None):
         """
             Store value + datatype metadata (of property value) + rank changes
@@ -299,37 +582,111 @@ class PageParser():
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
 
+        timestamp = self.revision_meta['timestamp']
+        entity_id = self.revision_meta['entity_id']
+        revision_id = self.revision_meta['revision_id']
+
+        change_target = change_target if change_target else ''
+        
+        label = ''
+
+        # Property value tagging
+        if change_target == '':
+            if new_datatype != old_datatype and action == 'UPDATE': # NOTE: the datatypes could be different but it could be a CREATE or DELETE
+                label = 'value_update'
+
+            if action == 'CREATE' and target == 'PROPERTY':
+                label = 'statement_insertion'
+
+            if action == 'DELETE' and target == 'PROPERTY':
+                label = 'statement_deletion'
+
+            if action == 'CREATE' and target == 'PROPERTY_VALUE':
+                label = 'value_insertion'
+        
+            if action == 'DELETE' and target == 'PROPERTY_VALUE':
+                label = 'value_deletion'
+
+        # Soft insertion + deletion 
+        if change_target == 'rank' and action == 'UPDATE':
+            if old_value in ['normal', 'preferred'] and new_value == 'deprecated':
+                label = 'soft_deletion'
+
+            if new_value == 'preferred' and old_value in ['deprecated','normal']:
+                label = 'soft_insertion'
+
+        self.update_entity_stats(change_target, action)
+
+        if change_target != 'rank':
+            self.changes_by_pv[(property_id, value_id)].append({
+                'timestamp': timestamp,
+                'old_hash': old_hash if old_hash else '',
+                'new_hash': new_hash if new_hash else '',
+                'old_value': old_value,
+                'new_value': new_value,
+                'comment': self.revision_meta['comment'],
+                'user_id': self.revision_meta['user_id'],
+                'change_target': change_target if change_target else '',
+                'revision_id': revision_id,
+                'user_type': self.revision_meta['user_type'],
+                'action': action,
+                'new_datatype': new_datatype,
+                'old_datatype': old_datatype
+            })
+
+        if change_target == '' and action == 'UPDATE' and new_datatype == old_datatype:
+            self.calculate_features(
+                revision_id,
+                property_id,
+                value_id,
+                old_value,
+                new_value,
+                old_datatype,
+                new_datatype,
+                change_target,
+                action
+            )
+            
         change = (
-            self.revision_meta['revision_id'],
+            revision_id,
             property_id,
+            self.PROPERTY_LABELS.get(str(property_id), ''),
             value_id,
             old_value,
             new_value,
             old_datatype,
             new_datatype,
-            change_target if change_target else '', # can't be None since change_target is part of the key of the table
+            change_target, # can't be None since change_target is part of the key of the table
             action,
             target,
             old_hash if old_hash else '',
             new_hash if new_hash else '',
-            self.revision_meta['timestamp'],
-            self.revision_meta['entity_id']
+            timestamp,
+            get_time_feature(timestamp, 'week'),
+            get_time_feature(timestamp, 'year_month'),
+            get_time_feature(timestamp, 'year'),
+            label,
+            entity_id
         )
-
+            
         self.changes.append(change)
 
-        change_metadata = ()
-        if change_magnitude is not None:
-            change_metadata = (
-                self.revision_meta['revision_id'],
-                property_id,
-                value_id,
-                change_target if change_target else '', # can't be None since change_target is part of the key of the table
-                'CHANGE_MAGNITUDE',
-                change_magnitude
-            )
-            self.changes_metadata.append(change_metadata)
+        if action == 'CREATE' or action == 'DELETE': # only for create and deletes
+            self.process_pair_changes(change)
+
+        # change_metadata = ()
+        # if change_magnitude is not None:
+        #     change_metadata = (
+        #         self.revision_meta['revision_id'],
+        #         property_id,
+        #         value_id,
+        #         change_target if change_target else '', # can't be None since change_target is part of the key of the table
+        #         'CHANGE_MAGNITUDE',
+        #         change_magnitude
+        #     )
+        #     self.changes_metadata.append(change_metadata)
         
+    
     def save_datatype_metadata_changes(self, property_id, value_id, old_value, new_value, old_datatype, new_datatype, change_target, change_type, change_magnitude=None, old_hash=None, new_hash=None):
         """
             Store value + datatype metadata (of property value) + rank changes
@@ -338,10 +695,16 @@ class PageParser():
         new_value = json.dumps(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
+        timestamp = self.revision_meta['timestamp']
+
+        label = ''
+        if action == 'UPDATE':
+            label = 'datatype_context_update'
 
         change = (
             self.revision_meta['revision_id'],
             property_id,
+            self.PROPERTY_LABELS.get(str(property_id), ''),
             value_id,
             old_value,
             new_value,
@@ -352,23 +715,46 @@ class PageParser():
             target,
             old_hash if old_hash else '',
             new_hash if new_hash else '',
-            self.revision_meta['timestamp'],
-            self.revision_meta['entity_id']
+            timestamp,
+            get_time_feature(timestamp, 'week'),
+            get_time_feature(timestamp, 'year_month'),
+            get_time_feature(timestamp, 'year'),
+            self.revision_meta['entity_id'],
+            label
         )
 
         self.datatype_metadata_changes.append(change)
+        
+        if action == 'CREATE':
+            self.entity_stats['num_datatype_metadata_creates'] += 1
+        if action == 'DELETE':
+            self.entity_stats['num_datatype_metadata_deletes'] += 1
+        elif action == 'UPDATE':
+            self.entity_stats['num_datatype_metadata_updates'] += 1
 
-        change_metadata = ()
-        if change_magnitude is not None:
-            change_metadata = (
-                self.revision_meta['revision_id'],
-                property_id,
-                value_id,
-                change_target if change_target else '', # can't be None since change_target is part of the key of the table
-                'CHANGE_MAGNITUDE',
-                change_magnitude
-            )
-            self.datatype_metadata_changes_metadata.append(change_metadata)
+        self.entity_stats['num_datatype_metadata_changes'] += 1
+        
+        # self.datatype_metadata_changes_by_pv[(property_id, value_id)].append({
+        #     'timestamp': timestamp,
+        #     'old_hash': old_hash if old_hash else '',
+        #     'new_hash': new_hash if new_hash else '',
+        #     'comment': self.revision_meta['comment'],
+        #     'user_id': self.revision_meta['user_id'],
+        #     'change_target': change_target if change_target else '',
+        #     'revision_id': self.revision_meta['revision_id']
+        # })
+
+        # change_metadata = ()
+        # if change_magnitude is not None:
+        #     change_metadata = (
+        #         self.revision_meta['revision_id'],
+        #         property_id,
+        #         value_id,
+        #         change_target if change_target else '', # can't be None since change_target is part of the key of the table
+        #         'CHANGE_MAGNITUDE',
+        #         change_magnitude
+        #     )
+        #     self.datatype_metadata_changes_metadata.append(change_metadata)
     
     
     def save_qualifier_changes(self, property_id, value_id, qual_property_id, value_hash, old_value, new_value, old_datatype, new_datatype, change_target, change_type):
@@ -379,12 +765,25 @@ class PageParser():
         new_value = json.dumps(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
-
+        timestamp = self.revision_meta['timestamp']
+        
+        label = ''
+        # -- qualifiers adding end time
+        # -- P582 = end time
+        # -- P8554 = earliest end date - earliest date on which the statement could have begun to no longer be true
+        # -- P12506 = latest end date - latest date beyond which the statement could no longer be true
+        
+        if action == 'CREATE':
+            if qual_property_id in ['P582', 'P8554', 'P12506']:
+                label = 'soft_insertion'
+        
         change = (
             self.revision_meta['revision_id'],
             property_id,
+            self.PROPERTY_LABELS.get(str(property_id), ''),
             value_id,
             qual_property_id,
+            self.PROPERTY_LABELS.get(str(qual_property_id), ''),
             value_hash,
             old_value,
             new_value,
@@ -393,11 +792,29 @@ class PageParser():
             change_target if change_target else '', # can't be None since change_target is part of the key of the table
             action,
             target,
-            self.revision_meta['timestamp'],
-            self.revision_meta['entity_id']
+            timestamp,
+            get_time_feature(timestamp, 'week'),
+            get_time_feature(timestamp, 'year_month'),
+            get_time_feature(timestamp, 'year'),
+            self.revision_meta['entity_id'],
+            label
         )
 
         self.qualifier_changes.append(change)
+
+        self.calculate_entity_property_time_period_stats(
+            entity_id=self.revision_meta['entity_id'],
+            property_id=property_id,
+            timestamp=timestamp,
+            revision_id=self.revision_meta['revision_id'],
+            user_id=self.revision_meta['user_id'],
+            user_type=self.revision_meta['user_type'],
+            action=action,
+            target=target,
+            change_target=change_target,
+            label=label,
+            time_granularity='year_month'
+        )
 
     def save_reference_changes(self, property_id, value_id, ref_property_id, ref_hash, value_hash, old_value, new_value, old_datatype, new_datatype, change_target, change_type):
         """
@@ -407,12 +824,15 @@ class PageParser():
         new_value = json.dumps(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type) 
-
+        timestamp = self.revision_meta['timestamp']
+        label = ''
         change = (
             self.revision_meta['revision_id'],
             property_id,
+            self.PROPERTY_LABELS.get(str(property_id), ''),
             value_id,
             ref_property_id,
+            self.PROPERTY_LABELS.get(str(ref_property_id), ''), 
             ref_hash,
             value_hash,
             old_value,
@@ -422,14 +842,32 @@ class PageParser():
             change_target if change_target else '', # can't be None since change_target is part of the key of the table
             action,
             target,
-            self.revision_meta['timestamp'],
-            self.revision_meta['entity_id']
+            timestamp,
+            get_time_feature(timestamp, 'week'),
+            get_time_feature(timestamp, 'year_month'),
+            get_time_feature(timestamp, 'year'),
+            self.revision_meta['entity_id'],
+            label
         )
 
         self.reference_changes.append(change)
 
+        self.calculate_entity_property_time_period_stats(
+            entity_id=self.revision_meta['entity_id'],
+            property_id=property_id,
+            timestamp=timestamp,
+            revision_id=self.revision_meta['revision_id'],
+            user_id=self.revision_meta['user_id'],
+            user_type=self.revision_meta['user_type'],
+            action=action,
+            target=target,
+            change_target=change_target,
+            label=label,
+            time_granularity='year_month'
+        )
+
     def _handle_datatype_metadata_changes(self, old_datatype_metadata, new_datatype_metadata, value_id, old_datatype, new_datatype, property_id, change_type, old_hash=None, new_hash=None, type_='value', rq_property_id=None, value_hash=None, ref_hash=None):
-        
+
         if old_datatype_metadata and not new_datatype_metadata: # deletion
             for key in old_datatype_metadata.keys():
                 old_meta = old_datatype_metadata.get(key, None)
@@ -438,7 +876,22 @@ class PageParser():
                     old_meta = old_meta.split('/')[-1]
                 
                 if type_ == 'value':
-                    self.save_datatype_metadata_changes(
+
+                    if old_datatype == 'monolingualtext':
+                        self.save_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=old_meta,
+                            new_value=None,
+                            old_datatype=old_datatype,
+                            new_datatype=new_datatype,
+                            change_target=key,
+                            change_type=change_type, 
+                            old_hash=old_hash,
+                            new_hash=None
+                        )
+                    else:
+                        self.save_datatype_metadata_changes(
                             id_to_int(property_id),
                             value_id=value_id,
                             old_value=old_meta,
@@ -487,7 +940,21 @@ class PageParser():
                     new_meta = new_meta.split('/')[-1]
                 
                 if type_ == 'value':
-                    self.save_datatype_metadata_changes(
+                    if new_datatype == 'monolingualtext':
+                        self.save_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=None,
+                            new_value=new_meta,
+                            new_datatype=new_datatype,
+                            old_datatype=old_datatype,
+                            change_target=key,
+                            change_type=change_type, 
+                            old_hash=None,
+                            new_hash=new_hash
+                        )
+                    else:
+                        self.save_datatype_metadata_changes(
                             id_to_int(property_id),
                             value_id=value_id,
                             old_value=None,
@@ -548,19 +1015,35 @@ class PageParser():
                 if old_meta != new_meta: # save only what changed
                     
                     if type_ == 'value':
-                        self.save_datatype_metadata_changes(
-                            id_to_int(property_id),
-                            value_id=value_id,
-                            old_value=old_meta,
-                            new_value=new_meta,
-                            old_datatype=old_datatype,
-                            new_datatype=new_datatype,
-                            change_target=key,
-                            change_type=change_type, 
-                            change_magnitude=change_magnitude,
-                            old_hash=old_hash,
-                            new_hash=new_hash
-                        )
+
+                        if old_datatype == 'monolingualtext':
+                            self.save_changes(
+                                id_to_int(property_id),
+                                value_id=value_id,
+                                old_value=old_meta,
+                                new_value=new_meta,
+                                old_datatype=old_datatype,
+                                new_datatype=new_datatype,
+                                change_target=key,
+                                change_type=change_type, 
+                                change_magnitude=change_magnitude,
+                                old_hash=old_hash,
+                                new_hash=new_hash
+                            )
+                        else:
+                            self.save_datatype_metadata_changes(
+                                id_to_int(property_id),
+                                value_id=value_id,
+                                old_value=old_meta,
+                                new_value=new_meta,
+                                old_datatype=old_datatype,
+                                new_datatype=new_datatype,
+                                change_target=key,
+                                change_type=change_type, 
+                                change_magnitude=change_magnitude,
+                                old_hash=old_hash,
+                                new_hash=new_hash
+                            )
                     # elif type_ == 'qualifier':
                     #     self.save_qualifier_changes(
                     #         id_to_int(property_id),
@@ -635,18 +1118,32 @@ class PageParser():
                         keys_to_skip.add(new_meta_key)
                 
                 if type_ == 'value':
-                    self.save_datatype_metadata_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        old_value=old_meta,
-                        new_value=new_meta,
-                        old_datatype=old_datatype,
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type,
-                        old_hash=old_hash,
-                        new_hash=new_hash
-                    )
+                    if key == 'language':
+                        self.save_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=old_meta,
+                            new_value=new_meta,
+                            old_datatype=old_datatype,
+                            new_datatype=new_datatype,
+                            change_target=key,
+                            change_type=change_type,
+                            old_hash=old_hash,
+                            new_hash=new_hash
+                        )
+                    else:
+                        self.save_datatype_metadata_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=old_meta,
+                            new_value=new_meta,
+                            old_datatype=old_datatype,
+                            new_datatype=new_datatype,
+                            change_target=key,
+                            change_type=change_type,
+                            old_hash=old_hash,
+                            new_hash=new_hash
+                        )
                 # elif type_ == 'qualifier':
                 #     self.save_qualifier_changes(
                 #         id_to_int(property_id),
@@ -692,18 +1189,32 @@ class PageParser():
                     old_meta = None
                 
                 if type_ == 'value':
-                    self.save_datatype_metadata_changes(
-                        id_to_int(property_id),
-                        value_id=value_id,
-                        old_value=old_meta,
-                        new_value=new_meta,
-                        old_datatype=old_datatype,
-                        new_datatype=new_datatype,
-                        change_target=key,
-                        change_type=change_type,
-                        old_hash=old_hash,
-                        new_hash=new_hash
-                    )
+                    if key == 'language':
+                        self.save_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=old_meta,
+                            new_value=new_meta,
+                            old_datatype=old_datatype,
+                            new_datatype=new_datatype,
+                            change_target=key,
+                            change_type=change_type,
+                            old_hash=old_hash,
+                            new_hash=new_hash
+                        )
+                    else:
+                        self.save_datatype_metadata_changes(
+                            id_to_int(property_id),
+                            value_id=value_id,
+                            old_value=old_meta,
+                            new_value=new_meta,
+                            old_datatype=old_datatype,
+                            new_datatype=new_datatype,
+                            change_target=key,
+                            change_type=change_type,
+                            old_hash=old_hash,
+                            new_hash=new_hash
+                        )
                 # elif type_ == 'qualifier':
                 #     self.save_qualifier_changes(
                 #         id_to_int(property_id),
@@ -767,7 +1278,7 @@ class PageParser():
             prop_val['datavalue']['value'].pop("after", None)
             
             # remove 0's at the beggining
-            prop_val['datavalue']['value']['time'] = re.sub(r'^([+-])0+(?=\d{4}-)', r'\1', prop_val['datavalue']['value']['time'])
+            prop_val['datavalue']['value']['time'] = re.sub(r'^([+-])0*(\d+)', r'\1\2', prop_val['datavalue']['value']['time'])
 
         if type_ in WD_ENTITY_TYPES:
             # NOTE: From WD's doc, not all entities have a numeric-id
@@ -1172,7 +1683,10 @@ class PageParser():
                 value_id = stmt.get('id', None)
 
                 if property_id == 'P31':
-                    self.entity_types_31.add((value_id, value))
+                    self.entity_data['p31_types'].add((value_id, value))
+
+                if property_id == 'P279':
+                    self.entity_data['p279_types'].add((value_id, value))
                 
                 old_value = None
                 new_value = value
@@ -1185,7 +1699,7 @@ class PageParser():
                     old_datatype=None,
                     new_datatype=datatype,
                     change_target=None,
-                    change_type=CREATE_ENTITY,
+                    change_type=CREATE_PROPERTY,
                     old_hash=None,
                     new_hash=new_hash
                 )
@@ -1203,7 +1717,7 @@ class PageParser():
                             old_datatype=None,
                             new_datatype=datatype,
                             change_target=k,
-                            change_type=CREATE_ENTITY,
+                            change_type=CREATE_PROPERTY,
                             old_hash=None,
                             new_hash=new_hash
                         )
@@ -1233,7 +1747,7 @@ class PageParser():
                     old_datatype=None,
                     new_datatype='string',
                     change_target=None,
-                    change_type=CREATE_ENTITY,
+                    change_type=CREATE_PROPERTY,
                     old_hash='',
                     new_hash=''
                 )
@@ -1251,7 +1765,10 @@ class PageParser():
                 value_id = stmt.get('id', None)
 
                 if property_id == 'P31':
-                    self.entity_types_31.remove((value_id, value))
+                    self.entity_data['p31_types'].remove((value_id, value))
+
+                if property_id == 'P279':
+                    self.entity_data['p279_types'].remove((value_id, value))
                 
                 old_value = value
                 new_value = None
@@ -1398,7 +1915,10 @@ class PageParser():
 
                 # add new type, if it's duplicated it will not be duplicated because we save a set
                 if new_pid == 'P31':
-                    self.entity_types_31.add((value_id, new_value))
+                    self.entity_data['p31_types'].add((value_id, new_value))
+
+                if new_pid == 'P279':
+                    self.entity_data['p279_types'].add((value_id, new_value))
 
                 old_hash = None
                 new_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
@@ -1442,7 +1962,10 @@ class PageParser():
 
                 # add new type, if it's duplicated it will not be duplicated because we save a set
                 if removed_pid == 'P31':
-                    self.entity_types_31.remove((value_id, old_value))
+                    self.entity_data['p31_types'].remove((value_id, old_value))
+
+                if removed_pid == 'P279':
+                    self.entity_data['p279_types'].remove((value_id, old_value))
 
                 new_hash = None
                 old_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
@@ -1576,9 +2099,6 @@ class PageParser():
                 prev_stmt = prev_by_id.get(sid, None)
                 curr_stmt = curr_by_id.get(sid, None)
 
-                new_value, new_datatype, new_datatype_metadata = PageParser._parse_datavalue(curr_stmt)
-                old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(prev_stmt)
-
                 old_hash = None
                 if prev_stmt:
                     prev_stmt['mainsnak'] = PageParser.homogenize_datavalue(prev_stmt['mainsnak'])
@@ -1589,6 +2109,9 @@ class PageParser():
                     curr_stmt['mainsnak'] = PageParser.homogenize_datavalue(curr_stmt['mainsnak'])
                     new_hash = PageParser.generate_value_hash(curr_stmt['mainsnak'])
 
+                new_value, new_datatype, new_datatype_metadata = PageParser._parse_datavalue(curr_stmt)
+                old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(prev_stmt)
+
                 # old_hash = PageParser._get_property_mainsnak(prev_stmt, 'hash') if prev_stmt else None
                 # new_hash = PageParser._get_property_mainsnak(curr_stmt, 'hash') if curr_stmt else None
 
@@ -1598,20 +2121,26 @@ class PageParser():
                     # Property value was removed -> the datatype is the datatype of the old_value
 
                     if pid == 'P31':
-                        self.entity_types_31.remove((sid, old_value))
+                        self.entity_data['p31_types'].remove((sid, old_value))
+
+                    if pid == 'P279':
+                        self.entity_data['p279_types'].remove((sid, old_value))
 
                     self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, DELETE_PROPERTY_VALUE, old_hash, new_hash)
 
                     if old_datatype_metadata:
                         # Add change record for the datatype_metadata fields
                         self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, old_datatype, pid, DELETE_PROPERTY_VALUE, old_hash, new_hash)
-                
+
                 elif curr_stmt and not prev_stmt:
                     change_detected = True
                     # Property value was created
 
                     if pid == 'P31':
-                        self.entity_types_31.add((sid, new_value))
+                        self.entity_data['p31_types'].add((sid, new_value))
+
+                    if pid == 'P279':
+                        self.entity_data['p279_types'].add((sid, new_value))
 
                     self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, CREATE_PROPERTY_VALUE, old_hash, new_hash)
 
@@ -1642,13 +2171,17 @@ class PageParser():
                             self._handle_value_changes(old_datatype, new_datatype, new_value, old_value, sid, pid, UPDATE_PROPERTY_VALUE, old_hash, new_hash, change_magnitude=change_magnitude)
 
                         if pid == 'P31':
-                            self.entity_types_31.remove((sid, old_value))
-                            self.entity_types_31.add((sid, new_value))
+                            self.entity_data['p31_types'].remove((sid, old_value))
+                            self.entity_data['p31_types'].add((sid, new_value))
+
+                        if pid == 'P279':
+                            self.entity_data['p279_types'].remove((sid, old_value))
+                            self.entity_data['p279_types'].add((sid, new_value))
 
                     if (old_datatype != new_datatype) or (old_datatype_metadata != new_datatype_metadata):
                         # Datatype change imples a datatype_metadata change
                         self._handle_datatype_metadata_changes(old_datatype_metadata, new_datatype_metadata, sid, old_datatype, new_datatype, pid, UPDATE_PROPERTY_DATATYPE_METADATA, old_hash, new_hash)
-
+                
                 # rank changes
                 rank_change_detected = self._handle_rank_changes(prev_stmt, curr_stmt, pid, sid)
 
@@ -1729,6 +2262,7 @@ class PageParser():
 
         return change_detected
 
+    
     def process_page(self):
         """
             Processes all the revisions in a <page></page> and stores the extracted data in the corresponding tables revision, change and change_metadata
@@ -1739,7 +2273,6 @@ class PageParser():
         revision_text_tag = f'{{{NS}}}text'
 
         entity_id = ''
-        entity_label = ''
 
         previous_revision = None
 
@@ -1752,7 +2285,15 @@ class PageParser():
             entity_id = (title_elem.text or '').strip()
 
         entity_id = id_to_int(entity_id) # convert Q-ID to integer (remove the 'Q')
-        
+
+        self.entity_stats['entity_id'] = entity_id
+
+        entity_types_31 = self.feature_creation.extract_entity_p31(entity_id)
+        entity_types_279 = self.feature_creation.extract_entity_p279(entity_id)
+
+        self.entity_data['p31_labels_list'] = entity_types_31
+        self.entity_data['p279_labels_list'] = entity_types_279
+
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
 
@@ -1786,16 +2327,24 @@ class PageParser():
                         username = ''
                         user_id = ''
 
+                    user_type = ''
+                    if 'bot' in username.lower():
+                        user_type = 'bot'
+                    elif username == '':
+                        user_type = 'anonymous'
+                    else:
+                        user_type = 'human'
+
                     # Save revision metadata (what will be stored in the revision table)
                     self.revision_meta = {
                         'entity_id': entity_id,
-                        'entity_label': entity_label,
                         'revision_id': revision_id,
                         'prev_revision_id': prev_revision_id if prev_revision_id else '-1', # for the first revision (doesn't have a parentid)
                         'timestamp': rev_elem.findtext(f'{{{NS}}}timestamp', '').strip(),
                         'comment': rev_elem.findtext(f'{{{NS}}}comment', '').strip(),
                         'username': username,
                         'user_id': user_id,
+                        'user_type': user_type,
                         'file_path': self.file_path
                     }
 
@@ -1808,10 +2357,16 @@ class PageParser():
                         # The json parsing for the revision text failed.
                         change = False
                     else:
-                        # update label
-                        curr_label = self.get_label(current_revision)
-                        if curr_label and entity_label != curr_label and curr_label != '':
-                            entity_label = curr_label
+                        # update label and description
+                        curr_label, curr_alias, curr_desc = self.get_label_alias_description(current_revision)
+                        if curr_label and self.entity_data['label'] != curr_label and curr_label != '':
+                            self.entity_data['label'] = curr_label
+
+                        if curr_desc and self.entity_data['description'] != curr_desc and curr_desc != '':
+                            self.entity_data['description'] = curr_desc
+
+                        if curr_alias and self.entity_data['alias'] != curr_alias and curr_alias != '':
+                            self.entity_data['alias'] = curr_alias
 
                         # get changes for revision
                         change = self.get_changes_from_revisions(current_revision, previous_revision)
@@ -1825,17 +2380,40 @@ class PageParser():
                         else:
                             prev_rev_id = self.revision_meta['prev_revision_id']
 
+                        def extract_redirect_qid(rev_text):
+                            """
+                                The revision text looks like: {"entity":"Q11085307","redirect":"Q4126"}
+                            """
+                            if not rev_text:
+                                return ''
+                            redirect_entity = json.loads(rev_text)
+                            redirect_entity = redirect_entity.get('redirect', '')
+
+                            return id_to_int(redirect_entity)
+
                         self.revision.append((
                             prev_rev_id,
                             self.revision_meta['revision_id'],
                             self.revision_meta['entity_id'],
                             self.revision_meta['timestamp'],
+                            get_time_feature(self.revision_meta['timestamp'], 'week'),
+                            get_time_feature(self.revision_meta['timestamp'], 'year_month'),
+                            get_time_feature(self.revision_meta['timestamp'], 'year'),
                             self.revision_meta['user_id'],
                             self.revision_meta['username'],
+                            self.revision_meta['user_type'],
                             self.revision_meta['comment'],
                             self.revision_meta['file_path'],
-                            self.current_revision_redirect
+                            self.current_revision_redirect,
+                            extract_redirect_qid(revision_text) if self.current_revision_redirect else ''
                         ))
+
+                        if self.revision_meta['user_type'] == 'bot':
+                            self.entity_stats['num_bot_edits'] += 1
+                        elif self.revision_meta['user_type'] == 'anonymous':
+                            self.entity_stats['num_anonymous_edits'] += 1
+                        else:
+                            self.entity_stats['num_human_edits'] += 1
 
                         if self.current_revision_redirect:
                             self.current_revision_redirect = False
@@ -1846,10 +2424,11 @@ class PageParser():
                         # have to update this here
                         last_non_deleted_revision_id = revision_id
 
-                    # if parse_revisions_text returns None then
-                    # we only update previous_revision with an actual revision (that has a json in the revision <text></text>)
-                    if current_revision is not None:
-                        previous_revision = current_revision
+                        # if parse_revisions_text returns None then
+                        # we only update previous_revision with an actual revision (that has a json in the revision <text></text>)
+                        # 
+                        if current_revision is not None:
+                            previous_revision = current_revision
                     
                 else: # revision was deleted
                     prev_revision_deleted = True
@@ -1857,38 +2436,167 @@ class PageParser():
             # free memory
             rev_elem.clear()
 
+        ## -------------------------------------------------- ##
+        # Tag reverted edits
+        ## -------------------------------------------------- ##
+        self.changes, self.entity_stats = self.feature_creation.tag_reverted_edits(self.changes_by_pv, self.changes, self.entity_stats)
+        
+        ## -------------------------------------------------- ##
+        # Upadte entity label
+        ## -------------------------------------------------- ##
         for i, r in enumerate(self.revision):
-            self.revision[i] = r + (entity_label,)
+            self.revision[i] = r + (self.entity_data['label'],)
 
-        SCHOLARLY_ARTICLE_TYPES = [
-            'Q13442814', # scholarly article
-            'Q191067',     # article (generic)
-            'Q18918145',   # academic journal article
-            'Q591041',    # scientific publication
-            'Q1266946',    # thesis
-            'Q187685',     # doctoral thesis
-            'Q1907875',    # master's thesis
-            'Q580922',     # preprint
-            'Q10885494',   # academic conference paper
-            'Q23927052',   # proceedings article
-            'Q591041',     # scientific publication
-            'Q7318358' # review article
-        ]
+        for i, c in enumerate(self.changes):
+            self.changes[i] = c + (self.entity_data['label'],)
 
+        for i, c in enumerate(self.datatype_metadata_changes):
+            self.datatype_metadata_changes[i] = c + (self.entity_data['label'],)
+
+        for i, c in enumerate(self.reference_changes):
+            self.reference_changes[i] = c + (self.entity_data['label'],)
+
+        for i, c in enumerate(self.qualifier_changes):
+            self.qualifier_changes[i] = c + (self.entity_data['label'],)
+
+        ## -------------------------------------------------- ##
+        # Add entity label, description and types to feature tables
+        ## -------------------------------------------------- ##
+        if len(self.entity_features) > 0:
+            for i, f in enumerate(self.entity_features):
+                self.entity_features[i] = f + (
+                    self.entity_data['label'],
+                    self.entity_data['description'],
+                    self.entity_data['p31_labels_list'],
+                    self.entity_data['p279_labels_list'],
+                    0.0, 
+                    0.0, 
+                    0.0,
+                    ''
+                )
+
+        if len(self.text_features) > 0:
+            for i, f in enumerate(self.text_features):
+                self.text_features[i] = f + (
+                    self.entity_data['label'],
+                    self.entity_data['description'],
+                    self.entity_data['p31_labels_list'],
+                    self.entity_data['p279_labels_list'],
+                    0.0,
+                    '',
+                )
+
+        if len(self.time_features) > 0:
+            for i, f in enumerate(self.time_features):
+                self.time_features[i] = f + (
+                    self.entity_data['label'],
+                    self.entity_data['description'],
+                    self.entity_data['p31_labels_list'],
+                    self.entity_data['p279_labels_list'],
+                    0.0,
+                    '',
+                )
+
+        if len(self.globecoordinate_features) > 0:
+            for i, f in enumerate(self.globecoordinate_features):
+                self.globecoordinate_features[i] = f + (
+                    self.entity_data['label'],
+                    self.entity_data['description'],
+                    self.entity_data['p31_labels_list'],
+                    self.entity_data['p279_labels_list'],
+                    0.0,
+                    '',
+                )
+
+        if len(self.quantity_features) > 0:
+            for i, f in enumerate(self.quantity_features):
+                self.quantity_features[i] = f + (
+                    self.entity_data['label'],
+                    self.entity_data['description'],
+                    self.entity_data['p31_labels_list'],
+                    self.entity_data['p279_labels_list'],
+                    0.0,
+                    '',
+                )
+
+        ## -------------------------------------------------- ##
+        # Filter entities and send them to corresponding tables
+        ## -------------------------------------------------- ##
         is_scholarly_article = False
-        if len(self.entity_types_31) > 0:
-            for et in self.entity_types_31:
-                if et[1] in SCHOLARLY_ARTICLE_TYPES: # get the value of P31
+        list_of_types_31 = list(set([type_id for val_id, type_id in self.entity_data['p31_types']]))
+        if len(list_of_types_31) > 0:
+            for et in list_of_types_31:
+                if et in self.SCHOLARLY_ARTICLE_TYPES: # get the value of P31
                     is_scholarly_article = True
                     break
 
-        batch_insert(self.conn, 
-                    self.revision, self.changes, self.changes_metadata, 
-                    self.qualifier_changes, self.reference_changes, self.datatype_metadata_changes,
-                    self.datatype_metadata_changes_metadata, 
-                    is_scholarly_article)
+        is_astronomical_object = False
+        if len(list_of_types_31) > 0:
+            for et in list_of_types_31:
+                if et in self.ASTRONOMICAL_OBJECT_TYPES: # get the value of P31
+                    is_astronomical_object = True
+                    break
+        
+        # only for the remaining entitie
+        has_less_revisions = False
+        if not is_astronomical_object and not is_scholarly_article and self.entity_stats['num_value_changes'] <= REVISION_THRESHOLD:
+            has_less_revisions = True
+
+        entity_property_time_stats = self.finalize_entity_property_time_stats()
+
+        # batch_insert(self.conn, 
+        #             self.revision, self.changes, 
+        #             # self.changes_metadata, 
+        #             self.qualifier_changes, self.reference_changes, self.datatype_metadata_changes,
+        #             self.entity_features,
+        #             self.text_features,
+        #             self.time_features,
+        #             self.globecoordinate_features,
+        #             self.quantity_features,
+        #             reverted_edit_features,
+        #             self.property_replacement_features,
+        #             entity_property_time_stats,
+        #             # self.datatype_metadata_changes_metadata, 
+        #             is_scholarly_article, is_astronomical_object, has_less_revisions)
+
+        ## -------------------------------------------------- ##
+        # Add entity stats
+        ## -------------------------------------------------- ##
+
+        self.entity_stats['num_revisions'] = len(self.revision)
+
+        self.entity_stats['num_qualifier_changes'] = len(self.qualifier_changes)
+        self.entity_stats['num_reference_changes'] = len(self.reference_changes)
+
+        self.entity_stats['entity_label'] = self.entity_data['label'] if self.entity_data['label'] else self.entity_data['alias']
+        
+        str_list = ', '.join(list_of_types_31)
+        self.entity_stats['entity_types_31'] = str_list
+        
+        self.entity_stats['first_revision_timestamp'] = self.revision[0][3] if len(self.revision) > 0 else None # timestamp is at position 3 in the tuple
+        self.entity_stats['last_revision_timestamp'] = self.revision[-1][3] if len(self.revision) > 0 else None
 
         # Clear element to free memory
         self.page_elem.clear()
         while self.page_elem.getprevious() is not None:
             del self.page_elem.getparent()[0]
+
+        return {
+            'revision': self.revision,
+            'value_change': self.changes,
+            'qualifier_change': self.qualifier_changes,
+            'reference_change': self.reference_changes,
+            'datatype_metadata_change': self.datatype_metadata_changes,
+            'features_entity': self.entity_features,
+            'features_text': self.text_features,
+            'features_time': self.time_features,
+            'features_globecoordinate': self.globecoordinate_features,
+            'features_quantity': self.quantity_features,
+            # 'features_reverted_edit': reverted_edit_features,
+            'features_property_replacement': self.property_replacement_features,
+            'entity_property_time_stats': entity_property_time_stats,
+            'is_scholarly_article': is_scholarly_article,
+            'is_astronomical_object': is_astronomical_object,
+            'has_less_revisions': has_less_revisions,
+            'entity_stats': [tuple(self.entity_stats.get(col) for col in ENTITY_STATS_COLS)]
+        }

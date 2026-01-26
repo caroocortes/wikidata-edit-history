@@ -1,19 +1,20 @@
 import requests
-import os
 import bz2
 from pathlib import Path
 import re
 from psycopg2.extras import execute_batch
 import psycopg2
-from dotenv import load_dotenv
 from math import radians, cos, sin, asin, sqrt
 from bs4 import BeautifulSoup
 import json
 import hashlib
 from urllib.parse import urljoin
 from scripts.const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
-import io
 import sys
+from io import StringIO
+from dateutil import parser
+from io import StringIO
+import os
 
 """
     Helper methods for magnitude of change calculation
@@ -116,7 +117,7 @@ def update_entity_label(conn, entity_id, entity_label):
         conn.rollback()
         print(f"Update of label ({entity_label}) for entity {entity_id} failed: {e}")
 
-def insert_rows(conn, table_name, rows, columns):
+def insert_rows_old(conn, table_name, rows, columns):
     if not rows:
         return
 
@@ -134,6 +135,7 @@ def insert_rows(conn, table_name, rows, columns):
         conn.commit()
         return 1
     except Exception as e:
+        print(f'Batch insert into {table_name} failed: {e}')
         conn.rollback()  # reset the transaction
         bad_rows = []
         for row in rows:
@@ -165,9 +167,91 @@ def insert_rows(conn, table_name, rows, columns):
                                 print(f'Rows: {e_row} \n {row}')
                     except Exception as select_err:
                         print(f"Error checking for existing row: {select_err}")
+        raise e
+    
 
+def insert_rows_copy(conn, table_name, rows, columns, conflict_column=None):
+    """
+    Insert rows with conflict handling
+    
+    Args:
+        conflict_column: Primary key column(s) for conflict detection
+        update_columns: Columns to update on conflict (None = skip updates, DO NOTHING)
+    """
+    if not rows:
+        return
+    
+    cursor = conn.cursor()
+    
+    try:
+        temp_table = f"{table_name}_temp_{os.getpid()}"
+        
+        # Create temp table
+        cursor.execute(f"""
+            CREATE TEMP TABLE {temp_table} 
+            (LIKE {table_name} INCLUDING DEFAULTS)
+            ON COMMIT DROP
+        """)
+        
+        # COPY to temp table
+        buffer = StringIO()
+        for row in rows:
+            line_items = []
+            for val in row:
+                if val is None:
+                    line_items.append('\\N')
+                elif val == '':
+                    line_items.append('')
+                else:
+                    val_str = str(val)
+                    val_str = val_str.replace('\\', '\\\\')
+                    val_str = val_str.replace('\t', '\\t')
+                    val_str = val_str.replace('\n', '\\n')
+                    val_str = val_str.replace('\r', '\\r')
+                    line_items.append(val_str)
+            buffer.write('\t'.join(line_items) + '\n')
+        
+        buffer.seek(0)
+        column_names = ', '.join(columns)
+        copy_query = f"COPY {temp_table} ({column_names}) FROM STDIN"
+        cursor.copy_expert(copy_query, buffer)
+        
+        # Insert with conflict handling
+        if conflict_column:
+            if isinstance(conflict_column, list):
+                conflict_cols = ', '.join(conflict_column)
+            else:
+                conflict_cols = conflict_column
+            
+            # DO NOTHING on conflict
+            insert_query = f"""
+                INSERT INTO {table_name} ({column_names})
+                SELECT {column_names} FROM {temp_table}
+                ON CONFLICT ({conflict_cols}) DO NOTHING
+            """
+        else:
+            insert_query = f"""
+                INSERT INTO {table_name} ({column_names})
+                SELECT {column_names} FROM {temp_table}
+            """
+        
+        cursor.execute(insert_query)
+        rows_affected = cursor.rowcount
+        
+        conn.commit()
+        
+        return rows_affected
+        
+    except Exception as e:
+        conn.rollback()
+        print(f"COPY failed for {table_name}: {e}")
+        raise
+    finally:
+        cursor.close()
+        buffer.close()
 
-def insert_rows_copy(conn, table_name, rows, columns):
+    
+def insert_rows(conn, table_name, rows, columns):
     if not rows:
         return
     
@@ -184,6 +268,8 @@ def insert_rows_copy(conn, table_name, rows, columns):
     except Exception as e:
         conn.rollback()
         print(f"Insert failed for {table_name}: {e}")
+        print(f"Sample row: {rows[0]}")
+        print(f"Columns: {columns}")
         raise
     finally:
         cursor.close()
@@ -199,14 +285,6 @@ def create_db_schema():
     
     try:
 
-        # dotenv_path = Path(__file__).resolve().parent.parent / ".env"
-        # load_dotenv(dotenv_path)
-
-        # DB_USER = os.environ.get("DB_USER")
-        # DB_PASS = os.environ.get("DB_PASS")
-        # DB_NAME = os.environ.get("DB_NAME")
-        # DB_HOST = os.environ.get("DB_HOST")
-        # DB_PORT = os.environ.get("DB_PORT")
         SCRIPT_DIR = Path(__file__).parent
         CONFIG_PATH = SCRIPT_DIR.parent / 'db_config.json'
         with open(CONFIG_PATH) as f:
@@ -295,3 +373,22 @@ def make_sah1_value_id(value_json):
     # sha1 always returns the same hash for the same input
     norm = json.dumps(value_json, sort_keys=True, separators=(',', ':'))
     return hashlib.sha1(norm.encode('utf-8')).hexdigest()
+
+def get_time_feature(timestamp, option='year'):
+
+    if isinstance(timestamp, str):
+        dt = parser.parse(timestamp)
+    else:
+        dt = timestamp  
+    
+    if option == 'year':
+        return str(dt.year)
+    
+    elif option == 'year_month':
+        return dt.strftime('%Y-%m')  # e.g., '2017-09'
+    
+    elif option == 'week':
+        # ISO week number with year
+        return dt.strftime('%Y-W%V')  # e.g., '2017-W37'
+    else:
+        return timestamp
