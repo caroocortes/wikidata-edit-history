@@ -510,11 +510,13 @@ class PageParser():
         else:
             value_hash = change[14] # new_hash is not None
             opposite_action = 'DELETE'
-        
+
         if self.pending_changes[value_hash][opposite_action] is not None:
             opposite_change = self.pending_changes[value_hash][opposite_action]
             
-            if (opposite_change[1] != change[1]): # different property_id and same value since I get it with value_hash
+            # property id is at position 1
+            # different property_id and same value since I get it with value_hash
+            if (opposite_change[1] != change[1]):
                 
                 features = self.feature_creation.create_property_replacement_features(change, opposite_change)
 
@@ -523,18 +525,23 @@ class PageParser():
                 # Clear the oldest one, so the most recent one can be compared to future ones
                 timestamp_change = datetime.strptime(change[15].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
                 timestamp_opposite_change = datetime.strptime(opposite_change[15].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-                if timestamp_change < timestamp_opposite_change and action == 'DELETE':
-                    self.pending_changes[value_hash]['DELETE'] = None
-                else:
-                    self.pending_changes[value_hash]['CREATE'] = None
-                
-        # No match - store as pending 
-        self.pending_changes[value_hash][action] = change
+                if timestamp_change < timestamp_opposite_change: # current change is the oldest one
+                    self.pending_changes[value_hash][action] = None
+                else: # opposite_action change is the oldest one, store change and remove opposite_action change
+                    self.pending_changes[value_hash][action] = change
+                    self.pending_changes[value_hash][opposite_action] = None
+            else:
+                # properties match, edit 
+                self.pending_changes[value_hash][action] = change
+        else:
+            # No match - store as pending 
+            self.pending_changes[value_hash][action] = change
     
-    def calculate_features(self, revision_id, property_id, value_id, old_value, new_value, old_datatype, new_datatype, change_target, action):
+    def calculate_features(self, revision_id, property_id, property_label, value_id, old_value, new_value, old_datatype, new_datatype, change_target, action):
         base_cols = (
             revision_id,
             property_id,
+            property_label,
             value_id,
             change_target,
             new_datatype,
@@ -634,10 +641,12 @@ class PageParser():
                 'old_datatype': old_datatype
             })
 
+        property_label = self.PROPERTY_LABELS.get(str(property_id), '')
         if change_target == '' and action == 'UPDATE' and new_datatype == old_datatype:
             self.calculate_features(
                 revision_id,
                 property_id,
+                property_label,
                 value_id,
                 old_value,
                 new_value,
@@ -650,7 +659,7 @@ class PageParser():
         change = (
             revision_id,
             property_id,
-            self.PROPERTY_LABELS.get(str(property_id), ''),
+            property_label,
             value_id,
             old_value,
             new_value,
@@ -1752,10 +1761,11 @@ class PageParser():
                     new_hash=''
                 )
      
-    def _changes_cleaned_entity(self, revision):
-        # TODO: merge this one with the created, the only thing that changes is the old_value/new_value None
-        # Process claims
-        claims = PageParser._safe_get_nested(revision, 'claims')
+    def _changes_cleaned_entity(self, previous_revision):
+        # I pass the previous revision because the current one is empty
+        # it was completely cleaned, so i need to know what there was on the entity previously 
+        # to save the corresponding deletes
+        claims = PageParser._safe_get_nested(previous_revision, 'claims')
         
         for property_id, property_stmts in claims.items():
             for stmt in property_stmts:
@@ -1812,8 +1822,8 @@ class PageParser():
 
         # If there's no description or label, the revisions shows them as []
         lang = self.config['language'] if 'language' in self.config and self.config['language'] else 'en'
-        labels = PageParser._safe_get_nested(revision, 'labels', lang, 'value')
-        descriptions = PageParser._safe_get_nested(revision, 'descriptions', lang, 'value')
+        labels = PageParser._safe_get_nested(previous_revision, 'labels', lang, 'value')
+        descriptions = PageParser._safe_get_nested(previous_revision, 'descriptions', lang, 'value')
 
         # Process labels and descriptions (non-claim properties)
         for pid, val in [(LABEL_PROP_ID, labels), (DESCRIPTION_PROP_ID, descriptions)]:
@@ -1876,7 +1886,15 @@ class PageParser():
             prev_desc = PageParser._safe_get_nested(previous_revision, 'descriptions', lang, 'value')
         curr_desc = PageParser._safe_get_nested(current_revision, 'descriptions', lang, 'value')
 
+        if self.revision_meta.get('entity_id') == 25104771 and self.revision_meta.get('revision_id') in [1279154838, 1279154833]:
+            print('Current description: ', curr_desc)
+            print('Previous description: ', prev_desc)
+            print('If check: curr_desc != prev_desc', curr_desc != prev_desc)
+
         if curr_desc != prev_desc:
+            if self.revision_meta.get('entity_id') == 25104771 and self.revision_meta.get('revision_id') in [1279154838, 1279154833]:
+                print('Description change detected!')
+
             change_detected = True
             old_value = prev_desc if not isinstance(prev_desc, dict) else None
             new_value = curr_desc if not isinstance(curr_desc, dict) else None
@@ -2216,7 +2234,6 @@ class PageParser():
                 return True
 
             if not curr_claims and not curr_label and not curr_desc:
-
                 curr_aliases = PageParser._safe_get_nested(current_revision, 'aliases')
                 curr_sitelinks = PageParser._safe_get_nested(current_revision, 'sitelinks')
 
@@ -2228,10 +2245,9 @@ class PageParser():
                 # completely empty revision -> the item was cleaned, probably because of a merge
                 # the following revision is probably a redirect
                 if not curr_aliases and not curr_sitelinks:
-                    # print(f"Revision {self.revision_meta['revision_id']} of entity {self.revision_meta['entity_id']} cleaned the entity")
-                    self._changes_cleaned_entity(current_revision)
+                    self._changes_cleaned_entity(previous_revision)
                     return True
-            
+
             # --- Labels and Description changes ---
             change_detected = self._handle_description_label_change(previous_revision, current_revision)
 
@@ -2543,21 +2559,6 @@ class PageParser():
             has_less_revisions = True
 
         entity_property_time_stats = self.finalize_entity_property_time_stats()
-
-        # batch_insert(self.conn, 
-        #             self.revision, self.changes, 
-        #             # self.changes_metadata, 
-        #             self.qualifier_changes, self.reference_changes, self.datatype_metadata_changes,
-        #             self.entity_features,
-        #             self.text_features,
-        #             self.time_features,
-        #             self.globecoordinate_features,
-        #             self.quantity_features,
-        #             reverted_edit_features,
-        #             self.property_replacement_features,
-        #             entity_property_time_stats,
-        #             # self.datatype_metadata_changes_metadata, 
-        #             is_scholarly_article, is_astronomical_object, has_less_revisions)
 
         ## -------------------------------------------------- ##
         # Add entity stats

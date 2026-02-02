@@ -1,5 +1,8 @@
+import csv
+import glob
 import re
 from Levenshtein import distance as levenshtein_distance
+import pandas as pd
 import os
 import json
 import numpy as np
@@ -8,14 +11,129 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from scripts.utils import get_time_feature
+from sentence_transformers import SentenceTransformer, util
+from sklearn.metrics.pairwise import cosine_similarity
+import torch
 
 from scripts.transitive_closure_cache import TransitiveClosureCache
 from scripts.const import *
+from scripts.utils import get_time_unit
 
 class FeatureCreation():
 
     def __init__(self, conn):
         self.conn = conn
+
+    def create_embedding_features(self, df, old_col, new_col):
+        """
+            Calculates cosine similarity between old and new value embeddings
+        """
+        
+        old_texts = []
+        new_texts = []
+
+        old_description = []
+        new_description = []
+
+        old_label = []
+        new_label = []
+
+        for _, row in df.iterrows():
+            entity = str(row['entity_label'])
+            prop = str(row['property_label'])
+                
+            latest_description = str(row['entity_description'])
+            entity_instance_of = str(row['entity_types_31']) if not pd.isna(row['entity_types_31']) else ''
+            entity_subclass_of = str(row['entity_types_279']) if not pd.isna(row['entity_types_279']) else ''
+
+            old_val = str(row[old_col]).replace('"', '') # these are the entity labels
+            new_val = str(row[new_col]).replace('"', '')
+            if 'label' in old_col:
+
+                old_value_description = str(row['old_value_description']) if not pd.isna(row['old_value_description']) else ''
+                new_value_description = str(row['new_value_description']) if not pd.isna(row['new_value_description']) else ''
+                # entity changes -> add the entity label as context
+                old_texts.append(f"Entity: {entity}, { 'Entity is instance of:'  + entity_instance_of if entity_instance_of else ''}, { 'Entity is subclass of:' + entity_subclass_of if entity_subclass_of else ''}, Entity Description: {latest_description}, Property: {prop}, Old Value: {old_val}, Old Value Description: {old_value_description}" )
+                new_texts.append(f"Entity: {entity}, { 'Entity is instance of:'  + entity_instance_of if entity_instance_of else ''}, { 'Entity is subclass of:' + entity_subclass_of if entity_subclass_of else ''}, Entity Description: {latest_description}, Property: {prop}, New Value: {new_val}, New Value Description: {new_value_description}")
+
+                # only calculate these features fro entity changes
+                old_label.append(old_val) # labels
+                new_label.append(new_val)
+
+                old_description.append(old_value_description) # descriptions
+                new_description.append(new_value_description)
+            
+            else:
+                # add the property label + entity label + latest description to provide context
+                old_texts.append(f"Entity: {entity}, { 'Entity is instance of:'  + entity_instance_of if entity_instance_of else ''}, { 'Entity is subclass of:' + entity_subclass_of if entity_subclass_of else ''}, Entity Description: {latest_description}, Property: {prop}, Old Value: {old_val}")
+                new_texts.append(f"Entity: {entity}, { 'Entity is instance of:'  + entity_instance_of if entity_instance_of else ''}, { 'Entity is subclass of:' + entity_subclass_of if entity_subclass_of else ''}, Entity Description: {latest_description}, Property: {prop}, New Value: {new_val}")
+
+        # load model
+        model = SentenceTransformer('all-MiniLM-L6-v2')
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        old_text_embeddings = model.encode(
+            old_texts,
+            device=device,
+            show_progress_bar=True,
+            batch_size=512
+        )
+        new_text_embeddings = model.encode(
+            new_texts,
+            device=device,
+            show_progress_bar=True,
+            batch_size=512
+        )
+        # calculate cosine similarity
+        similarities = np.array([
+            cosine_similarity([old_emb], [new_emb])[0][0]
+            for old_emb, new_emb in zip(old_text_embeddings, new_text_embeddings)
+        ])
+        df['full_cosine_similarity'] = similarities
+
+        if 'label' in old_col:
+            old_label_embeddings = model.encode(
+                old_label,
+                device=device,
+                show_progress_bar=True,
+                batch_size=512
+            )
+            new_label_embeddings = model.encode(
+                new_label,
+                device=device,
+                show_progress_bar=True,
+                batch_size=512
+            )
+            # calculate cosine similarity
+            similarities = np.array([
+                cosine_similarity([old_emb], [new_emb])[0][0]
+                for old_emb, new_emb in zip(old_label_embeddings, new_label_embeddings)
+            ])
+            df['label_cosine_similarity'] = similarities
+
+            old_description_embeddings = model.encode(
+                old_description,
+                device=device,
+                show_progress_bar=True,
+                batch_size=512
+            )
+            new_description_embeddings = model.encode(
+                new_description,
+                device=device,
+                show_progress_bar=True,
+                batch_size=512
+            )
+            # calculate cosine similarity
+            similarities = np.array([
+                cosine_similarity([old_emb], [new_emb])[0][0]
+                for old_emb, new_emb in zip(old_description_embeddings, new_description_embeddings)
+            ])
+            df['description_cosine_similarity'] = similarities 
+
+
+        return df
+
 
     @staticmethod
     def has_adjacent_swap(old, new):
@@ -109,6 +227,8 @@ class FeatureCreation():
         
         # for property_value_update or rewording (?), the structure similarity should be low.
         # for textual change the structure similarity should be high.
+        if max(features['token_count_old'], features['token_count_new']) == 0:
+            print('New Value: {}, Old Value: {}'.format(new_value, old_value))
         features['structure_similarity'] = 1 - abs(features['token_count_old'] - features['token_count_new']) / \
                                         max(features['token_count_old'], features['token_count_new'])
 
@@ -821,67 +941,47 @@ class FeatureCreation():
         return {'label': '', 'alias': '', 'description': ''}
     
     @staticmethod
-    def create_entity_features_old(old_value, new_value):
+    def create_entity_features_text_transitive(row, transitive_cache):
         """Extract features for entity datatypes using labels"""
 
-        old_value_metadata = FeatureCreation.get_entity_label_alias_description(old_value)
-        new_value_metadata = FeatureCreation.get_entity_label_alias_description(new_value)
-
-        old_value_label = old_value_metadata.get('label', '')
-        old_value_alias = old_value_metadata.get('alias', '')
-        old_value_description = old_value_metadata.get('description', '')
-
-        new_value_label = new_value_metadata.get('label', '')
-        new_value_alias = new_value_metadata.get('alias', '')
-        new_value_description = new_value_metadata.get('description', '')
-
-        # use the alias if label is missing
-        if old_value_label == '' and old_value_label is not None:
-            old_value_label = old_value_alias
-
-        if new_value_label == '' and new_value_label is not None:
-            new_value_label = new_value_alias
+        old_value_label = row['old_value_label']
+        new_value_label = row['new_value_label']
 
         features_tuple = FeatureCreation.create_text_features('entity', old_value_label, new_value_label)
 
+        text_features_dict = {
+            'length_diff_abs': features_tuple[0],
+            'token_count_old': features_tuple[1],
+            'token_count_new': features_tuple[2],         
+            'token_overlap': features_tuple[3],
+            'old_in_new': features_tuple[4],
+            'new_in_old': features_tuple[5], 
+            'levenshtein_distance': features_tuple[6],
+            'edit_distance_ratio': features_tuple[7],
+            'complete_replacement': features_tuple[8],
+            'structure_similarity': features_tuple[9],
+        }
+
         features = dict()
+
+        new_value = row['new_value']
+        old_value = row['old_value']
+
+        features['old_value_subclass_new_value'] = transitive_cache.check(old_value, new_value, 'subclass_transitive')
+        features['new_value_subclass_old_value'] = transitive_cache.check(new_value, old_value, 'subclass_transitive')
+
+        features['old_value_located_in_new_value'] = transitive_cache.check(old_value, new_value, 'located_in_transitive')
+        features['new_value_located_in_old_value'] = transitive_cache.check(new_value, old_value, 'located_in_transitive')
         
-        features['new_value_part_of_old_value'] = FeatureCreation.transitive_closure_check(new_value, old_value, 'part_of_transitive')
-        features['old_value_part_of_new_value'] = FeatureCreation.transitive_closure_check(old_value, new_value, 'part_of_transitive')
+        features['old_value_has_parts_new_value'] = transitive_cache.check(old_value, new_value, 'has_part_transitive')
+        features['new_value_has_parts_old_value'] = transitive_cache.check(new_value, old_value, 'has_part_transitive')
+        
+        features['old_value_part_of_new_value'] = transitive_cache.check(old_value, new_value, 'part_of_transitive')
+        features['new_value_part_of_old_value'] = transitive_cache.check(new_value, old_value, 'part_of_transitive')
 
-        features['new_value_subclass_old_value'] = FeatureCreation.transitive_closure_check(new_value, old_value, 'subclass_transitive')
-        features['old_value_subclass_new_value'] = FeatureCreation.transitive_closure_check(old_value, new_value, 'subclass_transitive')
+        result = {**text_features_dict, **features, 'label_cosine_similarity': 0.0, 'description_cosine_similarity': 0.0, 'full_cosine_similarity': 0.0}
 
-        features['new_value_has_parts_old_value'] = FeatureCreation.transitive_closure_check(new_value, old_value, 'has_part_transitive')
-        features['old_value_has_parts_new_value'] = FeatureCreation.transitive_closure_check(old_value, new_value, 'has_part_transitive')
-
-        features['new_value_located_in_old_value'] = FeatureCreation.transitive_closure_check(new_value, old_value, 'located_in_transitive')
-        features['old_value_located_in_new_value'] = FeatureCreation.transitive_closure_check(old_value, new_value, 'located_in_transitive')
-
-        # features['new_value_is_metaclass_for_old_value'] = FeatureCreation.transitive_closure_check(new_value, old_value, 'metaclass_transitive')
-        # features['old_value_is_metaclass_for_new_value'] = FeatureCreation.transitive_closure_check(old_value, new_value, 'metaclass_transitive')
-
-        result = features_tuple + (
-            features['old_value_subclass_new_value'], 
-            features['new_value_subclass_old_value'],
-
-            features['old_value_located_in_new_value'],
-            features['new_value_located_in_old_value'],
-            features['old_value_has_parts_new_value'],
-            features['new_value_has_parts_old_value'],
-
-            features['old_value_part_of_new_value'],
-            features['new_value_part_of_old_value'],
-            # features['new_value_is_metaclass_for_old_value'],
-            # features['old_value_is_metaclass_for_new_value'],
-
-            old_value_label,
-            new_value_label, 
-            old_value_description, 
-            new_value_description,
-        )
-
-        return result, old_value_label, new_value_label
+        return pd.Series(result, index=ENTITY_ONLY_FEATURES_COLS)
     
     def create_entity_features(self, old_value, new_value):
 
@@ -907,18 +1007,6 @@ class FeatureCreation():
         )
 
         features = dict()
-        
-        # features['new_value_part_of_old_value'] = transitive_cache.check(new_value, old_value, 'part_of_transitive')
-        # features['old_value_part_of_new_value'] = transitive_cache.check(old_value, new_value, 'part_of_transitive')
-
-        # features['new_value_subclass_old_value'] = transitive_cache.check(new_value, old_value, 'subclass_transitive')
-        # features['old_value_subclass_new_value'] = transitive_cache.check(old_value, new_value, 'subclass_transitive')
-
-        # features['new_value_has_parts_old_value'] = transitive_cache.check(new_value, old_value, 'has_part_transitive')
-        # features['old_value_has_parts_new_value'] = transitive_cache.check(old_value, new_value, 'has_part_transitive')
-
-        # features['new_value_located_in_old_value'] = transitive_cache.check(new_value, old_value, 'located_in_transitive')
-        # features['old_value_located_in_new_value'] = transitive_cache.check(old_value, new_value, 'located_in_transitive')
 
         features['new_value_part_of_old_value'] = 0
         features['old_value_part_of_new_value'] = 0
@@ -1271,6 +1359,9 @@ class FeatureCreation():
         return final_value_changes, entity_stats
     
 
+    ####################
+    # Property replacement features
+    ####################
     @staticmethod
     def create_property_replacement_features(c1, c2):
         """Create features for property replacements"""
@@ -1332,4 +1423,292 @@ class FeatureCreation():
 
         return features
 
+    
+    ####################################################################################################
+    # Update of features that weren't calculated during parsinf of the file
+    ####################################################################################################
+    def create_and_update_embedding_features(self, datatype, key_cols, select_cols, embedding_cols, table_prefix, batch_size=100000, max_batches=None):
+        """
+        Creates and updates embedding features for the given datatype. Processes in batches.
+        
+        :param datatype: datatype to calculate features for
+        :param key_cols: key columns of the feature tables
+        :param embedding_cols: columns of embedding features
+        :param table_prefix: can be _sa, _ao, _less or ''
+        :param batch_size: number of rows to process in each batch
+        :param max_batches: maximum number of batches to process (optional)
+        """
+        print('Creating embedding features for datatype:', datatype, flush=True)
+        main_start_time = time.time()
+
+        if not self.conn:
+            print('No DB connection available', flush=True)
+            return
+
+        base_query = """
+            SELECT {key_cols_str}, {select_cols_str}, {embedding_cols_str}
+                FROM features_{datatype}{table_prefix}
+                WHERE 
+                    (label IS NULL or label = '') AND 
+                    ({embedding_cols_str_filter}) AND 
+                    processed = FALSE
+                LIMIT {batch_size} OFFSET {offset}
+        """
+        
+        offset = 0
+        num_batches = 0
+
+        os.makedirs(f'{DATA_PATH}/{datatype}{table_prefix}', exist_ok=True)
+        
+        embedding_cols_str = ', '.join(embedding_cols)
+        key_cols_str = ', '.join(key_cols)
+        select_cols_str = ', '.join(select_cols)
+        
+        if datatype in ('time', 'quantity', 'text', 'globecoordinate'):
+            key_cols_temp = ', '.join([f'{col} {col_type}' for col, col_type in BASE_KEY_TYPES.items()])
+        else:
+            key_cols_temp = ', '.join([f'{col} {col_type}' for col, col_type in PROP_REP_KEY_TYPES.items()])
+
+        cursor = self.conn.cursor()
+        cursor.execute(f"CREATE TEMP TABLE temp_results_{datatype}{table_prefix} ({key_cols_temp}, {', '.join([f'{col} FLOAT' for col in embedding_cols])})")
+
+        while True:
+
+            if max_batches and num_batches >= max_batches:
+                print(f'Reached max_batches limit ({max_batches}), stopping', flush=True)
+                break
+            
+            if not os.path.exists(f'{DATA_PATH}/{datatype}{table_prefix}/chunk_{offset//batch_size}.csv'):
+
+                query = base_query.format(
+                    key_cols_str = key_cols_str,
+                    select_cols_str=select_cols_str,
+                    embedding_cols_str=embedding_cols_str,
+                    embedding_cols_str_filter = f' OR '.join([f'({col} IS NULL OR {col} = 0.0)' for col in embedding_cols]),
+                    datatype=datatype,
+                    table_prefix=table_prefix,
+                    batch_size=batch_size,
+                    offset=offset
+                )
+            
+                df = pd.read_sql(query, self.conn)
+                
+                if len(df) == 0:
+                    break
+
+                df.to_csv(f'{DATA_PATH}/{datatype}{table_prefix}/chunk_{offset//batch_size}.csv', index=False, sep=';', quoting=csv.QUOTE_NONE, escapechar='\\')
+            
+                result = self.create_embedding_features(df, old_col='old_value', new_col='new_value')
+                result = result[[*key_cols, *embedding_cols]]
+
+                # Save to csv for loading with copy
+                os.makedirs(f'{DATA_PATH}/{datatype}{table_prefix}', exist_ok=True)
+                batch_file = f'{DATA_PATH}/{datatype}{table_prefix}/chunk_{offset//batch_size}.csv'
+                result.to_csv(batch_file, index=False, header=False, sep=';', quoting=csv.QUOTE_NONE, escapechar='\\')
+            else:
+                batch_file = f'{DATA_PATH}/{datatype}{table_prefix}/chunk_{offset//batch_size}.csv'
+
+            with open(batch_file, 'r') as f:
+                cursor.copy_expert(f"COPY temp_results_{datatype}{table_prefix} FROM STDIN (FORMAT CSV, DELIMITER ';', QUOTE '\"', ESCAPE '\\')", f)
+
+            os.remove(batch_file)
+
+            print('Updating change table', flush=True)
+
+            # Update embedding features
+            query = f"""
+                UPDATE features_{datatype}{table_prefix} sf
+                SET {', '.join([f'{col} = tp.{col}' for col in embedding_cols])}, processed = TRUE
+                FROM temp_results_{datatype}{table_prefix} tp 
+                WHERE 
+                    (sf.label = '' OR sf.label IS NULL) AND
+                    {' AND '.join([f'sf.{col} = tp.{col}' if col != 'change_target' else f"COALESCE(sf.{col}, '') = COALESCE(tp.{col}, '')" for col in key_cols])}
+            """
+            cursor.execute(query)
+
+            cursor.execute(f"TRUNCATE TABLE temp_results_{datatype}{table_prefix}")
+
+            self.conn.commit()
+
+            offset += batch_size
+            num_batches += 1
+
+        print(f'Created {num_batches} batches for embedding features update', flush=True)
+
+        cursor.execute(f"DROP TABLE temp_results_{datatype}{table_prefix}")
+        self.conn.commit()
+
+        final_end_time = time.time() - main_start_time
+        final_time, unit = get_time_unit(final_end_time)
+        print(f'Finished creating and updating embedding features for {datatype} in {final_time} {unit}', flush=True)
+
+    
+    def update_label_description_entity_features(self, table_prefix):
+        """
+        Update new_value_label, new_value_description, old_value_label, old_value_description for entity changes
+        so we can calculate the features using these values
+        """
+        if not self.conn:
+            print('No DB connection available', flush=True)
+            return
+
+        cursor = self.conn.cursor()
+
+        old_new = ['old', 'new']
+
+        for suffix in old_new:
+            print(f'Updating {suffix}_value_label, {suffix}_value_description in the features_entity{table_prefix}', flush=True)
+            start_time = time.time()
+
+            cursor.execute(f"""
+                UPDATE features_entity{table_prefix} fe
+                SET 
+                    {suffix}_value_label =
+                        CASE 
+                            WHEN elad.label IS NOT NULL AND elad.label <> '' THEN elad.label
+                            ELSE elad.alias 
+                        END
+                    ,
+                    {suffix}_value_description = elad.description
+                FROM entity_labels_alias_description elad
+                WHERE elad.qid::TEXT = fe.{suffix}_value->>0 AND ({suffix}_value_label IS NULL OR {suffix}_value_label = '')
+            """)
+
+            elapsed_time = time.time() - start_time
+            final_time, unit = get_time_unit(elapsed_time)
+
+            print(f'Finished updating {suffix}_value_label and {suffix}_value_description in {final_time} {unit}', flush=True)
+
+
+    def create_all_features_entity(self, table_prefix):
+
+        #TODO: Only needs to run once, then this can be commented to be skipped
+        # update old_value_label and new_value_label & old_value_description and new_value_description
+        self.update_label_description_entity_features(table_prefix)
+        
+        # transitive closure 
+        self.transitive_cache = TransitiveClosureCache(CSV_PATHS)
+
+        select_cols_str = ', '.join([
+            'old_value_label', 'new_value_label',
+            'old_value_description', 'new_value_description', 
+            'entity_label', 'entity_description', 
+            'entity_types_31', 'entity_types_279'
+        ])
+
+        ENTITY_ONLY_FEATURES_COLS = ENTITY_ONLY_FEATURES_COLS_TYPES.keys()
+        feature_cols_str = ', '.join(ENTITY_ONLY_FEATURES_COLS)
+
+        key_cols = ['revision_id', 'property_id', 'value_id', 'change_target']
+        key_cols_str = ', '.join(key_cols)
+
+        batch_size = 100000
+        offset = 0
+        num_batches = 0
+
+        cursor = self.conn.cursor()
+
+        key_cols_temp = ', '.join([f'{col} {col_type}' for col, col_type in BASE_KEY_TYPES.items()])
+        cursor.execute(f"CREATE TEMP TABLE temp_results_{datatype}{table_prefix} ({key_cols_temp}, {', '.join([f'{col} {col_type}' for col, col_type in ENTITY_ONLY_FEATURES_COLS_TYPES.items()])})")
+
+        start_time = time.time()
+        
+        while True:
+
+            query = """
+                SELECT {key_cols_str}, {select_cols_str}, {feature_cols_str}
+                    FROM features_entity{table_prefix}
+                    WHERE 
+                        (label IS NULL or label = '') and processed = FALSE
+                    LIMIT {batch_size} OFFSET {offset}
+            """.format(
+                key_cols_str=key_cols_str,
+                select_cols_str=select_cols_str,
+                feature_cols_str=feature_cols_str,
+                table_prefix=table_prefix,
+                batch_size=batch_size,
+                offset=offset
+            )
+            df = pd.read_sql(query, self.conn)
+            
+            if len(df) == 0:
+                break
+            
+            # --------------- create text features + transitive closure features ---------------
+            df[ENTITY_ONLY_FEATURES_COLS] = df.apply(
+                lambda row: self.create_entity_features_text_transitive(row, self.transitive_cache),
+                axis=1
+            )
+            
+            # --------------- create embedding features ---------------
+            result = self.create_embedding_features(df, old_col='old_value_label', new_col='new_value_label')
+
+            # --------------- Save all results in csv for later load with copy ---------------
+            datatype = 'entity'
+            # Save to csv for loading with copy
+            os.makedirs(f'{DATA_PATH}/{datatype}', exist_ok=True)
+            batch_file = f'{DATA_PATH}/{datatype}/{datatype}_chunk_{offset//batch_size}.csv'
+            result.to_csv(batch_file, index=False, header=False, sep=';', quoting=csv.QUOTE_NONE, escapechar='\\')
+            
+            offset += batch_size
+            num_batches += 1
+
+            # --------------- Load file data into temp table ---------------
+            with open(batch_file, 'r') as f:
+                cursor.copy_expert(f"COPY temp_results_{datatype}{table_prefix} FROM STDIN (FORMAT csv, DELIMITER ';', QUOTE '\"', ESCAPE '\\')", f)
+            os.remove(batch_file)
+        
+        # --------------- Updating feature table ---------------
+        print('Updating feature table', flush=True)
+
+        cursor.execute(f"""
+            UPDATE features_{datatype}{table_prefix} f
+            SET {', '.join([f'{col} = tp.{col}' for col in ENTITY_ONLY_FEATURES_COLS])}, processed = TRUE
+            FROM temp_results_{datatype}{table_prefix} tp
+            WHERE 
+                (f.label = '' OR f.label IS NULL) AND
+                {' AND '.join([f'f.{col} = tp.{col}' if col != 'change_target' else f"COALESCE(f.{col}, '') = COALESCE(tp.{col}, '')" for col in key_cols])}
+        """)
+        
+        elapsed_time = time.time() - start_time
+        final_time, unit = get_time_unit(elapsed_time)
+        print(f'Finished entity feature creation {final_time} {unit}', flush=True)
+
+        cursor.execute(f"DROP TABLE temp_results_{datatype}{table_prefix}")
+
+        self.conn.commit()
+
+
+    def create_missing_features(self, datatype, table_prefix, max_batches=None):
+        """
+        Creates missing features for the given datatype and table.
+        
+        :param datatype: can be one of 'entity', 'property_replacement', 'quantity', 'time', 'text', 'globecoordinate'
+        :param table_prefix: can be one of '_sa', '_ao', '_less'
+        :param max_batches: maximum number of batches to process (optional)
+        """
+        print('Creating missing features for datatype:', datatype, flush=True)
+
+        if datatype not in ['entity', 'property_replacement', 'quantity', 'time', 'text', 'globecoordinate']:
+            print('Unsupported datatype for embedding features. Has to be one of: entity, property_replacement, quantity, time, text, globecoordinate. Input datatype:', datatype, flush=True)
+            return
+
+        if table_prefix not in ['_sa', '_ao', '_less', '']:
+            print('Unsupported table prefix for embedding features. Has to be one of _sa, _ao, _less. Input table prefix:', table_prefix, flush=True)
+            return
+
+        if datatype == 'entity':
+            self.create_all_features_entity(table_prefix)
+
+        else:
+            if datatype == 'property_replacement':
+                embedding_cols = ['property_label_cosine_similarity']
+                select_cols = ['deleted_property_label', 'created_property_label']
+                key_cols = ['pair_id']
+            else: # quantity, time, text, globecoordinate
+                key_cols = ['revision_id', 'property_id', 'value_id', 'change_target']
+                select_cols = ['old_value', 'new_value', 'entity_label', 'entity_description', 'property_label', 'entity_types_31', 'entity_types_279']
+                embedding_cols = ['full_cosine_similarity']
+
+            self.create_and_update_embedding_features(datatype, key_cols, select_cols, embedding_cols, table_prefix, max_batches=max_batches)
     

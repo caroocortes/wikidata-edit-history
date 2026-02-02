@@ -344,15 +344,6 @@ class FileParser():
                     cpu_percent = process.cpu_percent() # returns a float representing the current process CPU utilization as a percentage
                     total_cpu_percent += cpu_percent
                     cpu_samples += 1
-                    
-                    # # Log every 5 minutes
-                    # if time.time() - last_log > 300:
-                    #     avg_cpu = total_cpu_percent / cpu_samples if cpu_samples > 0 else 0
-                    #     print(f"[Worker {worker_id}] Pages: {pages_processed}, "
-                    #             f"Memory: {memory_mb:.1f}MB (peak: {max_memory_mb:.1f}MB), "
-                    #             f"CPU: {avg_cpu:.1f}%")
-                    #     sys.stdout.flush()
-                    #     last_log = time.time()
 
                 except queue.Empty:
                     total_wait_time += time.time() - wait_start

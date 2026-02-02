@@ -20,14 +20,6 @@ from scripts.const import PROCESSED_FILES_PATH, PARSER_LOG_FILES_PATH, CLAIMED_F
 with open("config.json", "r", encoding="utf-8") as f:
     CONFIG = json.load(f)
 
-# Define cache paths
-# CSV_PATHS = {
-#     'subclass_transitive': 'data/transitive_closures/subclass_of_transitive.csv',
-#     'part_of_transitive': 'data/transitive_closures/part_of_transitive.csv',
-#     'has_part_transitive': 'data/transitive_closures/has_parts_transitive.csv',
-#     'located_in_transitive': 'data/transitive_closures/located_in_transitive.csv',
-# }
-
 
 def safe_worker(func):
     """Decorator to catch and log worker exceptions"""
@@ -267,13 +259,17 @@ if __name__ == "__main__":
                     except concurrent.futures.TimeoutError:
                         print(f"Timeout processing {file_path}", flush=True)
                         print(traceback.format_exc(), flush=True)
+                        executor.shutdown(wait=True)
+                        break
                     except MemoryError as e:
                         print(f"MemoryError processing {file_path}: {e}", flush=True)
                         print(traceback.format_exc(), flush=True)
+                        executor.shutdown(wait=True)
+                        break
                     except Exception as e:
                         print(f"Error processing {file_path}: {e}", flush=True)
                         print(traceback.format_exc(), flush=True)
-                    
+                        break
                     sys.stdout.flush()
 
             except Exception as e:
