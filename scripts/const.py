@@ -25,6 +25,8 @@ INSTANCE_OF_PATH = f'data/p31_entity_types.csv'
 TRANSITIVE_CLOSURE_PICKLE_FILE_PATH = 'data/transitive_closures/transitive_closure_cache.pkl'
 TRANSITIVE_CLOSURE_STATS_PICKLE_FILE_PATH = 'data/transitive_closures/transitive_closure_stats.pkl'
 
+DATA_PATH = 'data'
+
 # --------------------------------------------------------------------------------------------------------------
 # PATH TO SUBCLASSES OF ASTRONOMICAL OBJECTS AND SCHOLARLY ARTICLES
 # It is used to identify entities of these types
@@ -60,6 +62,16 @@ CREATE_REFERENCE = "CREATE_REFERENCE"
 DELETE_REFERENCE = "DELETE_REFERENCE"
 DELETE_REFERENCE_VALUE = "DELETE_REFERENCE_VALUE"
 CREATE_REFERENCE_VALUE = "CREATE_REFERENCE_VALUE"
+
+# --------------------------------------------------------------------------------------------------------------
+# CSV PATHS FOR TRANSITIVE CLOSURES
+# --------------------------------------------------------------------------------------------------------------
+CSV_PATHS = {
+    'subclass_transitive': 'data/transitive_closures/subclass_of_transitive.csv',
+    'part_of_transitive': 'data/transitive_closures/part_of_transitive.csv',
+    'has_part_transitive': 'data/transitive_closures/has_parts_transitive.csv',
+    'located_in_transitive': 'data/transitive_closures/located_in_transitive.csv',
+}
 
 # ------------------------------------------------------------------------------------------------------------------------------
 # Label and description aren't considered "properties" with their own P-id's so we create our own
@@ -158,6 +170,7 @@ DATATYPE_METADATA_CHANGE_PK = ['revision_id', 'property_id', 'value_id', 'change
 ENTITY_FEATURE_COLS = [
     'revision_id',
     'property_id',
+    'property_label',
     'value_id',
     'change_target',
     'new_datatype',
@@ -209,9 +222,50 @@ ENTITY_FEATURE_COLS = [
 ]
 ENTITY_FEATURE_PK = ['revision_id', 'property_id', 'value_id', 'change_target']
 
+
+ENTITY_ONLY_FEATURES_COLS_TYPES = {
+    'length_diff_abs': 'INT',
+    'token_count_old': 'INT', 
+    'token_count_new': 'INT', 
+    'token_overlap': 'FLOAT', 
+    'old_in_new': 'INT',
+    'new_in_old': 'INT', 
+    'levenshtein_distance': 'INT',
+    'edit_distance_ratio': 'FLOAT',
+    'complete_replacement': 'INT', 
+    'structure_similarity': 'FLOAT',
+
+    'old_value_subclass_new_value': 'INT', 
+    'new_value_subclass_old_value': 'INT',
+
+    'old_value_located_in_new_value': 'INT',
+    'new_value_located_in_old_value': 'INT',
+    'old_value_has_parts_new_value': 'INT',
+    'new_value_has_parts_old_value': 'INT',
+
+    'old_value_part_of_new_value': 'INT',
+    'new_value_part_of_old_value': 'INT',
+    
+    'label_cosine_similarity': 'FLOAT', 
+    'description_cosine_similarity': 'FLOAT', 
+    'full_cosine_similarity': 'FLOAT'
+}
+
+BASE_KEY_TYPES = {
+    'revision_id': 'BIGINT',
+    'property_id': 'INT',
+    'value_id': 'TEXT',
+    'change_target': 'TEXT'
+}
+
+PROP_REP_KEY_TYPES = {
+    'pair_id': 'BIGINT'
+}
+
 TIME_FEATURE_COLS = [
     'revision_id',
     'property_id',
+    'property_label',
     'value_id',
     'change_target',
     'new_datatype',
@@ -248,6 +302,7 @@ TIME_FEATURE_PK = ['revision_id', 'property_id', 'value_id', 'change_target']
 QUANTITY_FEATURE_COLS = [
     'revision_id',
     'property_id',
+    'property_label',
     'value_id',
     'change_target',
     'new_datatype',
@@ -280,6 +335,7 @@ QUANTITY_FEATURE_PK = ['revision_id', 'property_id', 'value_id', 'change_target'
 GLOBE_FEATURE_COLS = [
     'revision_id',
     'property_id',
+    'property_label',
     'value_id',
     'change_target',
     'new_datatype',
@@ -320,6 +376,7 @@ GLOBE_FEATURE_PK = ['revision_id', 'property_id', 'value_id', 'change_target']
 TEXT_FEATURE_COLS = [
     'revision_id',
     'property_id',
+    'property_label',
     'value_id',
     'change_target',
     'new_datatype',

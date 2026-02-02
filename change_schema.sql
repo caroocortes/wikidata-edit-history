@@ -801,6 +801,7 @@ CREATE TABLE IF NOT EXISTS entity_stats (
 CREATE TABLE IF NOT EXISTS features_time (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -809,8 +810,8 @@ CREATE TABLE IF NOT EXISTS features_time (
     entity_description TEXT,
     entity_types_31 TEXT,
     entity_types_279 TEXT,
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
 
     -- For filtering
     new_datatype TEXT,
@@ -843,6 +844,7 @@ CREATE TABLE IF NOT EXISTS features_time (
 CREATE TABLE IF NOT EXISTS features_quantity (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -851,8 +853,8 @@ CREATE TABLE IF NOT EXISTS features_quantity (
     entity_description TEXT,
     entity_types_31 TEXT,
     entity_types_279 TEXT,
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
 
     -- For filtering
     new_datatype TEXT,
@@ -881,6 +883,7 @@ CREATE TABLE IF NOT EXISTS features_quantity (
 CREATE TABLE IF NOT EXISTS features_globecoordinate (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -894,8 +897,8 @@ CREATE TABLE IF NOT EXISTS features_globecoordinate (
     entity_description TEXT,
     entity_types_31 TEXT,
     entity_types_279 TEXT,
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
 
     -- for globecoordinate
     relative_value_diff_latitude FLOAT,
@@ -927,6 +930,7 @@ CREATE TABLE IF NOT EXISTS features_globecoordinate (
 CREATE TABLE IF NOT EXISTS features_text (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -940,8 +944,8 @@ CREATE TABLE IF NOT EXISTS features_text (
     entity_description TEXT,
     entity_types_31 TEXT,
     entity_types_279 TEXT,
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
 
     -- only for text
     char_insertions INT,
@@ -973,6 +977,7 @@ CREATE TABLE IF NOT EXISTS features_text (
 CREATE TABLE IF NOT EXISTS features_entity (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -987,8 +992,8 @@ CREATE TABLE IF NOT EXISTS features_entity (
     entity_types_31 TEXT,
     entity_types_279 TEXT,
     
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
     old_value_label TEXT,  -- this is the label or the alias if label == ''
     new_value_label TEXT, -- this is the label or the alias if label == ''
     old_value_description TEXT,
@@ -1103,6 +1108,7 @@ CREATE TABLE IF NOT EXISTS features_property_replacement (
 CREATE TABLE IF NOT EXISTS features_time_less (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -1111,8 +1117,8 @@ CREATE TABLE IF NOT EXISTS features_time_less (
     entity_description TEXT,
     entity_types_31 TEXT,
     entity_types_279 TEXT,
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
 
     -- For filtering
     new_datatype TEXT,
@@ -1145,6 +1151,7 @@ CREATE TABLE IF NOT EXISTS features_time_less (
 CREATE TABLE IF NOT EXISTS features_quantity_less (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -1153,8 +1160,8 @@ CREATE TABLE IF NOT EXISTS features_quantity_less (
     entity_description TEXT,
     entity_types_31 TEXT,
     entity_types_279 TEXT,
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
 
     -- For filtering
     new_datatype TEXT,
@@ -1183,6 +1190,7 @@ CREATE TABLE IF NOT EXISTS features_quantity_less (
 CREATE TABLE IF NOT EXISTS features_globecoordinate_less (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -1196,8 +1204,8 @@ CREATE TABLE IF NOT EXISTS features_globecoordinate_less (
     entity_description TEXT,
     entity_types_31 TEXT,
     entity_types_279 TEXT,
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
 
     -- for globecoordinate
     relative_value_diff_latitude FLOAT,
@@ -1229,6 +1237,7 @@ CREATE TABLE IF NOT EXISTS features_globecoordinate_less (
 CREATE TABLE IF NOT EXISTS features_text_less (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -1242,8 +1251,8 @@ CREATE TABLE IF NOT EXISTS features_text_less (
     entity_description TEXT,
     entity_types_31 TEXT,
     entity_types_279 TEXT,
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
 
     -- only for text
     char_insertions INT,
@@ -1275,6 +1284,7 @@ CREATE TABLE IF NOT EXISTS features_text_less (
 CREATE TABLE IF NOT EXISTS features_entity_less (
     revision_id BIGINT,
     property_id INT,
+    property_label TEXT,
     value_id TEXT,
     change_target TEXT,
 
@@ -1289,8 +1299,8 @@ CREATE TABLE IF NOT EXISTS features_entity_less (
     entity_types_31 TEXT,
     entity_types_279 TEXT,
     
-    old_value TEXT,
-    new_value TEXT,
+    old_value JSONB,
+    new_value JSONB,
     old_value_label TEXT,  -- this is the label or the alias if label == ''
     new_value_label TEXT, -- this is the label or the alias if label == ''
     old_value_description TEXT,

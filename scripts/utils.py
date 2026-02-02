@@ -16,6 +16,20 @@ from dateutil import parser
 from io import StringIO
 import os
 
+def get_time_unit(elapsed_time):
+    """
+    Convert elapsed time in seconds to appropriate unit.
+    Returns (value, unit)
+    """
+    if elapsed_time >= 86400:  # 60*60*24 = 86400 seconds in a day
+        return elapsed_time / 86400, 'days'
+    elif elapsed_time >= 3600:  # 60*60 = 3600 seconds in an hour
+        return elapsed_time / 3600, 'hours'
+    elif elapsed_time >= 60:
+        return elapsed_time / 60, 'minutes'
+    else:
+        return elapsed_time, 'seconds'
+
 """
     Helper methods for magnitude of change calculation
 """
@@ -223,12 +237,25 @@ def insert_rows_copy(conn, table_name, rows, columns, conflict_column=None):
             else:
                 conflict_cols = conflict_column
             
-            # DO NOTHING on conflict
-            insert_query = f"""
-                INSERT INTO {table_name} ({column_names})
-                SELECT {column_names} FROM {temp_table}
-                ON CONFLICT ({conflict_cols}) DO NOTHING
-            """
+            
+            if 'entity_stat' not in table_name:
+                # DO NOTHING on conflict
+                # if it's not an entity_stats table, then I don't need to update existing rows
+                insert_query = f"""
+                    INSERT INTO {table_name} ({column_names})
+                    SELECT {column_names} FROM {temp_table}
+                    ON CONFLICT ({conflict_cols}) DO NOTHING
+                """
+            else:
+                # if it's an entity_stats table, then I need to update existing rows, because I want to update the counts
+                # update only the non-conflict columns (no key columns)
+                insert_query = f"""
+                    INSERT INTO {table_name} ({column_names})
+                    SELECT {column_names} FROM {temp_table}
+                    ON CONFLICT ({conflict_cols}) DO UPDATE SET         
+                    {', '.join([f'{col} = EXCLUDED.{col}' for col in columns if col not in conflict_column])}
+                """
+
         else:
             insert_query = f"""
                 INSERT INTO {table_name} ({column_names})
