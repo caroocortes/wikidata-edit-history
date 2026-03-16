@@ -21,15 +21,15 @@ if __name__ == "__main__":
     )
 
     feature_creator = FeatureCreation(conn)
-    
-    # TODO: add text datatype, removed because I already ran that one
-    # TODO: add entity
-    # datatypes = ['text', 'quantity', 'time', 'quantity', 'globecoordinate', 'entity']
-    
+
     table_suffix = ''
-    max_batches = 1
-    # datatypes = ['quantity', 'time', 'globecoordinate']
+    max_batches = None
+    # datatypes = ['quantity', 'time', 'globecoordinate', 'property_replacement', 'text', 'entity']
     datatypes = ['entity']
     for datatype in datatypes:
-        feature_creator.create_missing_features(datatype, table_suffix, max_batches=max_batches)
 
+        # if datatype == 'entity':
+        #     # TODO:  ADD PARAMETER TO YAML TO SKIP THIS STEP IF ALREADY DONE
+        #     feature_creator.update_label_description_entity_features(table_suffix)
+
+        feature_creator.create_remaining_features(datatype, table_suffix, max_batches=max_batches)

@@ -1,3 +1,4 @@
+from fileinput import filename
 import html
 import json
 import Levenshtein
@@ -8,6 +9,9 @@ import hashlib
 import time
 from datetime import datetime
 from collections import defaultdict
+import psutil
+import gc
+import tracemalloc
 
 from scripts.feature_creation import FeatureCreation
 from scripts.utils import get_time_feature, haversine_metric, get_time_dict, gregorian_to_julian, id_to_int
@@ -66,7 +70,6 @@ class PageParser():
 
         # FOR ML FEATURES FRO PROPERTY_REPLACEMENT
         self.property_replacement_changes = []  # property replacement changes
-
 
         self.pending_changes = defaultdict(lambda: {'CREATE': None, 'DELETE': None})  # value_hash -> {'CREATE': change, 'DELETE': change}
 
@@ -502,13 +505,17 @@ class PageParser():
     def process_pair_changes(self, change):
         """Track and immediately process pairs
         for property replacement features"""
+
+        # skip label and description, since they're technically not considered actual properties...
+        if change[1] == -1 or change[1] == -2:
+            return
         
-        action = change[11] # action
+        action = change[9] # action
         if action == 'DELETE':
-            value_hash = change[13] # old_hash is not None
+            value_hash = change[11] # old_hash is not None
             opposite_action = 'CREATE'
         else:
-            value_hash = change[14] # new_hash is not None
+            value_hash = change[12] # new_hash is not None
             opposite_action = 'DELETE'
 
         if self.pending_changes[value_hash][opposite_action] is not None:
@@ -517,27 +524,36 @@ class PageParser():
             # property id is at position 1
             # different property_id and same value since I get it with value_hash
             if (opposite_change[1] != change[1]):
-                
+
                 features = self.feature_creation.create_property_replacement_features(change, opposite_change)
 
                 self.property_replacement_features.append(features) # already has all columns needed
                 
                 # Clear the oldest one, so the most recent one can be compared to future ones
-                timestamp_change = datetime.strptime(change[15].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-                timestamp_opposite_change = datetime.strptime(opposite_change[15].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                timestamp_change = datetime.strptime(change[13].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                timestamp_opposite_change = datetime.strptime(opposite_change[13].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
                 if timestamp_change < timestamp_opposite_change: # current change is the oldest one
                     self.pending_changes[value_hash][action] = None
+                    # I don't re-set the opposite change because it's already stored
                 else: # opposite_action change is the oldest one, store change and remove opposite_action change
                     self.pending_changes[value_hash][action] = change
                     self.pending_changes[value_hash][opposite_action] = None
             else:
-                # properties match, edit 
-                self.pending_changes[value_hash][action] = change
+                # properties match, just an edit 
+                timestamp_change = datetime.strptime(change[13].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                timestamp_opposite_change = datetime.strptime(opposite_change[13].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+                if timestamp_change < timestamp_opposite_change:
+                    self.pending_changes[value_hash][opposite_action] = opposite_change
+                    self.pending_changes[value_hash][action] = None
+                else:
+                    self.pending_changes[value_hash][action] = change
+                    self.pending_changes[value_hash][opposite_action] = None
         else:
             # No match - store as pending 
             self.pending_changes[value_hash][action] = change
     
     def calculate_features(self, revision_id, property_id, property_label, value_id, old_value, new_value, old_datatype, new_datatype, change_target, action):
+        
         base_cols = (
             revision_id,
             property_id,
@@ -570,6 +586,7 @@ class PageParser():
         
         if new_datatype in WD_STRING_TYPES:
             features = self.feature_creation.create_text_features('text', old_value, new_value)
+
             self.text_features.append(
                 base_cols + features
             )
@@ -580,12 +597,19 @@ class PageParser():
                 base_cols + features
             )
 
+    @staticmethod
+    def serialize_value(value):
+        if value is None:
+            return None
+        return json.dumps(value, ensure_ascii=False)
+
+
     def save_changes(self, property_id, value_id, old_value, new_value, old_datatype, new_datatype, change_target, change_type, change_magnitude=None, old_hash=None, new_hash=None):
         """
             Store value + datatype metadata (of property value) + rank changes
         """
-        old_value = json.dumps(old_value) if old_value else '{}' # in the DB can't be NULL because null = null is NULL in postgresql
-        new_value = json.dumps(new_value) if new_value else '{}'
+        old_value = PageParser.serialize_value(old_value) if old_value else '{}' # in the DB can't be NULL because null = null is NULL in postgresql
+        new_value = PageParser.serialize_value(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
 
@@ -616,10 +640,12 @@ class PageParser():
 
         # Soft insertion + deletion 
         if change_target == 'rank' and action == 'UPDATE':
-            if old_value in ['normal', 'preferred'] and new_value == 'deprecated':
+            old_value_filt = old_value.replace('"', '') if old_value else ''
+            new_value_filt = new_value.replace('"', '') if new_value else ''
+            if old_value_filt in ['normal', 'preferred'] and new_value_filt == 'deprecated':
                 label = 'soft_deletion'
 
-            if new_value == 'preferred' and old_value in ['deprecated','normal']:
+            if new_value_filt == 'preferred' and old_value_filt in ['deprecated','normal']:
                 label = 'soft_insertion'
 
         self.update_entity_stats(change_target, action)
@@ -657,51 +683,39 @@ class PageParser():
             )
             
         change = (
-            revision_id,
-            property_id,
-            property_label,
-            value_id,
-            old_value,
-            new_value,
-            old_datatype,
-            new_datatype,
-            change_target, # can't be None since change_target is part of the key of the table
-            action,
-            target,
-            old_hash if old_hash else '',
-            new_hash if new_hash else '',
-            timestamp,
-            get_time_feature(timestamp, 'week'),
-            get_time_feature(timestamp, 'year_month'),
-            get_time_feature(timestamp, 'year'),
-            label,
-            entity_id
+            revision_id, # 0
+            property_id, # 1
+            property_label, # 2
+            value_id, # 3
+            old_value, # 4
+            new_value, # 5
+            old_datatype, # 6
+            new_datatype, # 7
+            change_target, # 8 - can't be None since change_target is part of the key of the table
+            action, # 9
+            target, # 10
+            old_hash if old_hash else '', # 11
+            new_hash if new_hash else '', # 12
+            timestamp, # 13
+            get_time_feature(timestamp, 'week'), # 14
+            get_time_feature(timestamp, 'year_month'), # 15
+            get_time_feature(timestamp, 'year'), # 16
+            label, # 17
+            entity_id # 18
         )
             
         self.changes.append(change)
 
         if action == 'CREATE' or action == 'DELETE': # only for create and deletes
-            self.process_pair_changes(change)
+            self.process_pair_changes(change + (self.revision_meta['user_id'],))
 
-        # change_metadata = ()
-        # if change_magnitude is not None:
-        #     change_metadata = (
-        #         self.revision_meta['revision_id'],
-        #         property_id,
-        #         value_id,
-        #         change_target if change_target else '', # can't be None since change_target is part of the key of the table
-        #         'CHANGE_MAGNITUDE',
-        #         change_magnitude
-        #     )
-        #     self.changes_metadata.append(change_metadata)
-        
     
     def save_datatype_metadata_changes(self, property_id, value_id, old_value, new_value, old_datatype, new_datatype, change_target, change_type, change_magnitude=None, old_hash=None, new_hash=None):
         """
             Store value + datatype metadata (of property value) + rank changes
         """
-        old_value = json.dumps(old_value) if old_value else '{}' # in the DB can't be NULL because null = null is NULL in postgresql
-        new_value = json.dumps(new_value) if new_value else '{}'
+        old_value = PageParser.serialize_value(old_value) if old_value else '{}' # in the DB can't be NULL because null = null is NULL in postgresql
+        new_value = PageParser.serialize_value(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
         timestamp = self.revision_meta['timestamp']
@@ -770,8 +784,8 @@ class PageParser():
         """
             Store reference/qualifier changes
         """
-        old_value = json.dumps(old_value) if old_value else '{}'
-        new_value = json.dumps(new_value) if new_value else '{}'
+        old_value = PageParser.serialize_value(old_value) if old_value else '{}'
+        new_value = PageParser.serialize_value(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type)
         timestamp = self.revision_meta['timestamp']
@@ -781,10 +795,11 @@ class PageParser():
         # -- P582 = end time
         # -- P8554 = earliest end date - earliest date on which the statement could have begun to no longer be true
         # -- P12506 = latest end date - latest date beyond which the statement could no longer be true
+        # -- end period (P3416)
         
         if action == 'CREATE':
-            if qual_property_id in ['P582', 'P8554', 'P12506']:
-                label = 'soft_insertion'
+            if qual_property_id in [582, 8554, 12506, 3416]:
+                label = 'soft_deletion'
         
         change = (
             self.revision_meta['revision_id'],
@@ -829,8 +844,8 @@ class PageParser():
         """
             Store reference changes
         """
-        old_value = json.dumps(old_value) if old_value else '{}'
-        new_value = json.dumps(new_value) if new_value else '{}'
+        old_value = PageParser.serialize_value(old_value) if old_value else '{}'
+        new_value = PageParser.serialize_value(new_value) if new_value else '{}'
 
         action, target = PageParser.get_target_action_from_change_type(change_type) 
         timestamp = self.revision_meta['timestamp']
@@ -1465,22 +1480,6 @@ class PageParser():
                 change_type=DELETE_REFERENCE
             )
 
-            # if old_datatype_metadata:
-
-            #     self._handle_datatype_metadata_changes(
-            #         old_datatype_metadata=old_datatype_metadata,
-            #         new_datatype_metadata=None,
-            #         value_id=stmt_value_id,
-            #         old_datatype=prev_dtype,
-            #         new_datatype=None,
-            #         property_id=stmt_pid,
-            #         change_type=DELETE_REFERENCE,
-            #         type_='reference',
-            #         rq_property_id=pid,
-            #         value_hash=value_hash,
-            #         ref_hash=ref_hash
-            #     )
-
         # creations
         for ref_hash, pid, value_hash in created:
 
@@ -1506,22 +1505,6 @@ class PageParser():
                 change_target='',
                 change_type=CREATE_REFERENCE
             )
-
-            # if new_datatype_metadata:
-        
-            #     self._handle_datatype_metadata_changes(
-            #         old_datatype_metadata=None,
-            #         new_datatype_metadata=new_datatype_metadata,
-            #         value_id=stmt_value_id,
-            #         old_datatype=None,
-            #         new_datatype=curr_dtype,
-            #         property_id=stmt_pid,
-            #         change_type=CREATE_REFERENCE,
-            #         type_='reference',
-            #         rq_property_id=pid,
-            #         value_hash=value_hash,
-            #         ref_hash=ref_hash
-            #     )
         
         sys.stdout.flush()
 
@@ -1624,20 +1607,6 @@ class PageParser():
                     change_type=DELETE_QUALIFIER
                 )
 
-                # if old_datatype_metadata:
-                #     self._handle_datatype_metadata_changes(
-                #         old_datatype_metadata=old_datatype_metadata, 
-                #         new_datatype_metadata=None, 
-                #         value_id=stmt_value_id, 
-                #         old_datatype=prev_dtype, 
-                #         new_datatype=None, 
-                #         property_id=stmt_pid, 
-                #         change_type=DELETE_QUALIFIER, 
-                #         type_='qualifier', 
-                #         rq_property_id=pid, 
-                #         value_hash=h
-                #     )
-
             # --- Added values ---
             for h in added:
                 change_detected = True
@@ -1663,20 +1632,6 @@ class PageParser():
                     change_type=CREATE_QUALIFIER
                 )
 
-                # if new_datatype_metadata:
-                #     self._handle_datatype_metadata_changes(
-                #         old_datatype_metadata=None, 
-                #         new_datatype_metadata=new_datatype_metadata, 
-                #         value_id=stmt_value_id, 
-                #         old_datatype=None, 
-                #         new_datatype=curr_dtype, 
-                #         property_id=stmt_pid, 
-                #         change_type=CREATE_QUALIFIER, 
-                #         type_='qualifier', 
-                #         rq_property_id=pid, 
-                #         value_hash=h
-                #     )
-
         return change_detected
             
     def _changes_created_entity(self, revision):
@@ -1699,7 +1654,7 @@ class PageParser():
                 
                 old_value = None
                 new_value = value
-                
+
                 self.save_changes(
                     id_to_int(property_id), 
                     value_id=value_id,
@@ -1771,7 +1726,7 @@ class PageParser():
             for stmt in property_stmts:
                 
                 value, datatype, datatype_metadata = PageParser._parse_datavalue(stmt)
-                new_hash = PageParser._get_property_mainsnak(stmt, 'hash') if stmt else None
+                old_hash = PageParser._get_property_mainsnak(stmt, 'hash') if stmt else None
                 value_id = stmt.get('id', None)
 
                 if property_id == 'P31':
@@ -1792,8 +1747,8 @@ class PageParser():
                     new_datatype=None,
                     change_target=None,
                     change_type=DELETE_PROPERTY,
-                    old_hash=None,
-                    new_hash=new_hash
+                    old_hash=old_hash,
+                    new_hash=None
                 )
 
                 if datatype_metadata:
@@ -1810,8 +1765,8 @@ class PageParser():
                             new_datatype=None,
                             change_target=k,
                             change_type=DELETE_PROPERTY,
-                            old_hash=None,
-                            new_hash=new_hash
+                            old_hash=old_hash,
+                            new_hash=None
                         )
 
                 # qualifier changes
@@ -1974,6 +1929,11 @@ class PageParser():
         for removed_pid in removed_pids:
             prev_statements = prev_claims.get(removed_pid, [])
 
+            if len(prev_statements) == 1: # there was only one statement with this property, so it's a DELETE_PROPERTY
+                change_type = DELETE_PROPERTY
+            else:
+                change_type = DELETE_PROPERTY_VALUE
+
             for s in prev_statements:
                 old_value, old_datatype, old_datatype_metadata = PageParser._parse_datavalue(s)
                 value_id = s.get('id', None)
@@ -1988,11 +1948,11 @@ class PageParser():
                 new_hash = None
                 old_hash = PageParser._get_property_mainsnak(s, 'hash') if s else None
 
-                self._handle_value_changes(old_datatype, None, None, old_value, value_id, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
+                self._handle_value_changes(old_datatype, None, None, old_value, value_id, removed_pid, change_type, old_hash, new_hash)
 
                 if old_datatype_metadata:
-                    self._handle_datatype_metadata_changes(old_datatype_metadata, {}, value_id, old_datatype, None, removed_pid, DELETE_PROPERTY, old_hash, new_hash)
-
+                    self._handle_datatype_metadata_changes(old_datatype_metadata, {}, value_id, old_datatype, None, removed_pid, change_type, old_hash, new_hash)
+                
                 # rank
                 prev_rank = s.get('rank') if s else None
                 self.save_changes(
@@ -2003,7 +1963,7 @@ class PageParser():
                     old_datatype=old_datatype,
                     new_datatype=None,
                     change_target='rank',
-                    change_type=DELETE_PROPERTY,
+                    change_type=change_type,
                     old_hash=old_hash,
                     new_hash=None
                 )
@@ -2283,6 +2243,8 @@ class PageParser():
         """
             Processes all the revisions in a <page></page> and stores the extracted data in the corresponding tables revision, change and change_metadata
         """
+        # tracemalloc.start()
+        # snapshot_before = tracemalloc.take_snapshot()
 
         title_tag = f"{{{NS}}}title"
         revision_tag = f'{{{NS}}}revision'
@@ -2304,12 +2266,14 @@ class PageParser():
 
         self.entity_stats['entity_id'] = entity_id
 
-        entity_types_31 = self.feature_creation.extract_entity_p31(entity_id)
-        entity_types_279 = self.feature_creation.extract_entity_p279(entity_id)
+        # entity_types_31 = self.feature_creation.extract_entity_p31(entity_id)
+        # entity_types_279 = self.feature_creation.extract_entity_p279(entity_id)
 
-        self.entity_data['p31_labels_list'] = entity_types_31
-        self.entity_data['p279_labels_list'] = entity_types_279
+        # self.entity_data['p31_labels_list'] = ''
+        # self.entity_data['p279_labels_list'] = ''
 
+        start_parse_time = time.time()
+        changes_times = []
         # Iterate over revisions
         for rev_elem in self.page_elem.findall(revision_tag):
 
@@ -2366,8 +2330,7 @@ class PageParser():
 
                     # decode content inside <text></text>
                     if revision_text_elem.text:
-                        revision_text = (revision_text_elem.text).strip()
-                        current_revision = self._parse_json_revision(rev_elem, revision_text)
+                        current_revision = self._parse_json_revision(rev_elem, (revision_text_elem.text).strip())
                     
                     if current_revision is None or revision_text_elem.text is None:
                         # The json parsing for the revision text failed.
@@ -2385,7 +2348,10 @@ class PageParser():
                             self.entity_data['alias'] = curr_alias
 
                         # get changes for revision
+                        start_time_changes = time.time()
                         change = self.get_changes_from_revisions(current_revision, previous_revision)
+                        end_time_changes = time.time()
+                        changes_times.append(end_time_changes - start_time_changes) # get per revision work (time it takes to claculate diff)
 
                     if change: # store revision if there was any change detected
                         
@@ -2421,7 +2387,7 @@ class PageParser():
                             self.revision_meta['comment'],
                             self.revision_meta['file_path'],
                             self.current_revision_redirect,
-                            extract_redirect_qid(revision_text) if self.current_revision_redirect else ''
+                            extract_redirect_qid((revision_text_elem.text).strip()) if self.current_revision_redirect else ''
                         ))
 
                         if self.revision_meta['user_type'] == 'bot':
@@ -2452,89 +2418,136 @@ class PageParser():
             # free memory
             rev_elem.clear()
 
+        end_time_parse = time.time()
+        
+        # Clear element to free memory
+        self.page_elem.clear()
+        while self.page_elem.getprevious() is not None:
+            del self.page_elem.getparent()[0]
+
         ## -------------------------------------------------- ##
         # Tag reverted edits
         ## -------------------------------------------------- ##
         self.changes, self.entity_stats = self.feature_creation.tag_reverted_edits(self.changes_by_pv, self.changes, self.entity_stats)
-        
+
         ## -------------------------------------------------- ##
         # Upadte entity label
         ## -------------------------------------------------- ##
+
+        final_revision = []
         for i, r in enumerate(self.revision):
-            self.revision[i] = r + (self.entity_data['label'],)
+            final_revision.append(r + (self.entity_data['label'],))
+        self.revision = final_revision
 
+        final_changes = []
         for i, c in enumerate(self.changes):
-            self.changes[i] = c + (self.entity_data['label'],)
+            final_changes.append(c + (self.entity_data['label'],))
+        self.changes = final_changes
 
+        final_datatype_changes = []
         for i, c in enumerate(self.datatype_metadata_changes):
-            self.datatype_metadata_changes[i] = c + (self.entity_data['label'],)
+            final_datatype_changes.append(c + (self.entity_data['label'],))
+        self.datatype_metadata_changes = final_datatype_changes
 
+        final_reference_changes = []
         for i, c in enumerate(self.reference_changes):
-            self.reference_changes[i] = c + (self.entity_data['label'],)
+            final_reference_changes.append(c + (self.entity_data['label'],))
 
+        self.reference_changes = final_reference_changes
+
+        final_qualifier_changes = []
         for i, c in enumerate(self.qualifier_changes):
-            self.qualifier_changes[i] = c + (self.entity_data['label'],)
+            final_qualifier_changes.append(c + (self.entity_data['label'],))
+        self.qualifier_changes = final_qualifier_changes
 
         ## -------------------------------------------------- ##
         # Add entity label, description and types to feature tables
         ## -------------------------------------------------- ##
+        final_entity_features = []
         if len(self.entity_features) > 0:
             for i, f in enumerate(self.entity_features):
-                self.entity_features[i] = f + (
+
+                final_entity_features.append(
+                    f + (
                     self.entity_data['label'],
                     self.entity_data['description'],
-                    self.entity_data['p31_labels_list'],
-                    self.entity_data['p279_labels_list'],
+                    '',
+                    '',
                     0.0, 
                     0.0, 
                     0.0,
-                    ''
+                    '')
                 )
 
+            self.entity_features = final_entity_features
+
+        final_text_features = []
         if len(self.text_features) > 0:
             for i, f in enumerate(self.text_features):
-                self.text_features[i] = f + (
+
+                final_text_features.append(
+                    f + (
                     self.entity_data['label'],
                     self.entity_data['description'],
-                    self.entity_data['p31_labels_list'],
-                    self.entity_data['p279_labels_list'],
+                    '',
+                    '',
                     0.0,
                     '',
+                    )
                 )
 
+            self.text_features = final_text_features
+
+        final_time_features = []
         if len(self.time_features) > 0:
             for i, f in enumerate(self.time_features):
-                self.time_features[i] = f + (
+
+                final_time_features.append(
+                    f + (
                     self.entity_data['label'],
                     self.entity_data['description'],
-                    self.entity_data['p31_labels_list'],
-                    self.entity_data['p279_labels_list'],
+                    '',
+                    '',
                     0.0,
                     '',
+                    )
                 )
 
+            self.time_features = final_time_features
+
+        final_globe_features = []
         if len(self.globecoordinate_features) > 0:
             for i, f in enumerate(self.globecoordinate_features):
-                self.globecoordinate_features[i] = f + (
-                    self.entity_data['label'],
-                    self.entity_data['description'],
-                    self.entity_data['p31_labels_list'],
-                    self.entity_data['p279_labels_list'],
-                    0.0,
-                    '',
+
+                final_globe_features.append(
+                    f + (
+                        self.entity_data['label'],
+                        self.entity_data['description'],
+                        '',
+                        '',
+                        0.0,
+                        '',
+                    )
                 )
 
+            self.globecoordinate_features = final_globe_features
+
+        final_quantity_features = []
         if len(self.quantity_features) > 0:
             for i, f in enumerate(self.quantity_features):
-                self.quantity_features[i] = f + (
-                    self.entity_data['label'],
-                    self.entity_data['description'],
-                    self.entity_data['p31_labels_list'],
-                    self.entity_data['p279_labels_list'],
-                    0.0,
-                    '',
+                final_quantity_features.append(
+                    f + (
+                        self.entity_data['label'],
+                        self.entity_data['description'],
+                        '',
+                        '',
+                        0.0,
+                        '',
+                    )
                 )
 
+            self.quantity_features = final_quantity_features
+        
         ## -------------------------------------------------- ##
         # Filter entities and send them to corresponding tables
         ## -------------------------------------------------- ##
@@ -2557,7 +2570,7 @@ class PageParser():
         has_less_revisions = False
         if not is_astronomical_object and not is_scholarly_article and self.entity_stats['num_value_changes'] <= REVISION_THRESHOLD:
             has_less_revisions = True
-
+        
         entity_property_time_stats = self.finalize_entity_property_time_stats()
 
         ## -------------------------------------------------- ##
@@ -2577,27 +2590,70 @@ class PageParser():
         self.entity_stats['first_revision_timestamp'] = self.revision[0][3] if len(self.revision) > 0 else None # timestamp is at position 3 in the tuple
         self.entity_stats['last_revision_timestamp'] = self.revision[-1][3] if len(self.revision) > 0 else None
 
-        # Clear element to free memory
-        self.page_elem.clear()
-        while self.page_elem.getprevious() is not None:
-            del self.page_elem.getparent()[0]
+        avg_diff_calc_per_revision_sec = sum(changes_times) / len(changes_times) if len(changes_times) > 0 else 0
 
-        return {
-            'revision': self.revision,
-            'value_change': self.changes,
-            'qualifier_change': self.qualifier_changes,
-            'reference_change': self.reference_changes,
-            'datatype_metadata_change': self.datatype_metadata_changes,
-            'features_entity': self.entity_features,
-            'features_text': self.text_features,
-            'features_time': self.time_features,
-            'features_globecoordinate': self.globecoordinate_features,
-            'features_quantity': self.quantity_features,
-            # 'features_reverted_edit': reverted_edit_features,
-            'features_property_replacement': self.property_replacement_features,
-            'entity_property_time_stats': entity_property_time_stats,
+        ## -------------------------------------------------- ##
+        # Throughput metrics
+        ## -------------------------------------------------- ##
+        self.entity_stats['total_parse_time_sec'] = end_time_parse - start_parse_time
+        self.entity_stats['avg_diff_calc_per_revision_sec'] = avg_diff_calc_per_revision_sec
+        self.entity_stats['avg_diff_calc_per_revision_msec'] = avg_diff_calc_per_revision_sec * 1000
+        self.entity_stats['file_path'] = self.file_path
+
+        result = {
+            'revision': list(self.revision),
+            'value_change': list(self.changes),
+            'qualifier_change': list(self.qualifier_changes),
+            'reference_change': list(self.reference_changes),
+            'datatype_metadata_change': list(self.datatype_metadata_changes),
+            'features_entity': list(self.entity_features),
+            'features_text': list(self.text_features),
+            'features_time': list(self.time_features),
+            'features_globecoordinate': list(self.globecoordinate_features),
+            'features_quantity': list(self.quantity_features),
+            'features_property_replacement': list(self.property_replacement_features),
+            'entity_property_time_stats': list(entity_property_time_stats),
             'is_scholarly_article': is_scholarly_article,
             'is_astronomical_object': is_astronomical_object,
             'has_less_revisions': has_less_revisions,
             'entity_stats': [tuple(self.entity_stats.get(col) for col in ENTITY_STATS_COLS)]
         }
+
+        # # memory consumption
+        # snapshot_after = tracemalloc.take_snapshot()
+        # top_stats = snapshot_after.compare_to(snapshot_before, 'lineno')
+
+        # total_diff_mb = sum(stat.size_diff for stat in top_stats) / (1024**2)
+        # print(f"Entity {entity_id}: {total_diff_mb:.1f} MB allocated, {len(self.revision)} revisions")
+
+        # for stat in top_stats[:4]:
+        #     print(f"  {stat}")
+
+        # tracemalloc.stop()
+
+        if len(self.revision) > 10000:
+            print(f"MEGA-ENTITY: {entity_id} has {len(self.revision)} revisions, {len(self.changes)} changes, in file: {self.file_path}")
+            sys.stdout.flush()
+
+        self.changes_by_pv.clear()
+        self.pending_changes.clear()
+        self.entity_property_time.clear()
+        self.changes.clear()
+        self.revision.clear()
+        self.qualifier_changes.clear()
+        self.reference_changes.clear()
+        self.datatype_metadata_changes.clear()
+        self.entity_features.clear()
+        self.text_features.clear()
+        self.time_features.clear()
+        self.globecoordinate_features.clear()
+        self.quantity_features.clear()
+        self.property_replacement_features.clear()
+        del self.entity_stats
+        del self.entity_data
+
+        # large entity
+        if len(self.revision) > 400:
+            gc.collect()
+
+        return result

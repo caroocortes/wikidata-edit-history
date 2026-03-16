@@ -98,4 +98,6 @@ class TransitiveClosureCache:
         if value1 not in self.cache[table_name]:
             return 0
         
-        return 1 if value2 in self.cache[table_name][value1] else 0
+        cleaned_trans = [val.strip() for val in self.cache[table_name][value1]]
+
+        return 1 if value2 in cleaned_trans else 0

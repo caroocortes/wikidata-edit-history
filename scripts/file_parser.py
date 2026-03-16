@@ -10,18 +10,21 @@ import pandas as pd
 import psutil
 import os
 import traceback
+import csv
+import gc
 
 from scripts.page_parser import PageParser
 from scripts.const import *
-from scripts.utils import insert_rows_copy
-
+from scripts.utils import insert_rows_copy, total_memory_usage
 
 def process_page_xml(page_elem_str, file_path, config, conn, property_labels, astronomical_object_types, scholarly_article_types):
+
     parser = PageParser(file_path=file_path, page_elem_str=page_elem_str, config=config, connection=conn, property_labels=property_labels, 
                         astronomical_object_types=astronomical_object_types, scholarly_article_types=scholarly_article_types)
     try:
         results = parser.process_page()
         return results
+
     except Exception as e:
         print('Error in page parser')
         print(e)
@@ -38,6 +41,9 @@ class FileParser():
 
         self.num_workers = config.get('pages_in_parallel', 5) # processes that process pages in parallel
         self.max_workers = config.get('max_pages_in_parallel', 8)
+
+        self.worker_memory = mp.Value('d', 0.0)  # Shared
+        self.worker_memory_lock = mp.Lock()
 
         if shared_results_queue is not None:
             self.results_queue = shared_results_queue
@@ -59,10 +65,11 @@ class FileParser():
         df = pd.read_csv(PROPERTY_LABELS_PATH, names=['property_id', 'property_label'], header=None)
         self.PROPERTY_LABELS = dict(zip(df['property_id'], df['property_label']))
    
-        self.start_time = time.time()
-
         self.cumulative_page_size = 0
         self.num_pages = 0
+
+        self.start_time = time.time()
+        self.total_revisions = 0
 
         self.workers = []
         for i in range(self.num_workers):
@@ -70,17 +77,6 @@ class FileParser():
             p.start()
             self.workers.append(p)
             
-    def get_simple_stats(self):
-        runtime = time.time() - self.start_time
-        
-        stats = {
-            'runtime': runtime,
-            'entities_processed': self.num_entities,
-            'num_workers': self.num_workers,
-        }
-            
-        return stats
-    
     
     def batch_insert(
         self,
@@ -163,7 +159,8 @@ class FileParser():
             host=db_config["DB_HOST"],
             port=db_config["DB_PORT"],
             connect_timeout=30,
-            gssencmode='disable'
+            gssencmode='disable',
+            client_encoding='UTF8'
         )
 
         base_table_names = [
@@ -258,14 +255,6 @@ class FileParser():
             print(f"[DB_WRITER] Exiting")
             sys.stdout.flush()
     
-    def _add_worker(self):
-        i = len(self.workers)
-        p = mp.Process(target=self._worker, args=(i,))
-        p.start()
-        self.workers.append(p)
-        print(f"Added worker {i} due to queue size, total workers: {len(self.workers)}")
-        self.num_workers += 1
-
     def _worker(self, worker_id):
         """
             Process started in init
@@ -285,18 +274,14 @@ class FileParser():
             host=db_config["DB_HOST"],
             port=db_config["DB_PORT"],
             connect_timeout=30,
-            gssencmode='disable'
+            gssencmode='disable',
+            client_encoding='UTF8'
         )
 
         conn.autocommit = True
 
         process = psutil.Process(os.getpid())
         
-        # Resource tracking
-        max_memory_mb = 0
-        total_cpu_percent = 0
-        cpu_samples = 0
-
         pages_processed = 0
         total_wait_time = 0
         total_process_time = 0
@@ -307,7 +292,7 @@ class FileParser():
                 wait_start = time.time()
                 try:
                     page_elem_str = self.page_queue.get(timeout=1) # get is atomic -  only one thread can remove an item at a time
-                    
+
                     # ---- stats ----
                     wait_time = time.time() - wait_start
                     total_wait_time += wait_time
@@ -327,23 +312,28 @@ class FileParser():
                         self.SCHOLARLY_ARTICLE_TYPES
                     )
                     process_time = time.time() - process_start
+                    
+                    if process_time > 5:
+                        print(f"Worker {worker_id}: processed page in {process_time:.1f}s",
+                              f"total wait time {total_wait_time:.1f}s",
+                              f"number of revisions: {len(results.get('revision', [])) if results else 0}", flush=True)
+                        
+                    pages_processed += 1
 
                     if results is not None:
+
                         self.results_queue.put(results)
+                        
+                        if len(results.get('revision', [])) > 200:
+                            gc.collect()
+                        
+                        results = None
+
+                    if pages_processed % 50 == 0:  # Every 50 entities or with more than 200 revisions
+                        gc.collect()
                     
                     # ---- stats ----
                     total_process_time += process_time
-                    pages_processed += 1
-                    # ---- stats ----
-
-                    # -------- Resource monitorung -------
-                    memory_info = process.memory_info()
-                    memory_mb = memory_info.rss / 1024 / 1024  # Convert to MB
-                    max_memory_mb = max(max_memory_mb, memory_mb)
-                    
-                    cpu_percent = process.cpu_percent() # returns a float representing the current process CPU utilization as a percentage
-                    total_cpu_percent += cpu_percent
-                    cpu_samples += 1
 
                 except queue.Empty:
                     total_wait_time += time.time() - wait_start
@@ -363,13 +353,7 @@ class FileParser():
             conn.close()
 
             total_time = total_process_time + total_wait_time
-            efficiency = (total_process_time / total_time) * 100 if total_time > 0 else 0
-            avg_cpu = total_cpu_percent / cpu_samples if cpu_samples > 0 else 0
-            
-            print(f"Worker {worker_id} FINAL: {pages_processed} pages, "
-                f"{efficiency:.1f}% efficiency, {total_process_time:.2f}s processing, "
-                f"{total_wait_time:.2f}s waiting, Peak Memory: {max_memory_mb:.1f}MB, "
-                f"Avg CPU: {avg_cpu:.1f}%")
+            print(f"Worker {worker_id} FINAL: {pages_processed} pages, total process time {total_process_time:.1f}s, total wait time {total_wait_time:.1f}s, total time {total_time:.1f}s")
             sys.stdout.flush()
 
             os._exit(0)
@@ -391,7 +375,8 @@ class FileParser():
         context = etree.iterparse(file_obj, events=("end",), tag=page_tag, huge_tree=True) # streams the file, doesn't load everything to memory
         
         last_report = time.time()
-
+        start_time_reading = time.time()
+        
         for event, page_elem in context:
             keep = False
             entity_id = ""
@@ -404,14 +389,12 @@ class FileParser():
                     keep = True
 
             if keep:
-
-                # fullness = self.page_queue.qsize() / QUEUE_SIZE
-                # if fullness > 0.7 and self.num_workers < self.max_workers:
-                #     self._add_worker()
-
                 # Serialize the page element
                 page_elem_str = etree.tostring(page_elem, encoding="unicode")
-                
+
+                revision_count = page_elem_str.count('<revision>')
+                self.total_revisions += revision_count
+
                 self.page_queue.put(page_elem_str)
                 self.num_entities += 1
 
@@ -420,13 +403,14 @@ class FileParser():
                 self.num_pages += 1
 
             # Periodic progress report
-            if time.time() - last_report > 600:  # Every 10 min
+            if time.time() - last_report > 300:
                 rate = self.num_entities / (time.time() - self.start_time)
                 queue_size = self.page_queue.qsize()
-                queue_fullness = queue_size / QUEUE_SIZE
-                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, queue: {queue_fullness}")
-                print(f"Average page size so far: {self.cumulative_page_size / self.num_pages:.2f} bytes")
-                
+                alive_workers = sum(1 for p in self.workers if p.is_alive())
+                print(f"Progress: {self.num_entities} entities read, {rate:.1f} entities/sec, "
+                    f"queue: {queue_size}/{QUEUE_SIZE}, "
+                    f"workers alive: {alive_workers}/{self.num_workers}", flush=True)
+
                 sys.stdout.flush()
                 last_report = time.time()
 
@@ -439,6 +423,8 @@ class FileParser():
             if self.stop_event.is_set():
                 break
         
+        end_time_file_reading = time.time()
+
         # Send stop signals to workers
         for _ in range(self.num_workers):
             self.page_queue.put(None)
@@ -455,14 +441,43 @@ class FileParser():
             self.writer_process.join()
             if self.writer_process.exitcode != 0:
                 raise Exception(f"DB writer process failed with exit code {self.writer_process.exitcode}")
+    
+        total_time = time.time() - self.start_time
 
-        final_stats = self.get_simple_stats()
+        full_file_path = self.config.get('files_directory') + self.file_path
+        file_size = os.path.getsize(full_file_path) / (1024 * 1024)  # convert to MB
+
+        mem_data = {
+            'file': self.file_path,
+            'file_size_mb': file_size, 
+            'num_entities': self.num_entities,
+            'processed_revisions': self.total_revisions,
+            'avg_revisions_per_entity': (self.total_revisions / self.num_entities) if self.num_entities > 0 else 0,
+            'file_reading_sec': end_time_file_reading - start_time_reading,
+            'total_process_time_sec': total_time,
+            'avg_entities_per_sec': (self.num_entities / total_time) if self.num_entities > 0 else 0
+        }
+
+        SCRIPT_DIR = Path(__file__).parent  # /scripts
+        PROJECT_DIR = SCRIPT_DIR.parent     # home
+        LOGS_DIR = PROJECT_DIR / 'logs'
+
+        csv_file_path = LOGS_DIR / PARSER_LOG_FILES_PATH
+        file_exists = csv_file_path.exists()
+
+        with open(csv_file_path, 'a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=mem_data.keys())
+            
+            if not file_exists:
+                writer.writeheader()
+            
+            writer.writerow(mem_data)
+
         print(f"\n=== FINAL STATISTICS ===")
-        print(f"Total runtime: {final_stats['runtime']:.1f}s")
+        print(f"Total file reading time: {end_time_file_reading - start_time_reading:.1f}s")
+        print(f"Total processing time: {total_time:.1f}s")
         print(f"Total entities processed: {self.num_entities}")
-        print(f"Average processing rate: {self.num_entities/final_stats['runtime']:.2f} entities/sec")
-        print(f"Workers used: {final_stats['num_workers']}")
-        print(f"Total pages processed: {self.num_pages}")
+        print(f"Average processing rate: {self.num_entities/total_time:.2f} entities/sec")
         print(f"Average page size: {self.cumulative_page_size / self.num_pages:.2f} bytes")
         
         sys.stdout.flush()
