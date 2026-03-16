@@ -14,7 +14,8 @@ DOWNLOAD_LINKS_FILE_PATH = 'data/xml_download_links.txt'
 CLAIMED_FILES_PATH = "logs/claimed_files.txt"
 LOCK_FILE_PATH = "logs/file_claim.lock"
 PROCESSED_FILES_PATH = 'logs/processed_files.txt'
-PARSER_LOG_FILES_PATH = 'logs/parser_log_files.json'
+CONFIG_PATH = 'config.json'
+PARSER_LOG_FILES_PATH = 'parser_log_files.csv'
 ERROR_REVISION_TEXT_PATH = "logs/error_revision_text.txt"
 REVISION_NO_CLAIMS_TEXT_PATH = "logs/revision_no_claims.txt"
 PROPERTY_LABELS_PATH = f'data/property_labels_with_deleted.csv'
@@ -141,32 +142,6 @@ DATATYPE_METADATA_CHANGE_PK = ['revision_id', 'property_id', 'value_id', 'change
 # FEATURE COLUMNS
 # ------------------------------------------------------------------------------------------------------------------------------
 
-# REVERTED_EDIT_FEATURE_COLS = [
-#     'revision_id', 
-#     'property_id', 
-#     'value_id', 
-#     'change_target', 
-#     'new_datatype', 
-#     'old_datatype', 
-#     'action',
-
-#     # features
-#     'user_type_encoded', 
-#     'day_of_week_encoded', 
-#     'hour_of_day', 
-#     'is_weekend', 
-#     'action_encoded',
-#     'is_reverted_within_day', 
-#     'num_changes_same_user_last_24h', 
-#     'rv_keyword_in_comment_next_10',
-#     'hash_reversion_next_10', 
-#     'time_to_prev_change_seconds', 
-#     'time_to_next_change_seconds',
-
-#     #label
-#     'label'
-# ]
-
 ENTITY_FEATURE_COLS = [
     'revision_id',
     'property_id',
@@ -184,7 +159,13 @@ ENTITY_FEATURE_COLS = [
     'token_count_new', 
     'token_overlap', 
     'old_in_new',
-    'new_in_old', 
+    'new_in_old',
+    # 'same_value_without_special_char', 
+    # 'special_char_count_diff',
+    # 'special_chars_added',
+    # 'special_chars_removed',
+    # 'only_special_char_change',
+
     'levenshtein_distance',
     'edit_distance_ratio',
     'complete_replacement', 
@@ -276,11 +257,10 @@ TIME_FEATURE_COLS = [
 
     # for time
     'date_diff_days',
-    'time_diff_minutes',
-    'sign_change', # 0 or 1
+    'sign_change',
     'change_one_to_zero', # YYYY-01-01 -> YYYY-00-00 -> I treated this as formatting
     'change_one_to_value',
-    'change_zero_to_one', # YYYY-00-00 -> YYYY-01-01 -> I treated this as refinement?
+    'change_zero_to_one', # YYYY-00-00 -> YYYY-01-01 -> I treated this as refinement? # TODO: check this
     'day_added',
     'day_removed',
     'month_added',
@@ -288,6 +268,8 @@ TIME_FEATURE_COLS = [
     'different_year',
     'different_day',
     'different_month',
+    'precision_loss',
+    'precision_gain',
 
     'entity_label',
     'entity_description',
@@ -311,15 +293,15 @@ QUANTITY_FEATURE_COLS = [
     'old_value',
     'new_value',
 
-    'sign_change',
-    'precision_change',
-    'precision_added',
-    'precision_removed',
-    'length_increase',
-    'length_decrease',
-    'whole_number_change',
-    'shared_prefix',
-    'shared_prefix_length',
+    'sign_change', # format
+    'precision_change', # ref/unref/prop val update
+    'length_increase', # ref
+    'length_decrease', # unref
+    'whole_number_change', # prop val update
+    'old_is_prefix_of_new', # refinement
+    'new_is_prefix_of_old',  # unrefinement
+    'same_decimal_length', # prop val update + mix of the others 
+    'same_float_value', # for ref/unref/reformat
 
     'entity_label',
     'entity_description',
@@ -345,23 +327,24 @@ GLOBE_FEATURE_COLS = [
     'new_value',
 
     # for globecoordinate
-    'relative_value_diff_latitude',
-    'relative_value_diff_longitude',
-    'latitude_sign_change', # 0 or 1
-    'longitude_sign_change',# 0 or 1
-    'latitude_whole_number_change', # 0 or 1
-    'longitude_whole_number_change', # 0 or 1
-    'coordinate_distance_km',
-    'latitude_precision_change', # 0 or 1
-    'longitude_precision_change', # 0 or 1
-    'latitude_length_increase', # 0 or 1
-    'latitude_length_decrease', # 0 or 1
-    'longitude_length_increase', # 0 or 1
-    'longitude_length_decrease', # 0 or 1
-    'longitude_shared_prefix',
-    'latitude_shared_prefix',
-    'longitude_shared_prefix_length',
-    'latitude_shared_prefix_length',
+    'latitude_sign_change',
+    'longitude_sign_change',
+    'latitude_whole_number_change',
+    'longitude_whole_number_change',
+    'latitude_precision_change',
+    'longitude_precision_change',
+    'latitude_length_increase',
+    'latitude_length_decrease',
+    'longitude_length_increase',
+    'longitude_length_decrease',
+    'latitude_old_is_prefix_of_new',
+    'latitude_new_is_prefix_of_old',
+    'latitude_same_decimal_length',
+    'latitude_same_float_value',
+    'longitude_old_is_prefix_of_new',
+    'longitude_new_is_prefix_of_old',
+    'longitude_same_decimal_length',
+    'longitude_same_float_value',
     
     'entity_label', 
     'entity_description',
@@ -391,13 +374,20 @@ TEXT_FEATURE_COLS = [
     'token_overlap', 
     'old_in_new',
     'new_in_old', 
+
     'levenshtein_distance',
     'edit_distance_ratio',
     'complete_replacement',
     'structure_similarity',
 
+    'same_value_without_special_char', 
+    'special_char_count_diff',
+    'special_chars_added',
+    'special_chars_removed',
+    'only_special_char_change',
     'char_insertions',
     'char_deletions',
+    'char_substitutions',
     'adjacent_char_swap',
     'avg_word_similarity',
     'has_significant_prefix',
@@ -486,7 +476,12 @@ ENTITY_STATS_COLS = [
     'num_reversions',
     'num_reverted_edits_create',
     'num_reverted_edits_delete',
-    'num_reverted_edits_update'
+    'num_reverted_edits_update',
+
+    'total_parse_time_sec',
+    'avg_diff_calc_per_revision_sec',
+    'avg_diff_calc_per_revision_msec',
+    'file_path'
 ]
 
 ENTITY_STATS_PK = ['entity_id']

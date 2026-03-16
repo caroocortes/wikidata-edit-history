@@ -15,6 +15,22 @@ from io import StringIO
 from dateutil import parser
 from io import StringIO
 import os
+import pandas as pd
+import os
+import psutil
+
+def total_memory_usage():
+    """Get total memory including all child processes in MB"""
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss
+    
+    for child in process.children(recursive=True):
+        try:
+            mem += child.memory_info().rss
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    
+    return mem / (1024 * 1024)  # to MB
 
 def get_time_unit(elapsed_time):
     """
@@ -211,7 +227,7 @@ def insert_rows_copy(conn, table_name, rows, columns, conflict_column=None):
         buffer = StringIO()
         for row in rows:
             line_items = []
-            for val in row:
+            for i, val in enumerate(row):
                 if val is None:
                     line_items.append('\\N')
                 elif val == '':
@@ -219,6 +235,7 @@ def insert_rows_copy(conn, table_name, rows, columns, conflict_column=None):
                 else:
                     val_str = str(val)
                     val_str = val_str.replace('\\', '\\\\')
+                    val_str = val_str.replace('"', '\\"')
                     val_str = val_str.replace('\t', '\\t')
                     val_str = val_str.replace('\n', '\\n')
                     val_str = val_str.replace('\r', '\\r')
@@ -238,24 +255,23 @@ def insert_rows_copy(conn, table_name, rows, columns, conflict_column=None):
                 conflict_cols = conflict_column
             
             
-            if 'entity_stat' not in table_name:
+            if 'entity_stat' not in table_name and 'feature' not in table_name:
                 # DO NOTHING on conflict
-                # if it's not an entity_stats table, then I don't need to update existing rows
+                # if it's not an entity_stats or feature table, then I don't need to update existing rows
                 insert_query = f"""
                     INSERT INTO {table_name} ({column_names})
                     SELECT {column_names} FROM {temp_table}
                     ON CONFLICT ({conflict_cols}) DO NOTHING
                 """
             else:
-                # if it's an entity_stats table, then I need to update existing rows, because I want to update the counts
-                # update only the non-conflict columns (no key columns)
+            # if it's an entity_stats or feature table, then I need to update existing rows, because I want to update the counts
+            # update only the non-conflict columns (no key columns)
                 insert_query = f"""
                     INSERT INTO {table_name} ({column_names})
                     SELECT {column_names} FROM {temp_table}
                     ON CONFLICT ({conflict_cols}) DO UPDATE SET         
                     {', '.join([f'{col} = EXCLUDED.{col}' for col in columns if col not in conflict_column])}
                 """
-
         else:
             insert_query = f"""
                 INSERT INTO {table_name} ({column_names})
@@ -304,7 +320,7 @@ def insert_rows(conn, table_name, rows, columns):
 def create_db_schema():
     base_dir = Path(__file__).resolve().parent.parent
     
-    sql_file_path = f"{base_dir}/change_schema.sql"
+    sql_file_path = f"{base_dir}/sql/change_schema.sql"
     print(f"Creating DB schema from {sql_file_path}...")
 
     with open(sql_file_path, "r", encoding="utf-8") as f:
@@ -419,3 +435,22 @@ def get_time_feature(timestamp, option='year'):
         return dt.strftime('%Y-W%V')  # e.g., '2017-W37'
     else:
         return timestamp
+
+
+def query_to_df(conn, query):
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query)
+            
+            if cur.description is not None:
+                # Get column names
+                colnames = [desc[0] for desc in cur.description]
+                # Fetch all rows
+                rows = cur.fetchall()
+                # Return as Pandas DataFrame
+                return pd.DataFrame(rows, columns=colnames)
+            else:
+                print('Query did not return any rows')
+                return pd.DataFrame()
+    except Exception as e:
+        raise e

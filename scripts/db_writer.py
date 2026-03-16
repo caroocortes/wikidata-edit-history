@@ -6,6 +6,7 @@ import json
 import psycopg2
 import queue
 from pathlib import Path
+import gc
 
 from scripts.const import *
 from scripts.utils import insert_rows_copy
@@ -53,9 +54,6 @@ def batch_insert(conn, batch, table_suffix=''):
             if len(batch['features_quantity']) > 0:
                 insert_rows_copy(conn, f'features_quantity{table_suffix}', batch['features_quantity'], QUANTITY_FEATURE_COLS, QUANTITY_FEATURE_PK)
             
-            # if len(batch['features_reverted_edit']) > 0:
-            #     insert_rows_copy(conn, f'features_reverted_edit{table_suffix}', batch['features_reverted_edit'], REVERTED_EDIT_FEATURE_COLS, REVERTED_EDIT_FEATURE_PK)
-            
             if len(batch['features_property_replacement']) > 0:
                 insert_rows_copy(conn, f'features_property_replacement{table_suffix}', batch['features_property_replacement'], PROPERTY_REPLACEMENT_FEATURE_COLS, PROPERTY_REPLACEMENT_PK)
         
@@ -97,7 +95,8 @@ def db_writer(num_workers, results_queue):
         host=db_config["DB_HOST"],
         port=db_config["DB_PORT"],
         connect_timeout=30,
-        gssencmode='disable'
+        gssencmode='disable',
+        client_encoding='UTF8'
     )
 
     log(f"[DB_WRITER] Database connection established")
@@ -129,14 +128,9 @@ def db_writer(num_workers, results_queue):
     workers_finished = 0
     last_write = time.time()
 
-    last_log = time.time()
-
     try:
         while workers_finished < num_workers:
             try:
-                if time.time() - last_log > 30:
-                    log(f"[DB_WRITER] Still waiting... {workers_finished}/{num_workers} workers finished")
-                    last_log = time.time()
 
                 result = results_queue.get(timeout=5)
                 
@@ -164,14 +158,17 @@ def db_writer(num_workers, results_queue):
                 
                 current_batch_size = len(batches[table_suffix]['revision'])
                 time_since_write = time.time() - last_write
-                if len(batches[table_suffix]['revision']) >= BATCH_SIZE or (time_since_write > 20 and current_batch_size > 0):
-                    
+                if len(batches[table_suffix]['revision']) >= BATCH_SIZE or (time_since_write > 15 and current_batch_size > 0):
+
                     batch_insert(conn, batches[table_suffix], table_suffix=table_suffix)
+
                     # Clear this batch
                     for table in batches[table_suffix]:
                         batches[table_suffix][table] = []
 
                     last_write = time.time()
+
+                gc.collect(generation=0)
                 
             except queue.Empty:
                 log(f"[DB_WRITER] Queue empty timeout - flushing batches")

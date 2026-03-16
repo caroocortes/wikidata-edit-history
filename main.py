@@ -14,10 +14,10 @@ import multiprocessing as mp
 from scripts.db_writer import db_writer
 from scripts.utils import human_readable_size, create_db_schema, print_exception_details
 from scripts.file_parser import FileParser
-from scripts.const import PROCESSED_FILES_PATH, PARSER_LOG_FILES_PATH, CLAIMED_FILES_PATH, LOCK_FILE_PATH
+from scripts.const import PROCESSED_FILES_PATH, CLAIMED_FILES_PATH, LOCK_FILE_PATH, CONFIG_PATH
 
 # Load config
-with open("config.json", "r", encoding="utf-8") as f:
+with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     CONFIG = json.load(f)
 
 
@@ -53,16 +53,14 @@ def safe_worker(func):
 #         TRANSITIVE_CACHE = TransitiveClosureCache(CSV_PATHS)
 #         print(f"[Worker {os.getpid()}] Cache loaded")
 
-def log_file_process(process_time, num_entities, file_path, size):
+def log_file_process(file_path):
     if not isinstance(file_path, Path):
         file_path = Path(file_path) 
-    print(f"Finished processing {file_path} ({size}, {num_entities} entities) in {process_time} minutes") 
-
     try:
         if not os.path.exists(PROCESSED_FILES_PATH):
             with open(PROCESSED_FILES_PATH, "w") as f:
                 pass
-
+        print('Going to log to processed_files.txt', flush=True)
         with open(PROCESSED_FILES_PATH, "a") as f: 
             f.write(f"{file_path.resolve()}\n") 
     except Exception as e:
@@ -74,14 +72,14 @@ def process_file(file_path, shared_queue=None):
     """
     input_bz2 = os.path.basename(file_path)
 
-    parser = FileParser(file_path=input_bz2, config=CONFIG, shared_results_queue=shared_queue)
+    file_parser = FileParser(file_path=input_bz2, config=CONFIG, shared_results_queue=shared_queue)
     
     print(f"Processing: {file_path}")
     sys.stdout.flush()
     start_process = time.time()
     with bz2.open(file_path, 'rb') as in_f:
         try:
-            parser.parse_dump(in_f)
+            file_parser.parse_dump(in_f)
         except Exception as e:
             print(f"Parsing error in FileParser: {e}")
             print_exception_details(e, file_path)
@@ -91,27 +89,19 @@ def process_file(file_path, shared_queue=None):
     process_time = end_process - start_process
     size = os.path.getsize(file_path)
 
+    num_entities = file_parser.num_entities
+
+    del file_parser
+
     size_hr = human_readable_size(size)
     time_unit = "minutes" if process_time > 60 else "seconds"
     process_time = process_time / 60 if process_time > 60 else process_time
-    print(f"Processed {input_bz2} in {process_time:.2f} {time_unit}, {human_readable_size(size)}, {parser.num_entities} entities")
+    print(f"Processed {input_bz2} in {process_time:.2f} {time_unit}, {human_readable_size(size)}, {num_entities} entities")
     sys.stdout.flush()
     
-    if not os.path.exists(PARSER_LOG_FILES_PATH):
-        with open(PARSER_LOG_FILES_PATH, "w") as f:
-            pass  
-    with open(PARSER_LOG_FILES_PATH, "a", encoding="utf-8") as f:
-        json_line = {
-            "file": input_bz2,
-            "size": size_hr,
-            "num_entities": parser.num_entities,
-            "process_time_min": f"{process_time:.2f}"
-        }
-        f.write(json.dumps(json_line) + "\n")
-    
-    log_file_process(process_time, parser.num_entities, file_path, size_hr)
+    log_file_process(file_path)
 
-    return process_time, parser.num_entities, file_path, size_hr
+    return process_time, num_entities, file_path, size_hr
 
 
 def claim_files(available_files, num_files_to_claim):
@@ -204,81 +194,78 @@ if __name__ == "__main__":
         if args.max_files is not None:
             max_files = args.max_files
         
-        if max_files == 1:
-            process_time, num_entities, file_path, size = process_file(files_to_parse[0])
-        else:
-            if max_files < max_workers:
-                max_workers = max_files
+        if max_files < max_workers:
+            max_workers = max_files
 
-            print(f"Found {len(files_to_parse)} unprocessed .bz2 files in {dump_dir}, processing up to {max_files} files with {max_workers} files in parallel.")
-            
-            if len(files_to_parse) == 0:
-                print("No new files to process. Exiting.")
-                raise SystemExit(0)
-            
-            print("Claiming files...")
-            files_to_parse = claim_files(files_to_parse, max_files)
-            if len(files_to_parse) == 0:
-                print("No files to process after claiming. Exiting.")
-                raise SystemExit(0)
-            
-            print(f"Successfully claimed {len(files_to_parse)} files. Starting processing...")
+        print(f"Found {len(files_to_parse)} unprocessed .bz2 files in {dump_dir}, processing up to {max_files} files with {max_workers} files in parallel.")
+        
+        if len(files_to_parse) == 0:
+            print("No new files to process. Exiting.")
+            raise SystemExit(0)
+        
+        print("Claiming files...")
+        files_to_parse = claim_files(files_to_parse, max_files)
+        if len(files_to_parse) == 0:
+            print("No files to process after claiming. Exiting.")
+            raise SystemExit(0)
+        
+        print(f"Successfully claimed {len(files_to_parse)} files. Starting processing...")
 
-            files_in_parallel = max_workers
-            workers_per_file = CONFIG.get('pages_in_parallel', 6)
-            total_workers = len(files_to_parse) * workers_per_file
-            
-            print(f"Starting shared db_writer expecting {total_workers} workers")
-            
-            # Create shared queue
-            shared_queue = mp.Manager().Queue(maxsize=10000)
-            
-            # Start shared db_writer
-            db_writer_process = mp.Process(
-                target=db_writer,
-                args=(total_workers, shared_queue)
+        files_in_parallel = max_workers
+        workers_per_file = CONFIG.get('pages_in_parallel', 6)
+        total_workers = len(files_to_parse) * workers_per_file
+        
+        print(f"Starting shared db_writer expecting {total_workers} workers")
+        
+        # Create shared queue
+        shared_queue = mp.Manager().Queue(maxsize=10000)
+        
+        # Start shared db_writer
+        db_writer_process = mp.Process(
+            target=db_writer,
+            args=(total_workers, shared_queue)
+        )
+        db_writer_process.start()
+
+        try:
+
+            # Create executor with initializer that loads cache per worker
+            executor = concurrent.futures.ProcessPoolExecutor(
+                max_workers=max_workers
             )
-            db_writer_process.start()
-
-            try:
-
-                # Create executor with initializer that loads cache per worker
-                executor = concurrent.futures.ProcessPoolExecutor(
-                    max_workers=max_workers
-                )
-                
-                futures = {executor.submit(process_file, f, shared_queue): f for f in files_to_parse}
-
-                for future in concurrent.futures.as_completed(futures):
-                    file_path = futures[future]
-                    try:
-                    
-                        process_time, num_entities, _, size = future.result(timeout=7200)
-                        print(f"Finished {file_path}: {process_time:.2f}min, {num_entities} entities", flush=True)
-                    
-                    except concurrent.futures.TimeoutError:
-                        print(f"Timeout processing {file_path}", flush=True)
-                        print(traceback.format_exc(), flush=True)
-                        executor.shutdown(wait=True)
-                        break
-                    except MemoryError as e:
-                        print(f"MemoryError processing {file_path}: {e}", flush=True)
-                        print(traceback.format_exc(), flush=True)
-                        executor.shutdown(wait=True)
-                        break
-                    except Exception as e:
-                        print(f"Error processing {file_path}: {e}", flush=True)
-                        print(traceback.format_exc(), flush=True)
-                        break
-                    sys.stdout.flush()
-
-            except Exception as e:
-                print(f"Fatal error in processing: {e}", flush=True)
-                print(traceback.format_exc(), flush=True)
-            finally:
-                print("Waiting for db_writer to finish")
-                db_writer_process.join()
-                if db_writer_process.exitcode != 0:
-                    raise Exception(f"DB writer failed!")
             
-            executor.shutdown(wait=True)
+            futures = {executor.submit(process_file, f, shared_queue): f for f in files_to_parse}
+
+            for future in concurrent.futures.as_completed(futures):
+                file_path = futures[future]
+                try:
+                
+                    process_time, num_entities, _, size = future.result(timeout=7200)
+                    print(f"Finished {file_path}: {process_time:.2f}min, {num_entities} entities", flush=True)
+                
+                except concurrent.futures.TimeoutError:
+                    print(f"Timeout processing {file_path}", flush=True)
+                    print(traceback.format_exc(), flush=True)
+                    executor.shutdown(wait=True)
+                    break
+                except MemoryError as e:
+                    print(f"MemoryError processing {file_path}: {e}", flush=True)
+                    print(traceback.format_exc(), flush=True)
+                    executor.shutdown(wait=True)
+                    break
+                except Exception as e:
+                    print(f"Error processing {file_path}: {e}", flush=True)
+                    print(traceback.format_exc(), flush=True)
+                    break
+                sys.stdout.flush()
+
+        except Exception as e:
+            print(f"Fatal error in processing: {e}", flush=True)
+            print(traceback.format_exc(), flush=True)
+        finally:
+            print("Waiting for db_writer to finish")
+            db_writer_process.join()
+            if db_writer_process.exitcode != 0:
+                raise Exception(f"DB writer failed!")
+        
+        executor.shutdown(wait=True)
