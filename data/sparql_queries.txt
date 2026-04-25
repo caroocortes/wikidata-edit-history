@@ -1,0 +1,36 @@
+-- SUBCLASSES OF ASTRONOMICAL OBJECTS
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?s ?label WHERE {
+  { ?class wdt:P279* wd:Q6999. }
+  UNION
+  { BIND(wd:Q6999 AS ?class) }
+  OPTIONAL { ?class rdfs:label ?label. FILTER(LANG(?label) = "en") }
+  BIND(REPLACE(STR(?class), ".*/(Q\\d+)$", "$1") AS ?s)
+}
+-- SUBCLASSES OF SCHOLARLY ARTICLES
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?s ?label WHERE {
+  { ?class wdt:P279* wd:Q13442814. }
+  UNION
+  { BIND(wd:Q13442814 AS ?class) }
+  OPTIONAL { ?class rdfs:label ?label. FILTER(LANG(?label) = "en") }
+  BIND(REPLACE(STR(?class), ".*/(Q\\d+)$", "$1") AS ?s)
+}
+
+-- PROPERTY LABELS
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?property_id ?numeric_id ?property_label WHERE {
+  ?prop a wikibase:Property.
+  OPTIONAL { ?prop rdfs:label ?property_label. FILTER(LANG(?property_label) = "en") }
+  BIND(REPLACE(STR(?prop), ".*/(P\\d+)$", "$1") AS ?property_id)
+  BIND(REPLACE(STR(?prop), ".*P", "") AS ?numeric_id)
+}

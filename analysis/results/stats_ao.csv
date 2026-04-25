@@ -1,0 +1,23 @@
+metric,count
+number of entities,8404176
+number value changes,201417576
+number of revisions,46785304
+number value change creates,179472482
+number value change deletes,20290965
+number value change updates,1654129
+num entities with no updates,7095232
+avg num value changes,23.9663681484062209
+avg num value change creates,21.3551551038436130
+avg num value change deletes,2.4143907743007762
+avg num value change updates,0.19682227026183173698
+number rank changes,37408474
+number qualifier changes,80705396
+number reference changes,172357255
+number bot changes,21933649
+number anonymous changes,11561
+number human changes,24840094
+number reverted edits,131446
+number of reversions,130685
+number of reverted creates,104420
+number of reverted deletes,23884
+number of reverted updates,3142

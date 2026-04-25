@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 import json
 import hashlib
 from urllib.parse import urljoin
-from scripts.const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
 import sys
 from io import StringIO
 from dateutil import parser
@@ -18,6 +17,8 @@ import os
 import pandas as pd
 import os
 import psutil
+
+from scripts.const import WIKIDATA_SERVICE_URL, DOWNLOAD_LINKS_FILE_PATH
 
 def total_memory_usage():
     """Get total memory including all child processes in MB"""
@@ -147,59 +148,6 @@ def update_entity_label(conn, entity_id, entity_label):
         conn.rollback()
         print(f"Update of label ({entity_label}) for entity {entity_id} failed: {e}")
 
-def insert_rows_old(conn, table_name, rows, columns):
-    if not rows:
-        return
-
-    col_names = ', '.join(columns)
-    placeholders = ', '.join(['%s'] * len(columns))
-
-    query = f"""
-        INSERT INTO {table_name} ({col_names})
-        VALUES ({placeholders})
-    """
-
-    try:
-        with conn.cursor() as cur:
-            execute_batch(cur, query, rows)
-        conn.commit()
-        return 1
-    except Exception as e:
-        print(f'Batch insert into {table_name} failed: {e}')
-        conn.rollback()  # reset the transaction
-        bad_rows = []
-        for row in rows:
-            try:
-                with conn.cursor() as cur:
-                    cur.execute(query, row)
-                conn.commit()
-            except Exception as e_row:
-                conn.rollback()
-                bad_rows.append((row, str(e_row)))
-
-                # Try to parse PK columns from the error
-                # Example error: duplicate key value violates unique constraint "entity_pkey"
-                # DETAIL: Key (revision_id, entity_id)=(123, 'abc') already exists.
-                match = re.search(r"Key \((.*?)\)=\((.*?)\)", str(e_row))
-                if match:
-                    key_cols = [col.strip() for col in match.group(1).split(',')]
-                    key_vals = [val.strip() for val in match.group(2).split(',')]
-
-                    # Build WHERE clause dynamically
-                    where_clause = ' AND '.join([f"{col} = %s" for col in key_cols])
-                    select_query = f"SELECT * FROM {table_name} WHERE {where_clause}"
-
-                    try:
-                        with conn.cursor() as cur:
-                            cur.execute(select_query, key_vals)
-                            existing = cur.fetchone()
-                            if existing:
-                                print(f'Rows: {e_row} \n {row}')
-                    except Exception as select_err:
-                        print(f"Error checking for existing row: {select_err}")
-        raise e
-    
-
 def insert_rows_copy(conn, table_name, rows, columns, conflict_column=None):
     """
     Insert rows with conflict handling
@@ -212,7 +160,7 @@ def insert_rows_copy(conn, table_name, rows, columns, conflict_column=None):
         return
     
     cursor = conn.cursor()
-    
+    buffer = StringIO()
     try:
         temp_table = f"{table_name}_temp_{os.getpid()}"
         
@@ -224,7 +172,6 @@ def insert_rows_copy(conn, table_name, rows, columns, conflict_column=None):
         """)
         
         # COPY to temp table
-        buffer = StringIO()
         for row in rows:
             line_items = []
             for i, val in enumerate(row):
@@ -317,20 +264,96 @@ def insert_rows(conn, table_name, rows, columns):
     finally:
         cursor.close()
 
-def create_db_schema():
+def create_db_schema(set_up):
     base_dir = Path(__file__).resolve().parent.parent
     
-    sql_file_path = f"{base_dir}/sql/change_schema.sql"
-    print(f"Creating DB schema from {sql_file_path}...")
+    change_extraction_filters = set_up['change_extraction_filters']
 
-    with open(sql_file_path, "r", encoding="utf-8") as f:
-        query = f.read()
+    change_schema_file_path = f"{base_dir}/sql/change_schema.sql"
+    features_file_path = f"{base_dir}/sql/features_schema.sql"
+    datatype_metadata_file_path = f"{base_dir}/sql/datatype_metadata_schema.sql"
     
-    try:
+    with open(change_schema_file_path, "r", encoding="utf-8") as f:
+        change_schema_template = f.read()
 
-        SCRIPT_DIR = Path(__file__).parent
-        CONFIG_PATH = SCRIPT_DIR.parent / 'db_config.json'
-        with open(CONFIG_PATH) as f:
+    with open(features_file_path, "r", encoding="utf-8") as f:
+        features_file_template = f.read()
+
+    with open(datatype_metadata_file_path, "r", encoding="utf-8") as f:
+        datatype_metadata_schema_template = f.read()
+    
+    base_query = change_schema_template.replace("{suffix}", "")
+
+    filters_rest = change_extraction_filters.get('rest', {})
+    if filters_rest.get('feature_extraction', False):
+        # load schema for rest features
+        query_fe_rest = features_file_template.replace("{suffix}", "")
+        base_query += "\n" + query_fe_rest
+
+    if filters_rest.get('datatype_metadata_extraction', False):
+        # load schema for datatype metadata
+        query_dm = datatype_metadata_schema_template.replace("{suffix}", "")
+        base_query += "\n" + query_dm
+
+    #  ---------------------------------------------
+    #  Scholarly articles
+    #  ---------------------------------------------
+    filters_sa = change_extraction_filters.get('scholarly_articles_filter', {})
+    if filters_sa.get('extract', False):
+        # load schema for scholarly articles
+        query_sa = change_schema_template.replace("{suffix}", "_sa")
+        base_query += "\n" + query_sa
+
+        if filters_sa.get('feature_extraction', False):
+            # load feature extraction schema for scholarly articles
+            query_fe_sa = features_file_template.replace("{suffix}", "_sa")
+            base_query += "\n" + query_fe_sa
+
+        if filters_sa.get('datatype_metadata_extraction', False):
+            # load schema for datatype metadata
+            query_dm_sa = datatype_metadata_schema_template.replace("{suffix}", "_sa")
+            base_query += "\n" + query_dm_sa
+
+    #  ---------------------------------------------
+    #  Astronomical objects
+    #  ---------------------------------------------
+    filters_ao = change_extraction_filters.get('astronomical_objects_filter', {})
+    if filters_ao.get('extract', False):
+        # load schema for astronomical objects
+        query_ao = change_schema_template.replace("{suffix}", "_ao")
+        base_query += "\n" + query_ao
+
+        if filters_ao.get('feature_extraction', False):
+            query_fe_ao = features_file_template.replace("{suffix}", "_ao")
+            base_query += "\n" + query_fe_ao
+
+        if filters_ao.get('datatype_metadata_extraction', False):
+            # load schema for datatype metadata
+            query_dm_ao = datatype_metadata_schema_template.replace("{suffix}", "_ao")
+            base_query += "\n" + query_dm_ao
+    
+    #  ---------------------------------------------
+    #  Less than X value & rank changes
+    #  ---------------------------------------------
+    filters_less = change_extraction_filters.get('less_filter', {})
+    if filters_less.get('extract', False):
+        # load schema for less
+        query_less = change_schema_template.replace("{suffix}", "_less")
+        base_query += "\n" + query_less
+
+        if filters_less.get('feature_extraction', False):
+            query_fe_less = features_file_template.replace("{suffix}", "_less")
+            base_query += "\n" + query_fe_less
+
+        if filters_less.get('datatype_metadata_extraction', False):
+            # load schema for datatype metadata
+            query_dm_less = datatype_metadata_schema_template.replace("{suffix}", "_less")
+            base_query += "\n" + query_dm_less
+
+    try:
+        script_dir = Path(__file__).parent
+        db_config_path = script_dir.parent / set_up.get("db_config_path", "config/db_config.json")
+        with open(db_config_path) as f:
             config = json.load(f)
 
         conn = psycopg2.connect(
@@ -343,7 +366,7 @@ def create_db_schema():
 
         cursor = conn.cursor()
 
-        cursor.execute(query=query)
+        cursor.execute(query=base_query)
 
         conn.commit()
         cursor.close()

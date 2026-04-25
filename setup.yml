@@ -1,0 +1,55 @@
+database_config_path: config/db_config.json
+change_extraction_processing:
+  language: en
+  files_in_parallel: 5
+  pages_in_parallel: 2
+  files_directory: /sc/projects/sci-naumann/mpws2025fn1/wd-dump-202506/
+  memory_consumption_monitoring: true
+  page_queue_size: 10000
+  db_batch_size: 5000
+  db_max_queue_size: 10000
+change_extraction_filters:
+  scholarly_articles_filter:
+    extract: true
+    feature_extraction: true
+    datatype_metadata_extraction: false
+  astronomical_objects_filter:
+    extract: true
+    feature_extraction: true
+    datatype_metadata_extraction: false
+  less_filter:
+    extract: true
+    feature_extraction: true
+    datatype_metadata_extraction: false
+    threshold: 10
+  rest:
+    feature_extraction: true
+    datatype_metadata_extraction: false
+reverted_edit_tagging:
+  time_threshold_seconds: 2419200 # by default it's 4 weeks: 24 * 60 * 60 (seconds per day) * 28 (days in 4 weeks)
+re_interpretation: true
+update_entity_labels_descriptions: false
+transitive_closure_cache:
+  subclass_transitive_path: '/sc/home/carolina.cortes/wikidata-edit-history/data/transitive_closure/subclass_of_transitive.csv'
+  part_of_transitive_path: '/sc/home/carolina.cortes/wikidata-edit-history/data/transitive_closure/part_of_transitive.csv'
+  has_part_transitive_path: '/sc/home/carolina.cortes/wikidata-edit-history/data/transitive_closures/has_parts_transitive.csv'
+  located_in_transitive_path: '/sc/home/carolina.cortes/wikidata-edit-history/data/transitive_closures/located_in_transitive.csv'
+  transitive_closure_pickle_file_path: '/sc/home/carolina.cortes/wikidata-edit-history/data/transitive_closures/transitive_closure_cache.pkl'
+  transitive_closure_stats_pickle_file_path: '/sc/home/carolina.cortes/wikidata-edit-history/data/transitive_closures/transitive_closure_stats.pkl'
+analysis:
+  distribution_of_revisions_value_changes:
+    execute: false
+    reload_data: false
+  entity_types_analysis:
+    execute: false
+    reload_data: false
+  property_stats:
+    execute: false
+    reload_data: false
+  entity_stats:
+    execute: false
+    filter_big_entities: false
+    reload_data: false
+  stats_sa_ao:
+    execute: true
+    reload_data: false

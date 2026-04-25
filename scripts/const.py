@@ -14,7 +14,7 @@ DOWNLOAD_LINKS_FILE_PATH = 'data/xml_download_links.txt'
 CLAIMED_FILES_PATH = "logs/claimed_files.txt"
 LOCK_FILE_PATH = "logs/file_claim.lock"
 PROCESSED_FILES_PATH = 'logs/processed_files.txt'
-CONFIG_PATH = 'config.json'
+SETUP_PATH = 'setup.yml'
 PARSER_LOG_FILES_PATH = 'parser_log_files.csv'
 ERROR_REVISION_TEXT_PATH = "logs/error_revision_text.txt"
 REVISION_NO_CLAIMS_TEXT_PATH = "logs/revision_no_claims.txt"
@@ -47,20 +47,20 @@ STATS_FILE_PATH = 'logs/stats/stats.csv'
 # CHANGE TYPES
 # --------------------------------------------------------------------------------------------------------------
 
-CREATE_PROPERTY = "CREATE_PROPERTY"
+# CREATE_PROPERTY = "CREATE_PROPERTY"
 CREATE_PROPERTY_VALUE = "CREATE_PROPERTY_VALUE"
-CREATE_ENTITY = "CREATE_ENTITY"
+# CREATE_ENTITY = "CREATE_ENTITY"
 UPDATE_PROPERTY_VALUE = "UPDATE_PROPERTY_VALUE"
 UPDATE_PROPERTY_DATATYPE_METADATA = "UPDATE_PROPERTY_DATATYPE_METADATA"
-DELETE_PROPERTY = "DELETE_PROPERTY"
+# DELETE_PROPERTY = "DELETE_PROPERTY"
 DELETE_PROPERTY_VALUE = "DELETE_PROPERTY_VALUE"
 UPDATE_RANK = "UPDATE_RANK"
-CREATE_QUALIFIER = "CREATE_QUALIFIER"
-DELETE_QUALIFIER = "DELETE_QUALIFIER"
+# CREATE_QUALIFIER = "CREATE_QUALIFIER"
+# DELETE_QUALIFIER = "DELETE_QUALIFIER"
 CREATE_QUALIFIER_VALUE = "CREATE_QUALIFIER_VALUE"
 DELETE_QUALIFIER_VALUE = "DELETE_QUALIFIER_VALUE"
-CREATE_REFERENCE = "CREATE_REFERENCE"
-DELETE_REFERENCE = "DELETE_REFERENCE"
+# CREATE_REFERENCE = "CREATE_REFERENCE"
+# DELETE_REFERENCE = "DELETE_REFERENCE"
 DELETE_REFERENCE_VALUE = "DELETE_REFERENCE_VALUE"
 CREATE_REFERENCE_VALUE = "CREATE_REFERENCE_VALUE"
 
@@ -118,7 +118,7 @@ REVISION_PK = ['revision_id']
 VALUE_CHANGE_COLS = ['revision_id', 'property_id', 'property_label', 'value_id', 'old_value', 
                      'new_value', 'old_datatype', 'new_datatype', 'change_target', 
                      'action', 'target', 'old_hash', 'new_hash', 'timestamp', 'week', 'year_month', 
-                     'year', 'label', 'entity_id', 'is_reverted', 'reversion', 'entity_label']
+                     'year', 'label', 'entity_id', 'is_reverted', 'reversion', 'reversion_timestamp', 'revision_id_reversion', 'entity_label']
 VALUE_CHANGE_PK = ['revision_id', 'property_id', 'value_id', 'change_target']
 
 QUALIFIER_CHANGE_COLS = ['revision_id', 'property_id', 'property_label', 'value_id', 'qual_property_id', 'qual_property_label', 
@@ -153,23 +153,13 @@ ENTITY_FEATURE_COLS = [
     'action',
     'old_value',
     'new_value', 
-
-    'length_diff_abs',
-    'token_count_old', 
-    'token_count_new', 
+   
     'token_overlap', 
     'old_in_new',
     'new_in_old',
-    # 'same_value_without_special_char', 
-    # 'special_char_count_diff',
-    # 'special_chars_added',
-    # 'special_chars_removed',
-    # 'only_special_char_change',
-
-    'levenshtein_distance',
     'edit_distance_ratio',
     'complete_replacement', 
-    'structure_similarity',
+    'is_link_change',
 
     'old_value_subclass_new_value', 
     'new_value_subclass_old_value',
@@ -185,19 +175,14 @@ ENTITY_FEATURE_COLS = [
     # 'new_value_is_metaclass_for_old_value',
     # 'old_value_is_metaclass_for_new_value' ,
 
-    'old_value_label',
+    'old_value_label', # i add them in the featurec reation during parsing
     'new_value_label', 
     'old_value_description', 
     'new_value_description',
 
     'entity_label',
-    'entity_description',
-    'entity_types_31',
-    'entity_types_279',
-    
     'label_cosine_similarity', 
-    'description_cosine_similarity', 
-    'full_cosine_similarity',
+    'description_cosine_similarity',
 
     'label'
 ]
@@ -205,16 +190,11 @@ ENTITY_FEATURE_PK = ['revision_id', 'property_id', 'value_id', 'change_target']
 
 
 ENTITY_ONLY_FEATURES_COLS_TYPES = {
-    'length_diff_abs': 'INT',
-    'token_count_old': 'INT', 
-    'token_count_new': 'INT', 
     'token_overlap': 'FLOAT', 
     'old_in_new': 'INT',
     'new_in_old': 'INT', 
-    'levenshtein_distance': 'INT',
     'edit_distance_ratio': 'FLOAT',
     'complete_replacement': 'INT', 
-    'structure_similarity': 'FLOAT',
 
     'old_value_subclass_new_value': 'INT', 
     'new_value_subclass_old_value': 'INT',
@@ -229,7 +209,7 @@ ENTITY_ONLY_FEATURES_COLS_TYPES = {
     
     'label_cosine_similarity': 'FLOAT', 
     'description_cosine_similarity': 'FLOAT', 
-    'full_cosine_similarity': 'FLOAT'
+    'is_link_change': 'INT',
 }
 
 BASE_KEY_TYPES = {
@@ -259,8 +239,6 @@ TIME_FEATURE_COLS = [
     'date_diff_days',
     'sign_change',
     'change_one_to_zero', # YYYY-01-01 -> YYYY-00-00 -> I treated this as formatting
-    'change_one_to_value',
-    'change_zero_to_one', # YYYY-00-00 -> YYYY-01-01 -> I treated this as refinement? # TODO: check this
     'day_added',
     'day_removed',
     'month_added',
@@ -268,15 +246,8 @@ TIME_FEATURE_COLS = [
     'different_year',
     'different_day',
     'different_month',
-    'precision_loss',
-    'precision_gain',
 
     'entity_label',
-    'entity_description',
-    'entity_types_31',
-    'entity_types_279',
-
-    'full_cosine_similarity',
     'label'
 ]
 TIME_FEATURE_PK = ['revision_id', 'property_id', 'value_id', 'change_target']
@@ -300,16 +271,9 @@ QUANTITY_FEATURE_COLS = [
     'whole_number_change', # prop val update
     'old_is_prefix_of_new', # refinement
     'new_is_prefix_of_old',  # unrefinement
-    'same_decimal_length', # prop val update + mix of the others 
     'same_float_value', # for ref/unref/reformat
 
     'entity_label',
-    'entity_description',
-    'entity_types_31',
-    'entity_types_279',
-
-    'full_cosine_similarity',
-
     'label'
 ]
 QUANTITY_FEATURE_PK = ['revision_id', 'property_id', 'value_id', 'change_target']
@@ -339,20 +303,14 @@ GLOBE_FEATURE_COLS = [
     'longitude_length_decrease',
     'latitude_old_is_prefix_of_new',
     'latitude_new_is_prefix_of_old',
-    'latitude_same_decimal_length',
     'latitude_same_float_value',
     'longitude_old_is_prefix_of_new',
     'longitude_new_is_prefix_of_old',
-    'longitude_same_decimal_length',
     'longitude_same_float_value',
     
     'entity_label', 
-    'entity_description',
-    'entity_types_31',
-    'entity_types_279',
-
-    'full_cosine_similarity',
-    'label'
+    'label_latitude',
+    'label_longitude'
 ]
 GLOBE_FEATURE_PK = ['revision_id', 'property_id', 'value_id', 'change_target']
 
@@ -367,38 +325,34 @@ TEXT_FEATURE_COLS = [
     'action',
     'old_value',
     'new_value',
-
-    'length_diff_abs',
-    'token_count_old', 
-    'token_count_new',         
+      
     'token_overlap', 
     'old_in_new',
     'new_in_old', 
-
-    'levenshtein_distance',
     'edit_distance_ratio',
     'complete_replacement',
-    'structure_similarity',
 
+    'length_diff_abs',
+    'token_count_old', 
+    'token_count_new', 
+    'levenshtein_distance',  
+    # 'structure_similarity',
     'same_value_without_special_char', 
     'special_char_count_diff',
-    'special_chars_added',
-    'special_chars_removed',
-    'only_special_char_change',
+    # 'special_chars_added',
+    # 'special_chars_removed',
+    # 'only_special_char_change',
     'char_insertions',
     'char_deletions',
     'char_substitutions',
     'adjacent_char_swap',
-    'avg_word_similarity',
+    # 'avg_word_similarity',
     'has_significant_prefix',
     'has_significant_suffix',
 
     'entity_label', 
-    'entity_description',
-    'entity_types_31',
-    'entity_types_279',
 
-    'full_cosine_similarity',
+    'value_cosine_similarity',
 
     'label'
 ]
@@ -478,10 +432,17 @@ ENTITY_STATS_COLS = [
     'num_reverted_edits_delete',
     'num_reverted_edits_update',
 
-    'total_parse_time_sec',
-    'avg_diff_calc_per_revision_sec',
-    'avg_diff_calc_per_revision_msec',
-    'file_path'
+    'file_path',
+
+    'total_xml_parse_time_sec',
+    'total_process_time_sec',
+
+    'total_revision_diff_time_sec',
+    'num_revisions_timed',
+    'total_rev_edit_time_sec',
+
+    'total_feature_creation_sec',
+    'num_feature_creations_timed'
 ]
 
 ENTITY_STATS_PK = ['entity_id']

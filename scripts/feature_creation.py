@@ -22,10 +22,11 @@ from scripts.utils import get_time_unit
 
 class FeatureCreation():
 
-    def __init__(self, conn):
+    def __init__(self, set_up=None, conn=None):
         self.conn = conn
+        self.set_up = set_up
 
-    def create_embedding_features(self, df, old_col, new_col):
+    def create_embedding_features(self, model, df, old_col, new_col):
         """
             Calculates cosine similarity between old and new value embeddings
         """
@@ -40,12 +41,6 @@ class FeatureCreation():
         new_label = []
 
         for _, row in df.iterrows():
-            entity = str(row['entity_label'])
-            prop = str(row['property_label'])
-                
-            latest_description = str(row['entity_description'])
-            entity_instance_of = str(row['entity_types_31']) if not pd.isna(row['entity_types_31']) else ''
-            entity_subclass_of = str(row['entity_types_279']) if not pd.isna(row['entity_types_279']) else ''
 
             old_val = str(row[old_col]).replace('"', '') # these are the entity labels
             new_val = str(row[new_col]).replace('"', '')
@@ -53,9 +48,6 @@ class FeatureCreation():
 
                 old_value_description = str(row['old_value_description']) if not pd.isna(row['old_value_description']) else ''
                 new_value_description = str(row['new_value_description']) if not pd.isna(row['new_value_description']) else ''
-                # entity changes -> add the entity label as context
-                old_texts.append(f"Entity: {entity}, { 'Entity is instance of:'  + entity_instance_of if entity_instance_of else ''}, { 'Entity is subclass of:' + entity_subclass_of if entity_subclass_of else ''}, Entity Description: {latest_description}, Property: {prop}, Old Value: {old_val}, Old Value Description: {old_value_description}" )
-                new_texts.append(f"Entity: {entity}, { 'Entity is instance of:'  + entity_instance_of if entity_instance_of else ''}, { 'Entity is subclass of:' + entity_subclass_of if entity_subclass_of else ''}, Entity Description: {latest_description}, Property: {prop}, New Value: {new_val}, New Value Description: {new_value_description}")
 
                 # only calculate these features fro entity changes
                 old_label.append(old_val) # labels
@@ -63,35 +55,29 @@ class FeatureCreation():
 
                 old_description.append(old_value_description) # descriptions
                 new_description.append(new_value_description)
-            
             else:
-                # add the property label + entity label + latest description to provide context
-                old_texts.append(f"Entity: {entity}, { 'Entity is instance of:'  + entity_instance_of if entity_instance_of else ''}, { 'Entity is subclass of:' + entity_subclass_of if entity_subclass_of else ''}, Entity Description: {latest_description}, Property: {prop}, Old Value: {old_val}")
-                new_texts.append(f"Entity: {entity}, { 'Entity is instance of:'  + entity_instance_of if entity_instance_of else ''}, { 'Entity is subclass of:' + entity_subclass_of if entity_subclass_of else ''}, Entity Description: {latest_description}, Property: {prop}, New Value: {new_val}")
-
-        # load model
-        model = SentenceTransformer('all-MiniLM-L6-v2')
+                old_texts.append(old_val)
+                new_texts.append(new_val)
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        old_text_embeddings = model.encode(
-            old_texts,
-            device=device,
-            show_progress_bar=True,
-            batch_size=512
-        )
-        new_text_embeddings = model.encode(
-            new_texts,
-            device=device,
-            show_progress_bar=True,
-            batch_size=512
-        )
-        # calculate cosine similarity
-        similarities = np.array([
-            cosine_similarity([old_emb], [new_emb])[0][0]
-            for old_emb, new_emb in zip(old_text_embeddings, new_text_embeddings)
-        ])
-        df['full_cosine_similarity'] = similarities
+        if 'label' not in old_col: # remove for entity
+            old_text_embeddings = model.encode(
+                old_texts,
+                device=device,
+                show_progress_bar=True
+            )
+            new_text_embeddings = model.encode(
+                new_texts,
+                device=device,
+                show_progress_bar=True
+            )
+            # calculate cosine similarity
+            similarities = np.array([
+                cosine_similarity([old_emb], [new_emb])[0][0]
+                for old_emb, new_emb in zip(old_text_embeddings, new_text_embeddings)
+            ])
+            df['value_cosine_similarity'] = similarities
 
         if 'label' in old_col:
             old_label_embeddings = model.encode(
@@ -133,7 +119,6 @@ class FeatureCreation():
             df['description_cosine_similarity'] = similarities 
 
         return df
-
 
     @staticmethod
     def has_adjacent_swap(old, new):
@@ -191,10 +176,6 @@ class FeatureCreation():
 
         new_value = str(new_value).strip().replace('"', '')
         old_value = str(old_value).strip().replace('"', '')
-
-        features['length_diff_abs'] = int(abs(len(new_value) - len(old_value)))
-        features['token_count_old'] = int(len(old_value.split()))
-        features['token_count_new'] = int(len(new_value.split()))
         
         def calc_overlap(old_value, new_value):
             old_tokens = set(old_value.split())
@@ -211,64 +192,57 @@ class FeatureCreation():
         features['old_in_new'] = int(old_value in new_value)
         features['new_in_old'] = int(new_value in old_value)
 
-        special_char_regex = r'[^a-zA-Z0-9]'
-        old_value_no_special_char = re.sub(special_char_regex,"",old_value)
-        new_value_no_special_char = re.sub(special_char_regex,"",new_value)
-        features['same_value_without_special_char'] = int(old_value_no_special_char == new_value_no_special_char)
-
-        special_char_count_old = len(re.findall(special_char_regex, old_value))
-        special_char_count_new = len(re.findall(special_char_regex, new_value))
-
-        features['special_char_count_diff'] =  special_char_count_old - special_char_count_new
-        
-        features['special_chars_added'] = int(features['special_char_count_diff'] > 0)
-        features['special_chars_removed'] = int(features['special_char_count_diff'] < 0)
-        # the values are the same but there's a change of a special char
-        features['only_special_char_change'] = int((features['same_value_without_special_char'] == 1) & (features['special_char_count_diff'] != 0))
-
-        features['levenshtein_distance'] = levenshtein_distance(old_value.lower().strip(), new_value.lower().strip())
-
         old_len = len(old_value)
         new_len = len(new_value)
         max_len = max(old_len, new_len) if max(old_len, new_len) > 0 else 1 # replace 0's with 1 to avoid division by zero
 
+        lev_dist = levenshtein_distance(old_value.lower().strip(), new_value.lower().strip())
+       
         # percentage of how much changed
-        features['edit_distance_ratio'] = features['levenshtein_distance'] / max_len
+        features['edit_distance_ratio'] = lev_dist / max_len
         
         if (features['token_overlap'] == 0) and (features['old_in_new'] == 0) and (features['new_in_old'] == 0):
             features['complete_replacement'] = 1
         else:
             features['complete_replacement'] = 0
-        
-        # for property_value_update or rewording (?), the structure similarity should be low.
-        # for textual change the structure similarity should be high.
-        if max(features['token_count_old'], features['token_count_new']) == 0:
-            features['structure_similarity'] = 0
-        else:
-            features['structure_similarity'] = 1 - abs(features['token_count_old'] - features['token_count_new']) / \
-                                        max(features['token_count_old'], features['token_count_new'])
-
-        # for rewording 
-        # if features['token_overlap'] > 0.8 and old_value != new_value:
-        #     features['high_token_overlap'] = 1
-        # else:
-        #     features['high_token_overlap'] = 0
 
         result = (
-            features['length_diff_abs'],
-            features['token_count_old'],
-            features['token_count_new'],         
             features['token_overlap'],
             features['old_in_new'],
             features['new_in_old'], 
-            features['levenshtein_distance'],
             features['edit_distance_ratio'],
             features['complete_replacement'],
-            features['structure_similarity']
         )
 
         if datatype == 'text': # remove for entity
+
+            features['length_diff_abs'] = int(abs(len(new_value) - len(old_value)))
+            features['token_count_old'] = int(len(old_value.split()))
+            features['token_count_new'] = int(len(new_value.split()))
+
+            special_char_regex = r'[^a-zA-Z0-9]'
+            old_value_no_special_char = re.sub(special_char_regex,"",old_value)
+            new_value_no_special_char = re.sub(special_char_regex,"",new_value)
+            features['same_value_without_special_char'] = int(old_value_no_special_char == new_value_no_special_char)
+
+            special_char_count_old = len(re.findall(special_char_regex, old_value))
+            special_char_count_new = len(re.findall(special_char_regex, new_value))
+
+            features['special_char_count_diff'] =  special_char_count_old - special_char_count_new
             
+            # features['special_chars_added'] = int(features['special_char_count_diff'] > 0)
+            # features['special_chars_removed'] = int(features['special_char_count_diff'] < 0)
+            # # the values are the same but there's a change of a special char
+            # features['only_special_char_change'] = int((features['same_value_without_special_char'] == 1) & (features['special_char_count_diff'] != 0))
+
+            # for property_value_update or rewording (?), the structure similarity should be low.
+            # for textual change the structure similarity should be high.
+            # if max(features['token_count_old'], features['token_count_new']) == 0:
+            #     features['structure_similarity'] = 0
+            # else:
+            #     features['structure_similarity'] = 1 - abs(features['token_count_old'] - features['token_count_new']) / \
+            #                                 max(features['token_count_old'], features['token_count_new'])
+                
             def get_edit_operations(old_value, new_value):
                 
                 m, n = len(old_value), len(new_value)
@@ -323,16 +297,20 @@ class FeatureCreation():
             features['has_significant_suffix'] = int(len(os.path.commonprefix([old_value[::-1], new_value[::-1]])) >= 3)
 
             result = result + (
+                features['length_diff_abs'],
+                features['token_count_old'],
+                features['token_count_new'],  
+                lev_dist,
+                # features['structure_similarity'],
                 features['same_value_without_special_char'],
                 features['special_char_count_diff'],
-                features['special_chars_added'],
-                features['special_chars_removed'],
-                features['only_special_char_change'],
+                # features['special_chars_added'],
+                # features['special_chars_removed'],
+                # features['only_special_char_change'],
                 features['char_insertions'],
                 features['char_deletions'],
                 features['char_substitutions'],
                 features['adjacent_char_swap'],
-                features['avg_word_similarity'],
                 features['has_significant_prefix'],
                 features['has_significant_suffix'],
             )
@@ -353,9 +331,6 @@ class FeatureCreation():
         if old_value in ['some_value', 'no_value'] or new_value in ['some_value', 'no_value']:
             return (
                 1000, # big difference
-                # features['time_diff_minutes'],
-                0,
-                0,
                 0,
                 0,
                 0,
@@ -364,9 +339,7 @@ class FeatureCreation():
                 0,
                 1, # month, year, day changed
                 1,
-                1,
-                0,
-                0
+                1
             )
         else:
 
@@ -405,13 +378,9 @@ class FeatureCreation():
                     raise e
 
             old_date = get_date_parts(old_value, 'date') 
-            old_time = get_date_parts(old_value, 'time')
-
             new_date = get_date_parts(new_value, 'date')
-            new_time = get_date_parts(new_value, 'time')
 
         features = dict()
-
 
         def calc_date_diff(old_date, new_date):
             """Calculate date difference in days"""
@@ -430,32 +399,6 @@ class FeatureCreation():
             except:
                 return 10000
         
-        def calc_time_diff(dt1, dt2):
-            """Calculate time difference in minutes"""
-            try:
-
-                if dt1 is None or dt2 is None:
-                    return 1000
-                
-                if 'T' not in dt1 or 'T' not in dt2:
-                    # if there's somevalue or novalue
-                    return 1000
-                
-                hour1, minute1, second1 = get_date_parts(dt1, option='time')
-                hour2, minute2, second2 = get_date_parts(dt2, option='time')
-
-                if None in (hour1, minute1, second1, hour2, minute2, second2):
-                    return 1000
-
-                minute_diff = int(abs(minute2 - minute1))
-                hour_diff = int(abs(hour2 - hour1) * 60) # convert to minutes
-                second_diff = int(abs(second2 - second1) / 60)  # convert to minutes
-                
-                return hour_diff + minute_diff + second_diff
-            
-            except:
-                return 1000
-
         def calc_sign_change(dt1, dt2):
 
             if dt1[1:] == dt2[1:]:
@@ -463,105 +406,46 @@ class FeatureCreation():
             else:
                 return 0
         
-        def change_one_to_value(dt1, dt2):
-            try:
-                if dt1 is None or dt2 is None:
-                    return 0
-                if 'T' not in dt1 or 'T' not in dt2:
-                    # for somevalue or novalue
-                    return 0
-
-                year1, month1, day1 = get_date_parts(dt1, option='date')
-                year2, month2, day2 = get_date_parts(dt2, option='date')
-
-                if ((month1 == 1 and month2 > 0) or (day1 == 1 and day2 > 0)) and year1 == year2:
-                    return 1
-                else:
-                    return 0
-            except:
-                return 0
-
-        def calc_change_zero_one(old_date, new_date, option='zero_to_one'):
+        def added_removed_part(old_date, new_date, part='year', option='date', change_type='added'):
             try:
 
-                year1, month1, day1 = old_date
-                year2, month2, day2 = new_date
-
-                if option == 'zero_to_one':
-                    # YYYY-00-00 -> YYYY-01-01
-                    # YYYY-00-00 -> YYYY-01-00
-                    # YYYY-00-00 -> YYYY-00-01
-                    if ((month1 == 0 and month2 == 1 and (day2 == 0 or day2 == 1)) or (day1 == 0 and day2 == 1 and (month2 == 0 or month2 == 1))) and year1 == year2:
-                        return 1
-                    else:
-                        return 0
-                    
-                elif option == 'one_to_zero':
-                    # YYYY-01-01 -> YYYY-00-00
-                    # YYYY-01-00 -> YYYY-00-00
-                    # YYYY-00-01 -> YYYY-00-00
-                    if ((month1 == 1 and month2 == 0 and (day1 == 0 or day1 == 1)) or (day1 == 1 and day2 == 0 and (month1 == 0 or month1 == 1))) and year1 == year2:
-                        return 1
-                    else:
-                        return 0
-
-                elif option == 'one_to_value':
-                    # YYYY-01-01 -> YYYY-MM-DD (MM>1 or DD>1)
-                    if ((month1 == 1 and month2 > 1) and (day1 == 1 and day2 > 1)) and year1 == year2:
-                        return 1
-                    else:
-                        return 0
-            except:
-                return 0
-
-
-        def added_removed_part(old_date_time, new_date_time, part='year', option='date', change_type='added'):
-            try:
                 if option == 'date':
-                    year1, month1, day1 = old_date_time
-                    year2, month2, day2 = new_date_time
+                    year1, month1, day1 = old_date
+                    year2, month2, day2 = new_date
+                    
+                    if year1 != year2:
+                        return 0
+
                     if change_type == 'added':
                         if part == 'year' and year1 == 0 and year2 != 0:
                             return 1
-                        if part == 'month' and ((month1 == 0 and month2 > 0) or (month1 == 1 and month2 > 1)):
+                        # YYYY-01-01 -> YYYY-05-00:
+                        # YYYY-01-01 -> YYYY-05-10:
+                        if part == 'month' and ((month1 == 0 and month2 > 0 and day1 == 0) or (month1 == 1 and month2 > 1 and day1 == 1 and (day2 > 1 or day2 == 0))):
                             return 1
-                        if part == 'day' and ((day1 == 0 and day2 > 0) or (day1 == 1 and day2 > 1)):
+                        if part == 'day' and ((day1 == 0 and day2 > 0) or (day1 == 1 and day2 > 1 and month1 == 1 and month2 > 1)):
                             return 1
                         return 0
                     elif change_type == 'removed':
-                        # re_formatting = (day1 == 1 and day2 == 0) or (month1 == 1 and month2 == 0 and day1 == 1 and day2 == 0)
+
                         if part == 'year' and year1 > 0 and year2 == 0:
-                            return 1
-                        if part == 'month' and month1 > 0 and month2 == 0:
-                            if not (month1 == 1 and month2 == 0 and day1 == 1 and day2 == 0): # if it's not a reformatting change
                                 return 1
+
+                        # cases like: YYYY-MM-DD -> YYYY-01-01 where MM and DD !=01
+                        if (part == 'month' or part == 'day') and month1 > 1 and day1 > 1 and month2 == 1 and day2 == 1:
+                            return 1
+                        # cases like YYYY-MM-00 -> YYYY-00-00 
+                        if part == 'month' and month1 > 0 and month2 == 0:
+                            if not (day1 == 1 and day2 == 0) and not (day1 == 0 and day2 == 0): # if it's not a reformatting change
+                                return 1
+                        # cases like YYYY-MM-DD -> YYYY-MM-00
                         if part == 'day' and day1 > 0 and day2 == 0:
                             if not (day1 == 1 and day2 == 0): # if it's not a reformatting change
                                 return 1
                         return 0
             
-                elif option == 'time':
-                    hour1, minute1, second1 = old_date_time
-                    hour2, minute2, second2 = new_date_time
-                    if change_type == 'added':
-                        if part == 'hour' and hour1 == 0 and hour2 != 0:
-                            return 1
-                        if part == 'minute' and minute1 == 0 and minute2 != 0:
-                            return 1
-                        if part == 'second' and second1 == 0 and second2 != 0:
-                            return 1
-                        return 0
-                    elif change_type == 'removed':
-                        if part == 'hour' and hour1 != 0 and hour2 == 0:
-                            return 1
-                        if part == 'minute' and minute1 != 0 and minute2 == 0:
-                            return 1
-                        if part == 'second' and second1 != 0 and second2 == 0:
-                            return 1
-                        return 0
             except:
                 return 0
-
 
         def is_placeholder_to_zero(old_date, new_date):
 
@@ -585,105 +469,72 @@ class FeatureCreation():
 
             return 0
         
-        # Precision loss: non-zero -> zero 
-        def precision_loss_score(old_date, new_date, old_time, new_time):
-            """How many components went from non-zero to zero?"""
-            year1, month1, day1 = old_date
-            year2, month2, day2 = new_date
-
-            hour1, minute1, second1 = old_time
-            hour2, minute2, second2 = new_time
-
-            if year1 != year2:
-                return 0
-
-            score = 0
-            # re_formatting = (day1 == 1 and day2 == 0) or (month1 == 1 and month2 == 0 and day1 == 1 and day2 == 0)
-            if month1 > 0 and month2 == 0: 
-                if not (month1 == 1 and month2 == 0 and day1 == 1 and day2 == 0): # if it's not re_formatting
-                    score += 1
-            if day1 > 0 and day2 == 0:
-                if not (day1 == 1 and day2 == 0):
-                    score += 1
-            if hour1 > 0 and hour2 == 0: score += 1
-            if minute1 > 0 and minute2 == 0: score += 1
-            if second1 > 0 and second2 == 0: score += 1
-            return score
-
-        # Precision gain: zero -> non-zero
-        def precision_gain_score(old_date, new_date, old_time, new_time):
-            year1, month1, day1 = old_date
-            year2, month2, day2 = new_date
-
-            hour1, minute1, second1 = old_time
-            hour2, minute2, second2 = new_time
-
-            if year1 != year2:
-                return 0
-
-            score = 0
-            if month1 == 0 and month2 > 0: score += 1
-            if day1 == 0 and day2 > 0: score += 1
-            if hour1 == 0 and hour2 > 0: score += 1
-            if minute1 == 0 and minute2 > 0: score += 1
-            if second1 == 0 and second2 > 0: score += 1
-            return score
-
-        def date_part_changed(year1, month1, day1, year2, month2, day2, option='year'):
+        def date_part_changed(old_date, new_date, option='year'):
             
-            # re_formatting = (day1 == 1 and day2 == 0) or (month1 == 1 and month2 == 0 and day1 == 1 and day2 == 0)
+            """
+            Returns 1 if there was an actual change in the month/year/day
+            Not re_formatting (e.g. 01-01 -> XX-XX, 01-01 -> 00-00, 01-00 -> XX-00) or unrefinement/refinement (e.g. from X to 0)
+            """
+            year1, month1, day1 = old_date
+            year2, month2, day2 = new_date
             if option == 'year':
                 if year1 != year2:
                     return 1
             elif option == 'month':
-                if month1 != month2 and not (month1 == 1 and month2 == 0 and day1 == 1 and day2 == 0):
+                is_reformatting = ((month1 == 1 and day1 == 1 and day2 == 0 and month2 == 0) or  \
+                                (month1 > 0 and month2 > 0 and month1 == month2 and day1 == 1 and day2 == 0) or \
+                                (month1 == 1 and month2 == 0 and day1 == 0 and day2 == 0)) and year1 == year2
+                
+                # 1. just month added
+                # 2. goes from 01-01 to MM-00 or MM-DD
+                # 3. goes from 00-00 to MM-DD
+                is_refinement = ((month1 == 0 and month2 > 0 and day2 == 0) or \
+                                (month1 == 1 and day1 == 1 and month2 > 1 and (day2 > 1 or day2 == 0)) or \
+                                (month1 == 0 and month2 > 0 and day1 == 0 and day2 > 0)) and year1 == year2
+                # goes from MM-00 (month1) to 00-00 (month2)
+                is_unrefinement = (month2 == 0 and month1 > 0) and year1 == year2
+                if month1 != month2 and not is_reformatting and not is_refinement and not is_unrefinement:
                     return 1
             elif option == 'day':
-                if day1 != day2 and not (day1 == 1 and day2 == 0):
+                # 1. goes from 01-01 to 00-00
+                # 2. goes from XX-01 to XX-00
+                # 3. goes from 01-00 to 00-00
+                is_reformatting = ((month1 == 1 and day1 == 1 and day2 == 0 and month2 == 0) or  \
+                                (month1 > 0 and month2 > 0 and month1 == month2 and day1 == 1 and day2 == 0) or \
+                                (month1 == 1 and month2 == 0 and day1 == 0 and day2 == 0)) and year1 == year2
+                # 1. XX-00 to XX-DD with XX that can be 01/00
+                # 2. goes from 01-01 to MM-DD
+                is_refinement = ((day1 == 0 and day2 > 0) or \
+                                (day1 == 1 and day2 > 1 and month1 == 1 and month2 > 1)) and year1 == year2
+                # goes from XX-00 to XX-DD 
+                is_unrefinement = (day2 == 0 and day1 > 0) and year1 == year2
+                if day1 != day2 and not is_reformatting and not is_refinement and not is_unrefinement:
                     return 1
             return 0
 
         features['date_diff_days'] = calc_date_diff(old_date, new_date)
         features['sign_change'] = calc_sign_change(old_value, new_value)
         features['change_one_to_zero'] = is_placeholder_to_zero(old_date, new_date)
-        features['change_one_to_value'] = calc_change_zero_one(old_date, new_date, option='one_to_value')
-        features['change_zero_to_one'] = calc_change_zero_one(old_date, new_date, option='zero_to_one')
         features['day_added'] = added_removed_part(old_date, new_date, part='day', option='date', change_type='added')
         features['day_removed'] = added_removed_part(old_date, new_date, part='day', option='date', change_type='removed')
         features['month_added'] = added_removed_part(old_date, new_date, part='month', option='date', change_type='added')
         features['month_removed'] = added_removed_part(old_date, new_date, part='month', option='date', change_type='removed')
 
-        year1, month1, day1 = old_date
-        year2, month2, day2 = new_date
-
-        if ('somevalue' in old_value or 'novalue' in old_value or 'somevalue' in new_value or 'novalue' in new_value) and old_value != new_value:
-            features['different_year'] = 1
-            features['different_day'] = 1
-            features['different_month'] = 1
-        else:
-            features['different_year'] = date_part_changed(year1, month1, day1, year2, month2, day2, option='year')
-            features['different_day'] = date_part_changed(year1, month1, day1, year2, month2, day2, option='day')
-            features['different_month'] = date_part_changed(year1, month1, day1, year2, month2, day2, option='month')
-
-        features['precision_loss'] = precision_loss_score(old_date, new_date, old_time, new_time)
-        features['precision_gain'] = precision_gain_score(old_date, new_date, old_time, new_time)
+        features['different_year'] = date_part_changed(old_date, new_date, option='year')
+        features['different_day'] = date_part_changed(old_date, new_date, option='day')
+        features['different_month'] = date_part_changed(old_date, new_date, option='month')
 
         result = (
             features['date_diff_days'],
-            # features['time_diff_minutes'],
             features['sign_change'],
             features['change_one_to_zero'],
-            features['change_one_to_value'],
-            features['change_zero_to_one'],
             features['day_added'],
             features['day_removed'],
             features['month_added'],
             features['month_removed'],
             features['different_year'],
             features['different_day'],
-            features['different_month'],
-            features['precision_loss'],
-            features['precision_gain']
+            features['different_month']
         )
 
         return result
@@ -694,30 +545,47 @@ class FeatureCreation():
     @staticmethod
     def calc_precision_change(old_value, new_value, datatype='quantity', part=None):
         # returns 1 if only precision (decimal places) changed, 0 otherwise
-        # ndp == non decimal part
-        # dp == decimal part
         if datatype == 'globecoordinate':
             if '{' in old_value and '{' in new_value:
                 old = json.loads(old_value).get(part, None)
                 new = json.loads(new_value).get(part, None)
-                
-                old_ndp = str(old).split('.')[0] if '.' in str(old) else str(old)
-                old_dp = str(old).split('.')[1] if '.' in str(old) else 0
-
-                new_ndp = str(new).split('.')[0] if '.' in str(new) else str(new)
-                new_dp = str(new).split('.')[1] if '.' in str(new) else 0
+            
+            elif type(old_value) == dict and type(new_value) == dict:
+                old = old_value.get(part, None)
+                new = new_value.get(part, None)
+            
             else:
                 return 0
+            
+            old_ndp = str(old).split('.')[0] if '.' in str(old) else str(old)
+            try:
+                old_dp = str(old).split('.')[1] if '.' in str(old) and int(str(old).split('.')[1]) > 0 else '0'
+            except ValueError:
+                old_dp = '0'
+
+            new_ndp = str(new).split('.')[0] if '.' in str(new) else str(new)
+            try:
+                new_dp = str(new).split('.')[1] if '.' in str(new) and int(str(new).split('.')[1]) > 0 else '0'
+            except ValueError:
+                new_dp = '0'
         else:
 
             # quantity
             old_ndp = str(old_value).split('.')[0] if '.' in str(old_value) else str(old_value)
-            old_dp = str(old_value).split('.')[1] if '.' in str(old_value) else 0
+            try:
+                old_dp = str(old_value).split('.')[1] if '.' in str(old_value) and int(str(old_value).split('.')[1]) > 0 else '0'
+            except ValueError:
+                old_dp = '0'
 
             new_ndp = str(new_value).split('.')[0] if '.' in str(new_value) else str(new_value)
-            new_dp = str(new_value).split('.')[1] if '.' in str(new_value) else 0
+            try:
+                new_dp = str(new_value).split('.')[1] if '.' in str(new_value) and int(str(new_value).split('.')[1]) > 0 else '0'
+            except ValueError:
+                new_dp = '0'
 
-        if old_ndp == new_ndp and old_dp != new_dp:
+        # if both decimal parts are 0 -> there's no precision change
+        # e.g. 12 -> 12.0 is not a precision change, or 12.0 -> 12.00
+        if old_ndp == new_ndp and old_dp != new_dp and (old_dp != '0' or new_dp != '0'):
             return 1
         else:
             return 0
@@ -834,7 +702,6 @@ class FeatureCreation():
         else:
             features['length_decrease'] = 0
 
-        features['same_decimal_length'] = FeatureCreation.same_decimal_length(old_str, new_str, datatype='quantity')
         features['same_float_value'] = FeatureCreation.same_float_value(old_str, new_str, datatype='quantity')
 
         result = (
@@ -845,7 +712,6 @@ class FeatureCreation():
             features['whole_number_change'],
             features['old_is_prefix_of_new'],
             features['new_is_prefix_of_old'],
-            features['same_decimal_length'],
             features['same_float_value'],
         )
 
@@ -901,10 +767,7 @@ class FeatureCreation():
         else:
             features['longitude_length_decrease'] = 0
 
-        features['longitude_same_decimal_length'] = FeatureCreation.same_decimal_length(old_value, new_value, datatype='globecoordinate', part='longitude')
         features['longitude_same_float_value'] = FeatureCreation.same_float_value(old_value, new_value, datatype='globecoordinate', part='longitude')
-
-        features['latitude_same_decimal_length'] = FeatureCreation.same_decimal_length(old_value, new_value, datatype='globecoordinate', part='latitude')
         features['latitude_same_float_value'] = FeatureCreation.same_float_value(old_value, new_value, datatype='globecoordinate', part='latitude')
 
         result = (
@@ -925,12 +788,10 @@ class FeatureCreation():
 
             features['latitude_old_is_prefix_of_new'],
             features['latitude_new_is_prefix_of_old'],
-            features['latitude_same_decimal_length'],
             features['latitude_same_float_value'],
 
             features['longitude_old_is_prefix_of_new'],
             features['longitude_new_is_prefix_of_old'],
-            features['longitude_same_decimal_length'],
             features['longitude_same_float_value'],
         )
 
@@ -939,121 +800,7 @@ class FeatureCreation():
     ########################################################################################################################
     # Entity features
     ########################################################################################################################
-    def transitive_closure_check(self, value1, value2, table_name):
-        """
-            Check if value2 is in the transitive closure of value1 in the given table
-            e.g. check if new_value is subclass of old_value
-        """
-        start_time = time.time()
-        query = """
-            SELECT 1
-            FROM {table}
-            WHERE entity_id = {value1} AND transitive_closure_qids LIKE {value2}
-            LIMIT 1
-        """.format(table=table_name, value1=value1, value2=f'%{value2}%')
-
-        with self.conn.cursor() as cur:
-            cur.execute(query)
-            result = cur.fetchone()
-            elapsed = time.time() - start_time
-            if result:
-                print(f'Transitive closure check for {value1}, {value2}, {table_name} in {elapsed:.2f} seconds')
-                return 1
-            else:
-                print(f'Transitive closure check for {value1}, {value2}, {table_name} in {elapsed:.2f} seconds')
-                return 0
-            
-            
-    def extract_entity_p31(self, entity_id):
-        """Extract entity p31 values from the database given the entity ID"""
-        
-        query = """
-            SELECT type_labels_list
-            FROM p31_entity_types
-            WHERE entity_numeric_id = %s
-            LIMIT 1
-        """
-        with self.conn.cursor() as cur:
-            start_time = time.time()
-            cur.execute(query, (entity_id,))
-            result = cur.fetchone()
-            elapsed = time.time() - start_time
-            if result:
-                return result[0]
-            else:
-                return ''
-            
-
-    def extract_entity_p279(self, entity_id):
-        """Extract entity p279 values from the database given the entity ID"""
-        
-        query = """
-            SELECT type_labels_list
-            FROM p279_entity_types
-            WHERE entity_numeric_id = %s
-            LIMIT 1
-        """
-        with self.conn.cursor() as cur:
-            start_time = time.time()
-            cur.execute(query, (entity_id,))
-            result = cur.fetchone()
-            elapsed = time.time() - start_time
-            if result:
-                return result[0]
-            else:
-                return ''
-
-
-    def get_entity_label_alias_description(self, entity_id):
-        """Get entity metadata with Redis caching"""
-        
-        if not self.redis_client:
-            # query directly
-            return self._query_entity_label_alias_description(entity_id)
-        
-        cache_key = f'entity:{entity_id}'
-        
-        # Try Redis cache
-        try:
-            cached = self.redis_client.get(cache_key)
-            if cached:
-                return json.loads(cached)
-        except Exception as e:
-            print(f"Redis error: {e}, falling back to DB")
-        
-        metadata = self._query_entity_label_alias_description(entity_id)
-        
-        # Store in Redis (with TTL to prevent stale data)
-        try:
-            self.redis_client.setex(
-                cache_key,
-                432000,  # 5 day TTL
-                json.dumps(metadata)
-            )
-        except Exception as e:
-            print(f"Redis set error: {e}")
-        
-        return metadata
-    
-    def _query_entity_label_alias_description(self, entity_id):
-        """Query database for entity metadata"""
-        query = """
-            SELECT label, alias, description
-            FROM entity_labels_alias_description
-            WHERE qid = %s
-            LIMIT 1
-        """
-        with self.connection.cursor() as cur:
-            cur.execute(query, (entity_id,))
-            result = cur.fetchone()
-            
-            if result:
-                return {
-                    'label': result[0] or '', 'alias': result[1] or '', 'description': result[2] or ''
-                }
-        
-        return {'label': '', 'alias': '', 'description': ''}
-    
+                
     @staticmethod
     def create_entity_features_text_transitive(row, transitive_cache):
         """Extract features for entity datatypes using labels"""
@@ -1062,18 +809,15 @@ class FeatureCreation():
         new_value_label = row['new_value_label']
 
         features_tuple = FeatureCreation.create_text_features('entity', old_value_label, new_value_label)
+        # ['token_overlap', 'old_in_new', 'new_in_old', 'edit_distance_ratio', 'complete_replacement', 'label_cosine_similarity', 'description_cosine_similarity', 'is_link_change', 
+        # 'old_value_subclass_new_value', 'new_value_subclass_old_value', 'old_value_located_in_new_value', 'new_value_located_in_old_value', 'old_value_has_parts_new_value', 'new_value_has_parts_old_value', 'old_value_part_of_new_value', 'new_value_part_of_old_value']
 
         text_features_dict = {
-            'length_diff_abs': int(float(features_tuple[0])),
-            'token_count_old': int(float(features_tuple[1])),
-            'token_count_new': int(float(features_tuple[2])),         
-            'token_overlap': features_tuple[3],
-            'old_in_new': features_tuple[4],
-            'new_in_old': features_tuple[5], 
-            'levenshtein_distance': features_tuple[6],
-            'edit_distance_ratio': features_tuple[7],
-            'complete_replacement': features_tuple[8],
-            'structure_similarity': features_tuple[9],
+            'token_overlap': features_tuple[0],
+            'old_in_new': features_tuple[1],
+            'new_in_old': features_tuple[2], 
+            'edit_distance_ratio': features_tuple[3],
+            'complete_replacement': features_tuple[4],
         }
 
         features = dict()
@@ -1093,264 +837,103 @@ class FeatureCreation():
         features['old_value_part_of_new_value'] = transitive_cache.check(old_value, new_value, 'part_of_transitive')
         features['new_value_part_of_old_value'] = transitive_cache.check(new_value, old_value, 'part_of_transitive')
 
-        result = {**text_features_dict, **features, 'label_cosine_similarity': 0.0, 'description_cosine_similarity': 0.0, 'full_cosine_similarity': 0.0}
+        is_link_change = int((old_value_label == new_value_label) & (row['old_value'] != row['new_value']))
+
+        result = {**text_features_dict, **features, 'label_cosine_similarity': 0.0, 'description_cosine_similarity': 0.0, 'is_link_change': is_link_change}
         
         ENTITY_ONLY_FEATURES_COLS = ENTITY_ONLY_FEATURES_COLS_TYPES.keys()
 
         return pd.Series(result, index=ENTITY_ONLY_FEATURES_COLS)
     
-    def create_entity_features(self, old_value, new_value):
+    def create_entity_features(self):
+        # ['token_overlap', 'old_in_new', 'new_in_old', 'edit_distance_ratio', 'complete_replacement', 'label_cosine_similarity', 'description_cosine_similarity', 'is_link_change', 
+        # 'old_value_subclass_new_value', 'new_value_subclass_old_value', 'old_value_located_in_new_value', 'new_value_located_in_old_value', 'old_value_has_parts_new_value', 'new_value_has_parts_old_value', 'old_value_part_of_new_value', 'new_value_part_of_old_value']
 
-        old_value = str(old_value).strip().replace('"', '')
-        new_value = str(new_value).strip().replace('"', '')
-
-        old_value_label = ''
-        new_value_label = ''
-        old_value_description = ''
-        new_value_description = ''
-
-        features_tuple = (
-            None,
-            None,
-            None,         
-            None,
-            None,
-            None, 
-            None,
-            None,
-            None,
-            None,
-        )
-
-        features = dict()
-
-        features['new_value_part_of_old_value'] = 0
-        features['old_value_part_of_new_value'] = 0
-
-        features['new_value_subclass_old_value'] = 0
-        features['old_value_subclass_new_value'] = 0
-
-        features['new_value_has_parts_old_value'] = 0
-        features['old_value_has_parts_new_value'] = 0
-
-        features['new_value_located_in_old_value'] = 0
-        features['old_value_located_in_new_value'] = 0
-
-
-        result = features_tuple + (
-            features['old_value_subclass_new_value'], 
-            features['new_value_subclass_old_value'],
-
-            features['old_value_located_in_new_value'],
-            features['new_value_located_in_old_value'],
-            features['old_value_has_parts_new_value'],
-            features['new_value_has_parts_old_value'],
-
-            features['old_value_part_of_new_value'],
-            features['new_value_part_of_old_value'],
-
-            old_value_label,
-            new_value_label, 
-            old_value_description, 
-            new_value_description,
+        return (
+            None, # token_overlap
+            None, # old_in_new
+            None, # new_in_old
+            None, # edit_distance_ratio
+            None, # complete_replacement
+            None, # is_link_change
+            0, # new_value_part_of_old_value
+            0, # old_value_part_of_new_value
+            0, # new_value_subclass_old_value
+            0, # old_value_subclass_new_value
+            0, # new_value_has_parts_old_value
+            0, # old_value_has_parts_new_value
+            0, # new_value_located_in_old_value
+            0, # old_value_located_in_new_value
+            '', # old_value_label
+            '', # new_value_label
+            '', # old_value_description
+            '', # new_value_description
         )
         
-        return result
 
     ####################
     # Reverted edit features
     ####################
-    @staticmethod
-    def has_revert_keyword(next_changes):
-        """Check if any of next changes have revert keyword in comment"""
-        for change in next_changes:
-            comment = str(change.get('comment', '')).lower()
-            if any(keyword in comment for keyword in RV_KEYWORDS):
-                return 1
-        return 0
-
-    @staticmethod
-    def check_hash_revert_old(current_change, next_changes):
-        """Check for hash reversion in next 10 changes"""
-        curr_old_hash = current_change.get('old_hash', '')
-        curr_new_hash = current_change.get('new_hash', '')
-        
-        for next_change in next_changes:
-            next_old_hash = next_change.get('old_hash', '')
-            next_new_hash = next_change.get('new_hash', '')
-
-            # delete + update
-            if (curr_old_hash == next_new_hash and curr_old_hash != '' and next_new_hash != '') or (curr_old_hash == '' and next_new_hash == '' and curr_new_hash == next_old_hash): # create
-                return 1
-
-            # else: # hay algún cambio que tenga una keyword y que no cumpla lo de los hashes??
-            #     comment = str(next_change.get('comment', '')).lower()
-            #     if any(keyword in comment for keyword in RV_KEYWORDS):
-            #         return 1
-        
-        return 0
-
-    @staticmethod
-    def check_hash_revert(current_change, next_change, property_id):
+    def check_revert(self, current_change, next_change):
         """Check for hash reversion + (comment with reverted edit keyword or reverted within 4 weeks)"""
 
-        if property_id == -1 or property_id == -2: # label or description changes -> we don't store a hash, so use value comparison
+        curr_old_hash = str(current_change.get('old_value', '')).strip() if current_change.get('old_value', '') != '{}' else ''
+        curr_new_hash = str(current_change.get('new_value', '')).strip() if current_change.get('new_value', '') != '{}' else ''
 
-            curr_old_hash = str(current_change.get('old_value', '')).strip() if current_change.get('old_value', '') != '{}' else ''
-            curr_new_hash = str(current_change.get('new_value', '')).strip() if current_change.get('new_value', '') != '{}' else ''
-
-            next_old_hash = str(next_change.get('old_value', '')).strip() if next_change.get('old_value', '') != '{}' else ''
-            next_new_hash = str(next_change.get('new_value', '')).strip() if next_change.get('new_value', '') != '{}' else ''
-        else:
-
-            curr_old_hash = current_change.get('old_hash', '')
-            curr_new_hash = current_change.get('new_hash', '')
-            
-            next_old_hash = next_change.get('old_hash', '')
-            next_new_hash = next_change.get('new_hash', '')
+        next_old_hash = str(next_change.get('old_value', '')).strip() if next_change.get('old_value', '') != '{}' else ''
+        next_new_hash = str(next_change.get('new_value', '')).strip() if next_change.get('new_value', '') != '{}' else ''
 
         next_comment = str(next_change.get('comment', '')).lower()
-        next_timestamp = datetime.strptime(next_change['timestamp'].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-        current_timestamp = datetime.strptime(current_change['timestamp'].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
 
-        # delete + update
-        # create
-        # has rv comment or within a week
-        # Use Analysing the Evolution of Knowledge Graphs for the Purpose of Change Verification to jstify 4 weeks
+        def parse_timestamp(ts):
+            if isinstance(ts, datetime):
+                return ts
+            ts_str = str(ts).replace("T", " ").replace("Z", "")
+            ts_str = re.sub(r'[+-]\d{2}:?\d{0,2}$', '', ts_str).strip()
+            return datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+
+        next_timestamp = parse_timestamp(next_change['timestamp'])
+        current_timestamp = parse_timestamp(current_change['timestamp'])
+
         diff_timestamps = (next_timestamp - current_timestamp).total_seconds()
-        seconds_per_day = 24 * 60 * 60 # 24 hours, 1 hour - 60 minutes, 1 minute - 60 seconds -> 
-        seconds_in_four_weeks = 28 * seconds_per_day
-        if ((curr_old_hash == next_new_hash and curr_old_hash != '' and next_new_hash != '') or \
-            (curr_old_hash == '' and next_new_hash == '' and curr_new_hash == next_old_hash)) and \
-            (any(keyword in next_comment for keyword in RV_KEYWORDS) or diff_timestamps <= seconds_in_four_weeks): 
+        # seconds_per_day = 24 * 60 * 60 
+        # seconds_in_four_weeks = 28 * seconds_per_day
+        time_threshold = self.set_up.get('time_threshold_seconds', 28 * 24 * 60 * 60)
 
+        # DELETE + UPDATE case
+        # direct reversion: A→B then B→A (no intermediates)
+        direct = (
+            curr_old_hash == next_new_hash and 
+            curr_new_hash == next_old_hash and
+            curr_old_hash != '' and next_new_hash != '' and
+            diff_timestamps <= time_threshold
+        )
+
+        # trailing reversion: A→B ... →A (with intermediates, requires rv comment)
+        trailing = (
+            curr_old_hash == next_new_hash and
+            curr_old_hash != '' and
+            next_new_hash != '' and
+            curr_new_hash != next_old_hash and  # explicitly intermediates exist
+            # still restrict on time in case there's a restore that undos a similar change that happened 3 years ago, the values will still 
+            # match
+            (('restore' in next_comment or 'rollback' in next_comment) and diff_timestamps <= time_threshold)  # trailing reverts are done by restores/rollbacks
+        )
+
+        # CREATE case
+        create_case = (
+            curr_old_hash == '' and 
+            next_new_hash == '' and 
+            curr_new_hash == next_old_hash and
+            diff_timestamps <= time_threshold
+        )
+
+        if (direct or trailing or create_case):
             return 1
-        
+
         return 0
     
-    @staticmethod
-    def finalize_changes_with_temporal_features(changes_pv_dict):
-        """
-        Add temporal features to changes after all changes are collected
-        """
-
-        reverted_edit_features = []
-        
-        # process changes_by_epv and update self.changes
-        for (property_id, value_id), changes in changes_pv_dict.items():
-            changes.sort(key=lambda x: x['timestamp'])
-            entity_user_history = defaultdict(list)
-            
-            for i, change_info in enumerate(changes):
-                current_user = change_info['user_id']
-                current_ts = datetime.strptime(change_info['timestamp'].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
- 
-                # -------------------------
-                # FEATURE : time to prev / next
-                # -------------------------
-                if i > 0:
-                    prev_timestamp = datetime.strptime(changes[i-1]['timestamp'].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-                    time_to_prev = (current_ts - prev_timestamp).total_seconds()
-                else:
-                    time_to_prev = -1 # be careful with this in model training
-                
-                if i < len(changes) - 1:
-                    next_timestamp = datetime.strptime(changes[i+1]['timestamp'].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-                    time_to_next = (next_timestamp - current_ts).total_seconds()
-                else:
-                    time_to_next = -1 # be careful with this in model training
-                
-                # Check next 10 for reverts
-                if len(changes) < 10 :
-                    next_10 = changes[i+1:]
-                else:
-                    next_10 = changes[i+1:i+11]
-
-                # -------------------------
-                # FEATURE : rv keyword in comment in any of the next 10 changes
-                # -------------------------
-                rv_keyword_next_10 = FeatureCreation.has_revert_keyword(next_10)
-
-                # -------------------------
-                # FEATURE : is_reverted_within_a_day
-                # -------------------------
-                is_reverted_within_day = 0
-                next_changes = changes[i+1:]
-
-                for future_change in next_changes:
-                    future_timestamp = datetime.strptime(future_change['timestamp'].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-                    if (future_timestamp - current_ts).total_seconds() > 86400: # more than a day
-                        break
-
-                    if (
-                        FeatureCreation.check_hash_revert_old(change_info, [future_change], property_id=property_id)
-                    ):
-                        is_reverted_within_day = 1
-                        break
-                
-                # -------------------------
-                # FEATURE: num_changes_by_same_user_on_entity_last_24h
-                # -------------------------
-                window_start = current_ts - timedelta(hours=24)
-
-                # keep only last 24h
-                entity_user_history[current_user] = [
-                    ts for ts in entity_user_history[current_user]
-                    if ts >= window_start # dont have to parse because im saving current_ts and its already a datetime object
-                ]
-
-                num_changes_same_user_last_24h = len(
-                    entity_user_history[current_user]
-                )
-
-                # record current change
-                entity_user_history[current_user].append(current_ts)
-
-                # -------------------------
-                # FEATURE : hash reversion in any of the next 10 changes
-                # -------------------------
-                hash_reverted_next_10 = FeatureCreation.check_hash_revert_old(change_info, next_10, property_id=property_id)
-                
-                # BASIC FEATURES
-                is_weekend =  1 if current_ts.weekday() > 4 else 0
-                day_of_week = current_ts.strftime("%A")
-                hour_of_day = current_ts.hour   
-                
-                action_encoded = ACTION_ENCODING.get(change_info.get('action', ''), 0)
-                user_type_encoded = USER_TYPE_ENCODING.get(change_info.get('user_type', ''), 0)
-                day_of_week_encoded = DAY_OF_WEEK_ENCODING.get(day_of_week, 0)
-
-                features = (
-                    change_info['revision_id'],
-                    property_id,
-                    value_id,
-                    change_info['change_target'],
-
-                    change_info['new_datatype'],
-                    change_info['old_datatype'],
-                    change_info['action'],
-
-                    user_type_encoded,
-                    day_of_week_encoded,
-                    hour_of_day,
-                    is_weekend,
-                    action_encoded, 
-                    is_reverted_within_day, 
-                    num_changes_same_user_last_24h,
-                    rv_keyword_next_10, 
-                    hash_reverted_next_10, 
-                    time_to_prev, 
-                    time_to_next,
-
-                    '', #label
-                )
-
-                reverted_edit_features.append(features)
-
-        return reverted_edit_features
-    
-    @staticmethod
-    def tag_reverted_edits(changes_pv_dict, value_changes, entity_stats):
+    def tag_reverted_edits(self, changes_pv_dict, value_changes, entity_stats):
         """
         Tag reverted edits
         """
@@ -1399,38 +982,121 @@ class FeatureCreation():
             dict_lookup[key] = change
         
         # track reverts
+        # stores tuples for a change (value or rank change): (is_reverted, reversion, reversion_timestamp, revision_id_reversion)
         revert_flags = {} 
+        
         num_reverted_edits = 0
         num_reversions = 0
         num_reverted_edits_create = 0
         num_reverted_edits_delete = 0
         num_reverted_edits_update = 0
         
-        # process changes_by_epv and determine revert status
-        for (property_id, value_id), changes in changes_pv_dict.items():
-            changes.sort(key=lambda x: x['timestamp'])
-            
-            for i, change_info in enumerate(changes):
-                key = get_key_from_change(change_info, property_id, value_id)
-                
-                if key not in revert_flags:
-                    revert_flags[key] = (0, 0)  # (is_reverted, reversion)
-                
-                next_changes = changes[i+1:]
+        # process changes_by_epvc and determine revert status
+        for (property_id, value_id, change_target), pv_changes in changes_pv_dict.items():
+            pv_changes.sort(key=lambda x: x['timestamp'])
+            reversion_keys = set()
+            reverted_keys = set()
+
+            for i, current_change in enumerate(pv_changes):
+                curr_key = get_key_from_change(current_change, property_id, value_id)
+
+                if curr_key in reverted_keys:
+                        continue
+
+                next_changes = pv_changes[i+1:]
 
                 for j, future_change in enumerate(next_changes):
-                    reverted = FeatureCreation.check_hash_revert(change_info, future_change, property_id=property_id)
+
+                    future_key = (future_change['revision_id'], property_id, value_id, future_change['change_target'])
+                    if future_key in reversion_keys or \
+                        change_target != future_change['change_target'] or \
+                        (current_change['change_target'] == 'rank' and current_change['action'] in ['DELETE', 'CREATE']):
+                        # it has already been marked or the change target is different (e.g. value vs rank), so skip
+                        # only skip the create/delete of rank, those get tagged if the corresponding value gets tagged
+                        continue
+
+                    curr_action = current_change['action']
+                    next_action = future_change['action']
+
+                    valid_action_pair = (
+                        (curr_action == 'UPDATE' and next_action == 'UPDATE') or
+                        (curr_action == 'CREATE' and next_action == 'DELETE') or
+                        (curr_action == 'DELETE' and next_action == 'CREATE') or
+                        # for restore cases like:
+                        (curr_action == 'UPDATE' and next_action == 'CREATE' and (('restore' in future_change['comment']) or ('rollback' in future_change['comment'])))
+                    )
+
+                    reverted = 0
+                    if valid_action_pair:
+                        reverted = self.check_revert(current_change, future_change)
                     
                     if reverted == 1:
                         # mark current edit as reverted
-                        revert_flags[key] = (1, 0)
-                        
-                        # mark future change as reversion
-                        future_key = get_key_from_change(future_change, property_id, value_id)
-                        revert_flags[future_key] = (0, 1)
+                        rank_key = (current_change['revision_id'], property_id, value_id, 'rank')
+                        if curr_key not in revert_flags:
+                            # flags: 1, 0
+                            revert_flags[curr_key] = (1, 0, future_change['timestamp'], future_change['revision_id'])
+
+                            if current_change['change_target'] == '' and (current_change['action'] in ['DELETE', 'CREATE']):
+                                revert_flags[rank_key] = (1, 0, future_change['timestamp'], future_change['revision_id'])
+
+                        elif revert_flags[curr_key][0] == 0 and revert_flags[curr_key][1] == 1:  # is_reverted == 0 adn reversion == 1
+                            revert_flags[curr_key] = (1, 1, future_change['timestamp'], future_change['revision_id'])
+
+                            if change_target == '' and current_change['action'] in ['DELETE', 'CREATE']: # tag the rank changes
+                                revert_flags[rank_key] = (1, 1, future_change['timestamp'], future_change['revision_id'])
+
+                        reverted_keys.add(curr_key)
+
+                        future_key = (future_change['revision_id'], property_id, value_id, future_change['change_target'])
+                        rank_key = (future_change['revision_id'], property_id, value_id, 'rank')
+                        if future_key not in revert_flags:
+                            revert_flags[future_key] = (0, 1, None, None)
+
+                            if future_change['change_target'] == '' and (future_change['action'] in ['DELETE', 'CREATE']):
+                                revert_flags[rank_key] = (0, 1, None, None)
+
+                        elif revert_flags[future_key][1] == 0 and revert_flags[future_key][0] == 1: # reversion = 0 and is_Reverted = 1
+                            
+                            revert_flags[future_key][1] = (1, 1, revert_flags[future_key][2], revert_flags[future_key][3])
+                            
+                            if future_change['change_target'] == '' and future_change['action'] in ['DELETE', 'CREATE']:
+                                
+                                revert_flags[rank_key] = (1, 1, revert_flags[rank_key][2], revert_flags[rank_key][3])
+
+                        reversion_keys.add(future_key)
+
+                        # restore changes where the value restored (CREATE)
+                        # comes from a sequence of updates
+                        # v1 -> v2 #update
+                        # v2 -> v3
+                        # v3 -> {} # deleted
+                        # {} -> v1 # create
+                        if ('restore' in future_change['comment'] or 'rollback' in future_change['comment']) and \
+                            current_change['action'] == 'UPDATE' and \
+                            future_change['action'] == 'CREATE':
+
+                                for inter_change in next_changes[:j]:
+                                    
+                                    inter_key = (inter_change['revision_id'], property_id, value_id, inter_change['change_target'])
+                                    reverted_keys.add(inter_key)
+                                    if inter_key not in revert_flags:
+                                        revert_flags[inter_key] = (1, 0, future_change['timestamp'], future_change['revision_id'])
+                                        
+                                        if inter_change['change_target'] == '' and (inter_change['action'] in ['DELETE', 'CREATE']):
+                                            rank_key = (inter_change['revision_id'], property_id, value_id, 'rank')
+                                            revert_flags[rank_key] = (1, 0, future_change['timestamp'], future_change['revision_id'])
+                                    
+                                        # Update stats for intermediate changes
+                                        counts = update_revert_stats(inter_change)
+                                        
+                                        num_reverted_edits += counts['total']
+                                        num_reverted_edits_create += counts['create']
+                                        num_reverted_edits_delete += counts['delete']
+                                        num_reverted_edits_update += counts['update']
 
                         # Update stats for the original reverted change
-                        counts = update_revert_stats(change_info)
+                        counts = update_revert_stats(current_change)
                         
                         num_reverted_edits += counts['total']
                         num_reverted_edits_create += counts['create']
@@ -1439,20 +1105,7 @@ class FeatureCreation():
                         
                         # Update stats for the reversion (future_change counted as reversion only)
                         num_reversions += 1
-
-                        # mark changes in between as reverted (these are also reverted edits!)
-                        for inter_change in next_changes[:j]:
-                            inter_key = get_key_from_change(inter_change, property_id, value_id)
-                            revert_flags[inter_key] = (1, 0)
                             
-                            # Update stats for intermediate changes
-                            counts = update_revert_stats(inter_change)
-                            
-                            num_reverted_edits += counts['total']
-                            num_reverted_edits_create += counts['create']
-                            num_reverted_edits_delete += counts['delete']
-                            num_reverted_edits_update += counts['update']
-                        
                         break  # Found revert, move to next change
         
         final_value_changes = []
@@ -1462,11 +1115,11 @@ class FeatureCreation():
             if key[3] == 'rank':
                 # need to get corresponding value change for rank
                 value_key = (key[0], key[1], key[2], '')
-                is_reverted, reversion = revert_flags.get(value_key, (0, 0))
+                is_reverted, reversion, reversion_timestamp, revision_id_reversion  = revert_flags.get(value_key, (0, 0, None, None))
             else:
-                is_reverted, reversion = revert_flags.get(key, (0, 0))
+                is_reverted, reversion, reversion_timestamp, revision_id_reversion = revert_flags.get(key, (0, 0, None, None))
 
-            updated_tuple = original_tuple + (is_reverted, reversion)
+            updated_tuple = original_tuple + (is_reverted, reversion, reversion_timestamp, revision_id_reversion)
             
             final_value_changes.append(updated_tuple)
 
@@ -1482,70 +1135,70 @@ class FeatureCreation():
     ####################
     # Property replacement features
     ####################
-    @staticmethod
-    def create_property_replacement_features(c1, c2):
-        """Create features for property replacements"""
+    # @staticmethod
+    # def create_property_replacement_features(c1, c2):
+    #     """Create features for property replacements"""
 
-        # Save pair of create/delete where the value is the same and the property is different
-        # for each pair, save: user_id, property_label (need to keep track of this for text similarity), timestamp, action
+    #     # Save pair of create/delete where the value is the same and the property is different
+    #     # for each pair, save: user_id, property_label (need to keep track of this for text similarity), timestamp, action
         
-        if c1[9] == 'DELETE':
-            delete_change = c1
-            create_change = c2
-        else:
-            delete_change = c2
-            create_change = c1
+    #     if c1[9] == 'DELETE':
+    #         delete_change = c1
+    #         create_change = c2
+    #     else:
+    #         delete_change = c2
+    #         create_change = c1
 
-        if c1[19] == c2[19]:
-            same_user = 1
-        else:
-            same_user = 0
+    #     if c1[19] == c2[19]:
+    #         same_user = 1
+    #     else:
+    #         same_user = 0
 
-        create_change_dt = datetime.strptime(create_change[13].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
-        delete_change_dt = datetime.strptime(delete_change[13].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+    #     create_change_dt = datetime.strptime(create_change[13].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
+    #     delete_change_dt = datetime.strptime(delete_change[13].replace("T", " ").replace("Z", ""), "%Y-%m-%d %H:%M:%S")
         
-        if delete_change_dt > create_change_dt: # so it's positive time
-            time_diff = (delete_change_dt - create_change_dt).total_seconds() 
-        else:
-            time_diff = (create_change_dt - delete_change_dt).total_seconds()
+    #     if delete_change_dt > create_change_dt: # so it's positive time
+    #         time_diff = (delete_change_dt - create_change_dt).total_seconds() 
+    #     else:
+    #         time_diff = (create_change_dt - delete_change_dt).total_seconds()
 
-        same_day = int(create_change_dt.date() == delete_change_dt.date())
-        same_hour = int(create_change_dt.hour == delete_change_dt.hour)
-        same_revision = int(delete_change[0] == create_change[0])
-        delete_before_create = int(delete_change_dt < create_change_dt)
+    #     same_day = int(create_change_dt.date() == delete_change_dt.date())
+    #     same_hour = int(create_change_dt.hour == delete_change_dt.hour)
+    #     same_revision = int(delete_change[0] == create_change[0])
+    #     delete_before_create = int(delete_change_dt < create_change_dt)
 
-        features = (
+    #     features = (
             
-            delete_change[0],
-            delete_change[1],
-            delete_change[3],
-            delete_change[8],
+    #         delete_change[0],
+    #         delete_change[1],
+    #         delete_change[3],
+    #         delete_change[8],
 
-            create_change[0],
-            create_change[1],
-            create_change[3],
-            create_change[8],
+    #         create_change[0],
+    #         create_change[1],
+    #         create_change[3],
+    #         create_change[8],
             
-            time_diff,
-            same_day,
-            same_hour,
-            same_revision,
-            delete_before_create,
-            same_user,
-            0.0, # property label similarity
+    #         time_diff,
+    #         same_day,
+    #         same_hour,
+    #         same_revision,
+    #         delete_before_create,
+    #         same_user,
+    #         0.0, # property label similarity
 
-            delete_change[13],
-            create_change[13],
+    #         delete_change[13],
+    #         create_change[13],
 
-            delete_change[2],
-            create_change[2],
-            delete_change[19],
-            create_change[19],
+    #         delete_change[2],
+    #         create_change[2],
+    #         delete_change[19],
+    #         create_change[19],
             
-            '',
-        )
+    #         '',
+    #     )
 
-        return features
+    #     return features
 
     
     ####################################################################################################
@@ -1581,20 +1234,18 @@ class FeatureCreation():
         
         num_batches = 0
 
-        # os.makedirs(f'{DATA_PATH}/{datatype}{table_prefix}', exist_ok=True)
-        
         embedding_cols_str = ', '.join(embedding_cols)
         key_cols_str = ', '.join(key_cols)
         select_cols_str = ', '.join(select_cols)
         
-        if datatype in ('time', 'quantity', 'text', 'globecoordinate'):
-            key_cols_temp = ', '.join([f'{col} {col_type}' for col, col_type in BASE_KEY_TYPES.items()])
-        else:
-            key_cols_temp = ', '.join([f'{col} {col_type}' for col, col_type in PROP_REP_KEY_TYPES.items()])
+        key_cols_temp = ', '.join([f'{col} {col_type}' for col, col_type in BASE_KEY_TYPES.items()])
 
         cursor = self.conn.cursor()
         cursor.execute(f"CREATE TEMP TABLE temp_results_{datatype}{table_prefix} ({key_cols_temp}, {', '.join([f'{col} FLOAT' for col in embedding_cols])})")
         self.conn.commit()
+
+        # load model
+        model = SentenceTransformer('all-MiniLM-L6-v2')
 
         while True:
 
@@ -1622,15 +1273,8 @@ class FeatureCreation():
                 if len(df) == 0:
                     break
 
-                # df.to_csv(f'{DATA_PATH}/{datatype}{table_prefix}/chunk_{num_batches}.csv', index=False, sep=';', quoting=csv.QUOTE_NONE, escapechar='\\')
-            
-                result = self.create_embedding_features(df, old_col='old_value', new_col='new_value')
+                result = self.create_embedding_features(model, df, old_col='old_value', new_col='new_value')
                 result = result[[*key_cols, *embedding_cols]]
-
-                # Save to csv for loading with copy
-                # os.makedirs(f'{DATA_PATH}/{datatype}{table_prefix}', exist_ok=True)
-                # batch_file = f'{DATA_PATH}/{datatype}{table_prefix}/chunk_{num_batches}.csv'
-                # result.to_csv(batch_file, index=False, header=False, sep=';', quoting=csv.QUOTE_ALL, escapechar='\\')
 
                 buffer = io.StringIO()
                 result.to_csv(buffer, index=False, header=False, sep=';', quoting=csv.QUOTE_ALL, escapechar='\\')
@@ -1715,17 +1359,14 @@ class FeatureCreation():
     def create_all_features_entity(self, table_suffix, max_batches=None):
         
         # transitive closure 
-        self.transitive_cache = TransitiveClosureCache(CSV_PATHS)
+        self.transitive_cache = TransitiveClosureCache()
 
         datatype = 'entity'
 
         select_cols_str = ', '.join([
             'old_value', 'new_value',
-            'property_label',
             'old_value_label', 'new_value_label',
-            'old_value_description', 'new_value_description', 
-            'entity_label', 'entity_description', 
-            'entity_types_31', 'entity_types_279'
+            'old_value_description', 'new_value_description'
         ])
 
         ENTITY_ONLY_FEATURES_COLS = list(ENTITY_ONLY_FEATURES_COLS_TYPES.keys())
@@ -1742,6 +1383,9 @@ class FeatureCreation():
         key_cols_temp = ', '.join([f'{col} {col_type}' for col, col_type in BASE_KEY_TYPES.items()])
         cursor.execute(f"CREATE TEMP TABLE temp_results_{datatype}{table_suffix} ({key_cols_temp}, {', '.join([f'{col} {col_type}' for col, col_type in ENTITY_ONLY_FEATURES_COLS_TYPES.items()])})")
         self.conn.commit()
+
+        # load model for embedding features
+        model = SentenceTransformer('all-MiniLM-L6-v2')
 
         start_time = time.time()
         
@@ -1785,26 +1429,9 @@ class FeatureCreation():
                     df[col] = df[col].fillna(0).astype(int)
             
             # --------------- create embedding features ---------------
-            result = self.create_embedding_features(df, old_col='old_value_label', new_col='new_value_label')
+            result = self.create_embedding_features(model, df, old_col='old_value_label', new_col='new_value_label')
 
             result = df[[*key_cols, *ENTITY_ONLY_FEATURES_COLS]]
-            
-            # NOTE: before
-            # # --------------- Save all results in csv for later load with copy ---------------
-            # # Save to csv for loading with copy
-            # os.makedirs(f'{DATA_PATH}/{datatype}', exist_ok=True)
-            # batch_file = f'{DATA_PATH}/{datatype}/{datatype}_chunk_{num_batches}.csv'
-            # result.to_csv(batch_file, index=False, header=False, sep=';', quoting=csv.QUOTE_NONE, escapechar='\\')
-            
-            # print(f'Processed batch for entity features - {num_batches + 1} num batchs so far', flush=True)
-            # num_batches += 1
-
-            # # --------------- Load file data into temp table ---------------
-            # with open(batch_file, 'r') as f:
-            #     cursor.copy_expert(f"COPY temp_results_{datatype}{table_suffix} FROM STDIN (FORMAT csv, DELIMITER ';', QUOTE '\"', ESCAPE '\\')", f)
-            # os.remove(batch_file)
-
-            # NOTE: now:
 
             buffer = io.StringIO()
             result.to_csv(buffer, index=False, header=False, sep=';', quoting=csv.QUOTE_ALL, escapechar='\\')
@@ -1849,8 +1476,8 @@ class FeatureCreation():
         """
         print('Creating missing features for datatype:', datatype, flush=True)
 
-        if datatype not in ['entity', 'property_replacement', 'quantity', 'time', 'text', 'globecoordinate']:
-            print('Unsupported datatype for embedding features. Has to be one of: entity, property_replacement, quantity, time, text, globecoordinate. Input datatype:', datatype, flush=True)
+        if datatype not in ['entity', 'quantity', 'time', 'text', 'globecoordinate']:
+            print('Unsupported datatype for embedding features. Has to be one of: entity, quantity, time, text, globecoordinate. Input datatype:', datatype, flush=True)
             return
 
         if table_suffix not in ['_sa', '_ao', '_less', '']:
@@ -1859,16 +1486,10 @@ class FeatureCreation():
 
         if datatype == 'entity':
             self.create_all_features_entity(table_suffix, max_batches=max_batches)
-
-        else:
-            if datatype == 'property_replacement':
-                embedding_cols = ['property_label_cosine_similarity']
-                select_cols = ['deleted_property_label', 'created_property_label']
-                key_cols = ['pair_id'] # TODO: change here
-            else: # quantity, time, text, globecoordinate
-                key_cols = ['revision_id', 'property_id', 'value_id', 'change_target']
-                select_cols = ['old_value', 'new_value', 'entity_label', 'entity_description', 'property_label', 'entity_types_31', 'entity_types_279']
-                embedding_cols = ['full_cosine_similarity']
+        elif datatype == 'text':
+            key_cols = ['revision_id', 'property_id', 'value_id', 'change_target']
+            select_cols = ['old_value', 'new_value']
+            embedding_cols = ['value_cosine_similarity']
 
             self.create_and_update_embedding_features(datatype, key_cols, select_cols, embedding_cols, table_suffix, max_batches=max_batches)
     
