@@ -663,12 +663,14 @@ Therefore, the transitive closures must be extracted before running this step. T
 
 This step uses the *all-MiniLM-L6-v2* sentence transformer model, which is downloaded automatically on first run. A GPU is not required but significantly speeds up computation. If a CUDA-compatible GPU is available it will be used automatically, otherwise the script falls back to CPU (`device = "cuda" if torch.cuda.is_available() else "cpu"`).
 
-For embedding-based features for entity changes, the labels and descriptions of `old_value` and `new_value` must be added. For this, enable *update_entity_labels_descriptions* to true in `set_up.yml` before running this script. Note that this script assumers there exists a table in the database with the following schema (qid, numeric_id, label, alias, description) (*entity_labels_alias_description.csv* extracted with the Wikidata-Toolkit).
+For embedding-based features for entity changes, the labels and descriptions of `old_value` and `new_value` must be added. For this, enable *update_entity_labels_descriptions* to true in `set_up.yml` before running this script. Note that this script assumers there exists a table named `entity_labels_alias_description` in the database with the following schema (qid, numeric_id, label, alias, description) (*entity_labels_alias_description.csv* extracted with the Wikidata-Toolkit).
+
+*Note:* The remaining features can be computed for the different tables, call the script with the corresponding table_suffix ('ao', 'sa', 'rest', 'less').
 
 To compute the remaining features, run from root:
 
 ```bash
-python3 -m scripts.compute_remaining_features
+python3 -m scripts.compute_remaining_features --table_suffix rest
 ```
 
 This script reads from the `features_text` and `features_entity` tables in the database and writes the computed values back. It must be run after change extraction with `feature_extraction: true` and before running the ML classifier.

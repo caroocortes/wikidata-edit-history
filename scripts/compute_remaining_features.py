@@ -3,11 +3,23 @@ import psycopg2
 import time
 import yaml
 from pathlib import Path
+import argparse
 
 from scripts.feature_creation import FeatureCreation
 from scripts.const import SETUP_PATH
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--table_suffix', type=str, default='', help='Suffix for table names, can be less, sa, ao or rest')
+    args = parser.parse_args()
+
+    if args.table_suffix not in ['less', 'sa', 'ao', 'rest']:
+        raise ValueError("Invalid table suffix. Allowed values are 'less', 'sa', 'ao', 'rest'.")
+    elif args.table_suffix == 'rest':
+        table_suffix = ''
+    else:
+        table_suffix = '_' + args.table_suffix
 
     script_dir = Path(__file__).parent
     with open(script_dir.parent / Path(SETUP_PATH), 'r') as f:
@@ -29,7 +41,6 @@ if __name__ == "__main__":
 
     feature_creator = FeatureCreation(conn)
 
-    table_suffix = ''
     max_batches = None
     datatypes = ['entity', 'text']
     
