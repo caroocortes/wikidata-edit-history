@@ -162,7 +162,7 @@ All files needed for this step are in the folder `/wdtk` of this repository.
 
 We use the [Wikidata Toolkit](https://github.com/Wikidata-Toolkit/Wikidata-Toolkit) to extract additional data from a Wikidata JSON dump.
 
-We provide the extracted data in [WiDiff: Wikidata Entity Labels, Descriptions and Alias, Types (P31 and P279), and Transitive Closures (June 2025)][https://doi.org/10.5281/zenodo.19771721]. To extract new data, follow the steps below.
+We provide the extracted data in [WiDiff: Wikidata Entity Labels, Descriptions and Alias, Types (P31 and P279), and Transitive Closures (June 2025)](https://doi.org/10.5281/zenodo.19771721). To extract new data, follow the steps below.
 
 Three extraction classes are provided:
 
