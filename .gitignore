@@ -7,3 +7,4 @@ scripts/__pycache__/*
 .env
 .DS_STORE
 logs/*
+slurm_wrapper.slurm
