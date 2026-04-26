@@ -31,7 +31,7 @@ This tool extracts changes (diff between revisions) of statement values, ranks, 
     - data/subclassof_astronomical_objects.csv
     - data/subclassof_scholarly_articles.csv
     - data/property_labels.csv
-using the queries in `data/sparql_queries.txt` against [Wikidata's query service][https://query.wikidata.org/], or [QLever][https://qlever.dev/wikidata/]
+using the queries in `data/sparql_queries.txt` against [Wikidata's query service](https://query.wikidata.org/), or [QLever](https://qlever.dev/wikidata/)
 - Download dump files from Wikidata's dump service. The folder `download/` contains a script to download files from the list of files in `download/xml_download_links.txt`.
 
 ### Configuration (`set_up.yml`)
@@ -704,6 +704,6 @@ python3 -m analysis.scripts.general_analysis
 
 Output figures are saved to `analysis/results/figures/`.
 
-We provide datasets to run this analysis ([WiDiff: Analysis Results from Wikidata Edit History Dump (June 2025)][https://doi.org/10.5281/zenodo.19771569]). Download the *widiff_analysis_results_20250601.zip* and put the .csv files in the folder `analysis/results/`.
+We provide datasets to run this analysis ([WiDiff: Analysis Results from Wikidata Edit History Dump (June 2025)](https://doi.org/10.5281/zenodo.19771569)). Download the *widiff_analysis_results_20250601.zip* and put the .csv files in the folder `analysis/results/`.
 
 **Note:** On first run, set `reload_data: true` to execute the SQL queries and store the results. Subsequent runs can use `reload_data: false` to load from the stored results.
