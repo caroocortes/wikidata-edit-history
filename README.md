@@ -160,7 +160,11 @@ All files needed for this step are in the folder `/wdtk` of this repository.
 
 ### Overview
 
-We use the [Wikidata Toolkit](https://github.com/Wikidata-Toolkit/Wikidata-Toolkit) to extract additional data from a Wikidata JSON dump. Three extraction classes are provided:
+We use the [Wikidata Toolkit](https://github.com/Wikidata-Toolkit/Wikidata-Toolkit) to extract additional data from a Wikidata JSON dump.
+
+We provide the extracted data in [WiDiff: Wikidata Entity Labels, Descriptions and Alias, Types (P31 and P279), and Transitive Closures (June 2025)][https://doi.org/10.5281/zenodo.19771721]. To extract new data, follow the steps below.
+
+Three extraction classes are provided:
 
 | Class | Description |
 |---|---|
@@ -659,7 +663,7 @@ Therefore, the transitive closures must be extracted before running this step. T
 
 This step uses the *all-MiniLM-L6-v2* sentence transformer model, which is downloaded automatically on first run. A GPU is not required but significantly speeds up computation. If a CUDA-compatible GPU is available it will be used automatically, otherwise the script falls back to CPU (`device = "cuda" if torch.cuda.is_available() else "cpu"`).
 
-For embedding-based features for entity changes, the labels and descriptions of `old_value` and `new_value` must be loaded. For this, enable *update_entity_labels_descriptions* to true in `set_up.yml` before running this script
+For embedding-based features for entity changes, the labels and descriptions of `old_value` and `new_value` must be added. For this, enable *update_entity_labels_descriptions* to true in `set_up.yml` before running this script. Note that this script assumers there exists a table in the database with the following schema (qid, numeric_id, label, alias, description) (*entity_labels_alias_description.csv* extracted with the Wikidata-Toolkit).
 
 To compute the remaining features, run from root:
 
@@ -699,5 +703,7 @@ python3 -m analysis.scripts.general_analysis
 | `property_stats` | Most edited properties (wrt. number of entities that have a change to that entity) and type of action distribution |
 
 Output figures are saved to `analysis/results/figures/`.
+
+We provide datasets to run this analysis ([WiDiff: Analysis Results from Wikidata Edit History Dump (June 2025)][https://doi.org/10.5281/zenodo.19771569]). Download the *widiff_analysis_results_20250601.zip* and put the .csv files in the folder `analysis/results/`.
 
 **Note:** On first run, set `reload_data: true` to execute the SQL queries and store the results. Subsequent runs can use `reload_data: false` to load from the stored results.
