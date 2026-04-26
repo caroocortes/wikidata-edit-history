@@ -38,7 +38,7 @@ class FileParser():
         self.set_up = set_up
         self.file_path = file_path
         
-        self.batch_size = 5000
+        self.batch_size = self.set_up.get('change_extraction_processing', {}).get('db_batch_size', 5000)
 
         # STATS
         self.total_revisions = 0
