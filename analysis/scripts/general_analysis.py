@@ -226,6 +226,29 @@ def entity_type_stats(db_config, reload_data):
 
     save_fig(fig, f'{RESULTS_DIR}/figures/entity_type_top_{top_filter}_most_edited.png')
 
+    # --- Plot 3: 10 less edited entity types by value changes ---
+
+    df_top = df.head(top_filter) # get the head for the less edited ones because it's ascending true
+
+    fig, ax = plt.subplots(figsize=(2.5, 2))
+    
+    df['value_changes_per_entity'] = df['num_value_changes'] / df['count'] # normalize by count so I don't just get the
+    df_filtered = df[df['count'] >= 100].copy() # filter out the ones with very low count, if not the ratio is skewed
+    df_filtered.sort_values('value_changes_per_entity', ascending=True, inplace=True)
+    df_top = df.head(top_filter)
+    print(df_top[['display_label', 'individual_type', 'value_changes_per_entity']])
+
+    bars = ax.barh(df_top['display_label'], df_top['value_changes_per_entity'], color=clear_color_palette[1], edgecolor='none')
+    ax.bar_label(bars, labels=[format_number(c) for c in df_top['value_changes_per_entity']])
+    ax.set_xlabel('Avg. Number of Value Changes per Entity of the Type')
+    # ax.set_title(f'Top {top_filter} Most Edited Entity Types')
+    ax.xaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, _: format_number(x)))
+
+    plt.subplots_adjust(wspace=0.5)
+
+    save_fig(fig, f'{RESULTS_DIR}/figures/entity_type_top_{top_filter}_less_edited.png')
+
+
     # --- Plot 4: User type stacked bar ---
     df_top = df_filtered.nlargest(top_filter, 'value_changes_per_entity')
     x = np.arange(len(df_top))

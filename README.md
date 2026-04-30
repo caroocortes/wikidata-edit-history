@@ -2,6 +2,16 @@
 
 This tool extracts changes (diff between revisions) of statement values, ranks, qualifiers, and references, from WD's xml dumps and stores them in a relational DB.
 
+This README is structured as follows:
+
+- [Change extraction](#change-extraction): change extraction prerequisites and configuration parameters.
+- [Running WiDiff](#running-widiff): explains how to run the extraction pipeline.
+- [Downloading extra data](#downloading-extra-data): explaines how to download extra data (e.g., labels and descriptions for all entities).
+- [Databse schema](#database-schema): database schema description and diagram (includes change schema and feature tables).
+- [Transitive Closure Cache Creation](#transitive-closure-cache-creation): instructions on how to create the transitive closure cache from the .csv files obtained in [Downloading extra data](#downloading-extra-data).
+- [Compute Remaining Features](#compute-remaining-features): instructions on how to compute remaining features for change type classification.
+- [Descriptive Analysis](#descriptive-analysis): instructions on how to re-run the analysis.
+
 ## Project structure
 ```bash
 ├── config/           # Configuration files
@@ -32,7 +42,10 @@ This tool extracts changes (diff between revisions) of statement values, ranks, 
     - data/subclassof_scholarly_articles.csv
     - data/property_labels.csv
 using the queries in `data/sparql_queries.txt` against [Wikidata's query service](https://query.wikidata.org/), or [QLever](https://qlever.dev/wikidata/)
-- Download dump files from Wikidata's dump service. The folder `download/` contains a script to download files from the list of files in `download/xml_download_links.txt`.
+- Download dump files from Wikidata's dump service. The folder `download/` contains a script to download files from the list of files in `download/xml_download_links.txt`. Note that the list provided is from the dump of June 2025 which may not be available anymore, since Wikidata provides the more recent dumps ([Link to Wikidata dumps][https://dumps.wikimedia.org/wikidatawiki/]).
+The files to download are the ones called pages-meta-history (See image below).
+
+![pages-meta-history](diagrams/pages-meta-history.png)
 
 ### Configuration (`set_up.yml`)
 
@@ -140,7 +153,7 @@ The system must support at least *files_in_parallel* × *pages_in_parallel* core
 
 Additionally, `file_parser.py` uses `bz2.open(file_path, 'rb')`, therefore, appropriate amount of memory needs to be reserved for processing files. 
 
-![architecture diagram](arch_diagram/parser_arch.svg)
+![architecture diagram](diagrams/parser_arch.svg)
 
 ### Output Files
 The pipeline generates three output files:
@@ -264,7 +277,6 @@ bash extract_extra_data.bash
 ```
 
 ## Database schema
-
 The database is organized into two groups of tables: **change tables**, which store the extracted changes, and **feature tables**, which store the features computed for change classification.
 
 Given the amount of data on Wikidata, the most tables contain "redundant data" for query performance or to simplify aggregations (e.g., tables with a timestamp column contain columns with the week, year_moth and year of the timestamp for aggregations on different time levels).
@@ -463,8 +475,9 @@ Given the amount of data on Wikidata, the most tables contain "redundant data" f
 | total_feature_creation_sec | Total time for feature creation in secons |
 | num_feature_creations_timed | Number of feature creations calls for which the time was measured |
 
-### Feature Tables
+![database schema diagram](diagrams/database_schema_diagram.png)
 
+### Feature Tables
 One feature table per datatype: `features_text`, `features_quantity`, `features_time`, `features_entity`, `features_globecoordinate`. Each table stores the features computed for change classification, referencing the corresponding row in `value_change`. Features are datatype-specific.
 
 **`features_time`**
@@ -634,7 +647,6 @@ One feature table per datatype: `features_text`, `features_quantity`, `features_
 **Note:** All table names include a `{suffix}` placeholder, which is replaced at runtime for the different filters of entity types in `set_up.yml`. The values for this suffix can be: `_sa` (scholarly articles), `_ao` (astronomical objects), `_less` (entities with less than *threshold* value changes)
 
 ## Transitive Closure Cache Creation
-
 The transitive closure cache is required for ML-based change classification. It loads the transitive closure CSV files produced by `ExtractTransitiveClosure.java` into memory and serializes them as a pickle file for fast access during feature computation.
 
 Set the following parameters in `set_up.yml` under `transitive_closure_cache`:
@@ -676,7 +688,6 @@ python3 -m scripts.compute_remaining_features --table_suffix rest
 This script reads from the `features_text` and `features_entity` tables in the database and writes the computed values back. It must be run after change extraction with `feature_extraction: true` and before running the ML classifier.
 
 ## Descriptive Analysis
-
 Descriptive analysis scripts are provided in `analysis/scripts.py`. Each analysis can be enabled and configured independently in `setup.yml` under the `analysis` section:
 
 ```yaml
