@@ -1,4 +1,4 @@
-ML_MODELS = ['gb', 'random_forest','xgboost']
+ML_MODELS = ['gradient_boosting', 'random_forest','xgboost']
 ML_MODELS_LABELS = ['Gradient Boosting', 'Random Forest', 'XGBoost']
 
 # ===============================

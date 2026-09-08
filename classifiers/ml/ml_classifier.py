@@ -29,8 +29,12 @@ from sql_runner.sql_runner import SQLRunner
 class MLClassifier():
     def __init__(self, config_path: str):
 
-        with open(config_path, 'r') as f:
-            self.config = json.load(f)
+        try: 
+            with open(config_path, 'r') as f:
+                self.config = json.load(f)
+        except Exception as e:
+            print(f"Error loading ML classifier config from {config_path}: {e}")
+            raise e
 
         self.feature_creation = FeatureCreation()
 
@@ -122,7 +126,7 @@ class MLClassifier():
             }
             
             # This already does cross-validation internally
-            grid_search = GridSearchCV(RandomForestClassifier(self.random_state), param_grid=param_grid, cv=cv, verbose=3, n_jobs=-1)
+            grid_search = GridSearchCV(RandomForestClassifier(self.random_state), param_grid=param_grid, cv=cv, verbose=2, n_jobs=-1)
 
         elif classifier == 'Gradient_Boosting':
             param_grid = {
@@ -138,7 +142,7 @@ class MLClassifier():
                 for key in list(param_grid.keys()):
                     param_grid[f'estimator__{key}'] = param_grid.pop(key)
                     print(f"Updated param_grid for multi-output: {param_grid}", flush=True)
-            grid_search = GridSearchCV(base_estimator, param_grid=param_grid, cv=cv, verbose=3, n_jobs=-1)
+            grid_search = GridSearchCV(base_estimator, param_grid=param_grid, cv=cv, verbose=2, n_jobs=-1)
 
         elif classifier == 'XGBoost': # does not require meta model for multi-label
             # https://www.kaggle.com/code/prashant111/a-guide-on-xgboost-hyperparameters-tuning
@@ -150,7 +154,7 @@ class MLClassifier():
                 'colsample_bytree': [0.6, 0.8, 1.0]
             }
 
-            grid_search = GridSearchCV(XGBClassifier(random_state=self.random_state), param_grid=param_grid, cv=cv, verbose=3, n_jobs=-1)
+            grid_search = GridSearchCV(XGBClassifier(random_state=self.random_state), param_grid=param_grid, cv=cv, verbose=2, n_jobs=-1)
 
         fit_kwargs = {}
         if sample_weight is not None:
@@ -519,6 +523,7 @@ class MLClassifier():
 
         all_predictions = []
 
+        print(f"Classifying batch of size {len(X)} for datatype {dt_label} using {len(results_folds)} folds", flush=True)
         for i, fold_result in enumerate(results_folds):
             model = fold_result['model']
 
@@ -552,6 +557,8 @@ class MLClassifier():
             
             # has one array for each fold
             all_predictions.append(pred_proba_positive)
+
+        print(f"Completed predictions for all folds", flush=True)
 
         # Stack all predictions: shape (n_folds, n_samples, n_classes)
         all_predictions = np.array(all_predictions)
@@ -606,7 +613,7 @@ class MLClassifier():
         key_cols_str = ', '.join(key_cols)
 
         raw_cols = ENTITY_UPDATES_COLS if dt_label == 'entity' else TEXT_UPDATES_COLS
-        value_cols = sorted(raw_cols - set(key_cols))
+        value_cols = sorted(set(raw_cols) - set(key_cols))
         value_cols_str = ', '.join(value_cols)
 
         table_name = dt_label
@@ -641,8 +648,8 @@ class MLClassifier():
                 # entity already had rb classification
                 filt_rb += 'AND rb = FALSE'
 
-            # load best model
-            with open(f'{TRAINING_INFO_DIR}/best_model_training_info.pkl', 'rb') as f:
+            # load best model for the datatype
+            with open(f'{TRAINING_INFO_DIR}/best_model_training_info_{dt_label}.pkl', 'rb') as f:
                 training_info_model = pickle.load(f)
 
             while True:
@@ -665,8 +672,9 @@ class MLClassifier():
                 if len(df) == 0:
                     break
 
+                df['gs'] = False
+
                 if gs_lookup is not None:
-                    df['gs'] = False
                     df_gs, df_remaining = self._split_by_gs(df, gs_lookup)
                     if len(df_gs) > 0:
                         print(f'Found {len(df_gs)} rows in gold standard, label already set', flush=True)
@@ -698,7 +706,11 @@ class MLClassifier():
                     time_1 = time.time()
                     print(f'Finished classifying batch {num_batches+1}, took {time_1 - time_0:.2f} seconds')
 
-                    results_parts.append(results[key_cols + ['predicted_labels']])
+                    cols = key_cols + ['predicted_labels']
+                    if dt_label == 'text':
+                        cols += ['gs']
+
+                    results_parts.append(results[cols])
 
                 results_filtered = pd.concat(results_parts, ignore_index=True)
 
@@ -717,10 +729,10 @@ class MLClassifier():
                 if dt_label == 'text':
                     # entity already had rb classification which already checks for rows in gold_standard so gs was already set
                     #  therefore we only update gs for text rows
-                    filt_upt_gs = 'gs = tp.gs'
+                    filt_upt_gs = ', gs = tp.gs'
                 cursor.execute(f"""
                     UPDATE updates_{table_name}{table_suffix} f
-                    SET {label_column} = tp.predicted_labels, {filt_upt_gs}
+                    SET {label_column} = tp.predicted_labels {filt_upt_gs}
                     FROM temp_predictions_{dt_label} tp
                     WHERE 
                         {' AND '.join([f'f.{key_col} = tp.{key_col}' for key_col in key_cols])}
@@ -759,7 +771,7 @@ class MLClassifier():
 
         results per fold:
         {
-            'classifier': string, # kn, xgboost, random_forest
+            'classifier': string, #gb, xgboost, random_forest
             'fold': int,
             'metrics_results': {
                 'label': { 
@@ -791,7 +803,7 @@ class MLClassifier():
 
         # Create data structure
         results = {}
-        for model in ['kn', 'random_forest', 'xgboost']:
+        for model in ['gradient_boosting', 'random_forest', 'xgboost']:
             print(f'Processing model: {model}')
             
             with open(f'{TRAINING_INFO_DIR}/training_info_{model}.pkl', 'rb') as f:
@@ -904,106 +916,71 @@ class MLClassifier():
     @staticmethod
     def select_best_classifier(results_dt_label_model):
         """
-        Selects best classifier based on:
-            - number of classification tasks they have highest F1
-        if multiple models are best in the same number of classification tasks:
-            - the best model is the one that has best F1 avg across all classification tasks
+        Selects the best classifier per datatype, based on the number of labels
+        (within that datatype) where the model has the highest F1.
         """
 
-        score_per_model = {}
-        df_data = {
-            'datatype': [],
-            'label': [],
-            'best_model': [],
-            'best_f1': []
-        }
-        
+        os.makedirs(TRAINING_INFO_DIR, exist_ok=True)
+        overall_best_per_datatype = {}
+
         for datatype in results_dt_label_model:
+            score_per_model = {}  # reset per datatype
+            df_data = {'datatype': [], 'label': [], 'best_model': [], 'best_f1': []}  # reset per datatype
+
             for label in results_dt_label_model[datatype]:
                 best_f1 = -1
                 best_models = []
+
                 for model in results_dt_label_model[datatype][label]:
                     if model not in score_per_model:
                         score_per_model[model] = 0
-                    
+
                     f1 = results_dt_label_model[datatype][label][model]['f1']
-                    
+
                     print(f'Model: {model}', f'F1: {f1:.5f}', 'Datatype:', datatype, 'Label:', label)
-                    
+
                     if f1 > best_f1:
                         best_f1 = f1
-                        best_models = [model] # reset with a new best model
-                    elif f1 == best_f1: # more than 1 model has best f1
-                        best_models.append(model) 
+                        best_models = [model]
+                    elif f1 == best_f1:
+                        best_models.append(model)
 
                 df_data['datatype'].append(datatype)
                 df_data['label'].append(label)
                 df_data['best_model'].append(', '.join(best_models))
                 df_data['best_f1'].append(best_f1)
-                
+
                 for model in best_models:
                     score_per_model[model] += 1
 
-        df = pd.DataFrame(df_data)
+            # --- pick the model(s) that win the most labels for this datatype ---
+            max_score = max(score_per_model.values())
+            winning_models = [m for m, s in score_per_model.items() if s == max_score]
+            if len(winning_models) > 1:
+                print(f'Warning: multiple models tied for best for datatype {datatype}: {winning_models} (won {max_score} labels)')
+                # pick the one that has highest F1 on avg across all labels for this datatype
+                avg_f1_per_model = {m: 0 for m in winning_models}
+                for label in results_dt_label_model[datatype]:
+                    for model in winning_models:
+                        avg_f1_per_model[model] += results_dt_label_model[datatype][label][model]['f1']
+                avg_f1_per_model = {m: f1 / len(results_dt_label_model[datatype]) for m, f1 in avg_f1_per_model.items()}
+                overall_best_per_datatype[datatype] = [max(avg_f1_per_model, key=avg_f1_per_model.get)][0]
+                print(f'Picked {overall_best_per_datatype[datatype]} as best for datatype {datatype} based on highest average F1 across all labels')
+            else:
+                overall_best_per_datatype[datatype] = winning_models[0]
 
-        os.makedirs(TRAINING_INFO_DIR, exist_ok=True)
-        df.to_csv(f'{TRAINING_INFO_DIR}/best_model_per_f1_all_tasks.csv', header=0)
-        print(f'Saved best model per classification task (according to F1 score) to {TRAINING_INFO_DIR}/best_model_per_f1_all_tasks.csv')
+            df = pd.DataFrame(df_data)
+            df.to_csv(f'{TRAINING_INFO_DIR}/best_model_per_f1_all_tasks_{datatype}.csv', index=False)
+            print(f'Saved per-label winners for {datatype} to CSV')
+            print(f'Best model(s) for {datatype}: {winning_models} (won {max_score} labels)')
 
-        print('Overall best model (considering only F1 score):')
-        best_score = 0
-        best_model = None
-        for model, score in score_per_model.items():
-            if score > best_score:
-                best_score = score
-                best_model = model
-            print(f'Model: {model}, Score: {score}')
+            with open(f'{TRAINING_INFO_DIR}/training_info_{overall_best_per_datatype[datatype]}.pkl', 'rb') as f:
+                print(f'Saving training info for {datatype} from {TRAINING_INFO_DIR}/training_info_{overall_best_per_datatype[datatype]}.pkl ')
+                training_info_model = pickle.load(f)
+
+            with open(f'{TRAINING_INFO_DIR}/best_model_training_info_{datatype}.pkl', 'wb') as f:
+                pickle.dump(training_info_model, f)
         
-        model_averages = {model: {'f1': [], 'precision': [], 'recall': [], 'accuracy': []} 
-                    for model in ML_MODELS}
-
-        for datatype in results_dt_label_model:
-            for label in results_dt_label_model[datatype]:
-                for model in ML_MODELS:
-                    model_averages[model]['f1'].append(results_dt_label_model[datatype][label][model]['f1'])
-                    model_averages[model]['precision'].append(results_dt_label_model[datatype][label][model]['precision'])
-                    model_averages[model]['recall'].append(results_dt_label_model[datatype][label][model]['recall'])
-                    model_averages[model]['accuracy'].append(results_dt_label_model[datatype][label][model]['accuracy'])
-
-
-        summary_stats = []
-        for model in ML_MODELS:
-            summary_stats.append({
-                'Model': model,
-                'Mean F1': np.mean(model_averages[model]['f1']),
-                'Mean Precision': np.mean(model_averages[model]['precision']),
-                'Mean Recall': np.mean(model_averages[model]['recall']),
-                'Mean Accuracy': np.mean(model_averages[model]['accuracy'])
-            })
-
-        df_summary = pd.DataFrame(summary_stats)
-        df_summary.to_csv(f'{TRAINING_INFO_DIR}/summary_all_models.csv', index=False)
-        print("\nModel Performance Summary (across all classification tasks):")
-        display(df_summary.to_string(index=False))
-
-        best_model_f1 = None
-        best_f1 = 0
-        for i, stats in enumerate(summary_stats):
-            if stats['Mean F1'] > best_f1:
-                best_f1 = stats['Mean F1']
-                best_model_f1 = stats['Model']
-        
-        print(f'Model with best F1 across all classification tasks is {best_model_f1} with an avg. F1 of {best_f1}')
-
-        print(f'Saved summary stats to {TRAINING_INFO_DIR}/summary_all_models.csv')
-
-        with open(f'{TRAINING_INFO_DIR}/training_info_{best_model_f1}.pkl', 'rb') as f:
-            training_info_model = pickle.load(f)
-
-        with open(f'{TRAINING_INFO_DIR}/best_model_training_info.pkl', 'wb') as f:
-            pickle.dump(training_info_model, f)
-        
-    
     def evaluate_cross_validation(self):
         results_dt_label_model = MLClassifier.create_data_structure_for_visualization()
 

@@ -1,2 +1,3 @@
 Time taken for LLM classification of text changes: 742.3332591056824 seconds
 Time taken for LLM classification of entity changes: 681.6770832538605 seconds
+681.6770832538605 + 742.3332591056824

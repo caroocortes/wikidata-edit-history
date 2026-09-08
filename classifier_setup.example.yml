@@ -8,11 +8,9 @@ classification_ml:
   train: false
 config:
   classifier_type: ml
-  db_config_path: wikidata-edit-history/config/db_config.json
-  ml_config_path: wikidata-edit-history/classifiers/ml/config/ml_classifier_config.json
-  llm_config_path: wikidata-edit-history/classifiers/llm/config/llm_classifier_config.json
-separate_non_latin_entity: false
-separate_non_latin_text: false
+  db_config_path: config/db_config.json
+  ml_config_path: classifiers/ml/config/ml_classifier_config.json
+  llm_config_path: classifiers/llm/config/llm_classifier_config.json
 transitive_closure_cache:
   has_part_transitive_path: auxiliary_data/transitive_closures/has_parts_transitive.csv
   located_in_transitive_path: auxiliary_data/transitive_closures/located_in_transitive.csv

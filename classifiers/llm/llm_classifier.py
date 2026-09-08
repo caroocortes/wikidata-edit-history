@@ -12,8 +12,13 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 class LLMClassifier():
     def __init__(self, config_path: str):
 
-        with open(config_path, 'r') as f:
-            self.config = json.load(f)
+        try:
+            with open(config_path, 'r') as f:
+                self.config = json.load(f)
+        except Exception as e:
+            print(f"Error loading LLM classifier configuration from {config_path}: {e}")
+            raise e
+        
         self.base_url = self.config.get('base_url', '')
         self.api_key = self.config.get('api_key', 'EMPTY')
         self.llm_id = self.config.get('llm_id', '')

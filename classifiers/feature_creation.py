@@ -47,9 +47,14 @@ class FeatureCreation():
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
+        print(f"Using device: {device} for embedding and NLI models", flush=True)
+
         nli_model = getattr(self, 'nli_model', None)
         if nli_model is None:
             self.nli_model = CrossEncoder('cross-encoder/nli-deberta-v3-base', device=device)
+
+            if device == "cuda":
+                self.nli_model.model.half()
 
         embedding_model = getattr(self, 'embedding_model', None)
         if embedding_model is None:
@@ -77,17 +82,18 @@ class FeatureCreation():
             new_texts = _clean_series(df[new_col]).tolist()
 
         if 'label' not in old_col:  # remove for entity
+            print("Creating embedding features for text changes", flush=True)
             old_text_embeddings = self.embedding_model.encode(
                 old_texts,
                 device=device,
-                # show_progress_bar=True,
+                show_progress_bar=True,
                 batch_size=512
             )
             new_text_embeddings = self.embedding_model.encode(
                 new_texts,
                 device=device,
                 batch_size=512,
-                # show_progress_bar=True
+                show_progress_bar=True
             )
             similarities = _row_cosine_similarity(old_text_embeddings, new_text_embeddings)
             similarities = np.clip(similarities, -1.0, 1.0)
@@ -106,11 +112,15 @@ class FeatureCreation():
             cols_n2o = ['new_to_old_contradiction', 'new_to_old_entailment', 'new_to_old_neutral']
 
             if o2n_pairs:
-                o2n_scores = self.nli_model.predict(o2n_pairs, batch_size=128, 
-                                                    # show_progress_bar=True
-                )
-                n2o_scores = self.nli_model.predict(n2o_pairs, batch_size=128, # show_progress_bar=True
-                )
+                print("Creating NLI features for text changes", flush=True)
+                o2n_scores = self.nli_model.predict(o2n_pairs, 
+                                                    batch_size=128, 
+                                                    show_progress_bar=True
+                                                )
+                n2o_scores = self.nli_model.predict(n2o_pairs, 
+                                                    batch_size=128,
+                                                    show_progress_bar=True
+                                                )
 
                 df.loc[df.index, cols_o2n] = np.asarray(o2n_scores)
                 df.loc[df.index, cols_n2o] = np.asarray(n2o_scores)
@@ -123,16 +133,17 @@ class FeatureCreation():
             torch.cuda.empty_cache()
 
         if 'label' in old_col:
+            print("Creating embedding features for entity changes", flush=True)
             old_label_embeddings = self.embedding_model.encode(
                 old_label,
                 device=device,
-                # show_progress_bar=True,
+                show_progress_bar=True,
                 batch_size=512
             )
             new_label_embeddings = self.embedding_model.encode(
                 new_label,
                 device=device,
-                # show_progress_bar=True,
+                show_progress_bar=True,
                 batch_size=512
             )
             similarities = _row_cosine_similarity(old_label_embeddings, new_label_embeddings)
@@ -146,13 +157,13 @@ class FeatureCreation():
             old_description_embeddings = self.embedding_model.encode(
                 old_description,
                 device=device,
-                # show_progress_bar=True,
+                show_progress_bar=True,
                 batch_size=512
             )
             new_description_embeddings = self.embedding_model.encode(
                 new_description,
                 device=device,
-                # show_progress_bar=True,
+                show_progress_bar=True,
                 batch_size=512
             )
             similarities = _row_cosine_similarity(old_description_embeddings, new_description_embeddings)
@@ -173,12 +184,13 @@ class FeatureCreation():
             cols_n2o = ['new_to_old_contradiction', 'new_to_old_entailment', 'new_to_old_neutral']
 
             if o2n_pairs:
+                print("Creating NLI features for entity changes - labels", flush=True)
                 o2n_scores = self.nli_model.predict(o2n_pairs, batch_size=128,
-                                                    #  show_progress_bar=True
+                                                    show_progress_bar=True
                                                      )
                 n2o_scores = self.nli_model.predict(n2o_pairs, 
                                                     batch_size=128, 
-                                                    # show_progress_bar=True
+                                                    show_progress_bar=True
                                                     )
 
                 df.loc[df.index, cols_o2n] = np.asarray(o2n_scores)
@@ -198,13 +210,14 @@ class FeatureCreation():
             cols_n2o = ['new_to_old_desc_contradiction', 'new_to_old_desc_entailment', 'new_to_old_desc_neutral']
 
             if o2n_pairs:
+                print("Creating NLI features for entity changes - descriptions", flush=True)
                 o2n_scores = self.nli_model.predict(o2n_pairs,
                                                      batch_size=128, 
-                                                    # show_progress_bar=True
+                                                    show_progress_bar=True
                                                     )
                 n2o_scores = self.nli_model.predict(n2o_pairs, 
                                                     batch_size=128, 
-                                                    # show_progress_bar=True
+                                                    show_progress_bar=True
                                                     )
 
                 df.loc[df.index, cols_o2n] = np.asarray(o2n_scores)

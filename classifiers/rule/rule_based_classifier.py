@@ -860,8 +860,7 @@ class RuleBasedClassifier():
         cursor = self.conn.cursor()
 
         cursor.execute("""
-            DROP TABLE IF EXISTS entity_stats_all;
-            CREATE TABLE entity_stats_all AS
+            CREATE TABLE IF NOT EXISTS entity_stats_all AS
                 SELECT qid, entity_label, entity_description FROM entity_stats
                 UNION ALL
                 SELECT qid, entity_label, entity_description FROM entity_stats_sa
@@ -870,7 +869,7 @@ class RuleBasedClassifier():
                 UNION ALL
                 SELECT qid, entity_label, entity_description FROM entity_stats_less;
 
-            CREATE INDEX idx_entity_stats_all_qid ON entity_stats_all (qid);
+            CREATE INDEX IF NOT EXISTS idx_entity_stats_all_qid ON entity_stats_all (qid);
             ANALYZE entity_stats_all;
         """)
         self.conn.commit()
@@ -878,11 +877,11 @@ class RuleBasedClassifier():
         old_new = ['old', 'new']
 
         for suffix in old_new:
-            print(f'Updating {suffix}_value_label, {suffix}_value_description in the features_entity{table_suffix}', flush=True)
+            print(f'Updating {suffix}_value_label, {suffix}_value_description in the updates_entity{table_suffix}_full', flush=True)
             start_time = time.perf_counter()
 
             cursor.execute(f"""
-                UPDATE features_entity{table_suffix} fe
+                UPDATE updates_entity{table_suffix}_full fe
                 SET 
                     {suffix}_value_label = es.entity_label,
                     {suffix}_value_description = es.entity_description
@@ -953,7 +952,6 @@ class RuleBasedClassifier():
                 table_suffix=table_suffix,
                 batch_size=batch_size
             )
-            print(query, flush=True)
             df = query_to_df(self.conn, query)
 
             df['rb'] = False

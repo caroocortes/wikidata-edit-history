@@ -1,6 +1,6 @@
 # WiDiff - Change Extraction and Exploration in Wikidata
 
-This tool extracts changes (diff between revisions) of statement values, ranks, qualifiers, and references, from Wikidata's xml dumps and stores them in a relational DB.
+This tool extracts changes (diff between revisions) of statement values, ranks, qualifiers, and references, from Wikidata's xml dumps and stores them in a relational DB. For a description of the change extraction, refer to our paper [WiDiff: Change Extraction and Exploration in Wikidata]().
 
 Additionally, this tool was extended to classify changes using a defined change type taxonomy, with rule-based and ML classifiers, as described in [Change classification](#change-classification).
 
@@ -17,7 +17,7 @@ This README is structured as follows:
 - [Downloading extra data](#downloading-extra-data): explaines how to download extra data (e.g., transitive closures).
 - [Transitive Closure Cache Creation](#transitive-closure-cache-creation): instructions on how to create the transitive closure cache from the .csv files obtained in [Downloading extra data](#downloading-extra-data).
 
-**To reproduce the comparison of RDF and Relational DB storage read *wikidata-edit-history/rdf_benchmarking/README.md*.**
+**To reproduce the comparison of RDF and Relational DB storage go to *wikidata-edit-history/rdf_benchmarking/README.md*.**
 
 ## Project structure
 ```bash
@@ -69,7 +69,7 @@ Path to the database configuration file, which has to be a json file with the fo
 }
 ```
 
-We provide a template file in *config/db_config.json*.
+We provide a template file in *config/db_config.example.json*.
 
 **NOTE: The DB needs to be created beforehand and the adequate credentials (username, user password, database name, hostname and port) need to be set on *the config/db_config.json* file. The schema is created by the pipeline.**
 
@@ -376,30 +376,42 @@ For entity changes, the table contains all entity UPDATEs since classification d
 
 **Note:** All table names include a `{suffix}` placeholder, which is replaced at runtime for the different filters of entity types in `set_up.yml`. The values for this suffix can be: `_sa` (scholarly articles), `_ao` (astronomical objects), `_less` (entities with less than *threshold* value changes)
 
+## Run metrics
+
+See *metrics.ipynb* in *wikidata-edit-history/logs* for run metrics of the change extraction.
+
+*run_results.csv* contains Elapsed time and MaxRSS for 100 files batch jobs ran to process the full June 2025 dump. 
+
+*parser_log_files.csv* contains specs for the different filees in the dump.
+
 ## Change classification
 
-This step assumes the change extraction was performed with *re_interpretation: true* (see `set_up.yml`).
+This section describes the change classification of Wikidata's edit history for a defined taxonomy.
 
 Structure of section:
 - [Change Classification Framework and Change Type taxonomy](#change-classification-framework-and-change-type-taxonomy): presents the [change type taxonomy](#change-type-taxonomy) and classification framework
-- [ML model training](#ml-model-training): provides links to model, features, and classification results of our ML classifier for reproducibility
-- [Classification](#classification): explains how to train and run our ML-based classification, and describes how to run the LLM baseline.
+- [Rule-based classification](#rule-based-classification): explains how to run the rule-based classification.
+- [Classification of remaining changes (Text and Entity)](#classification-of-remaining-changes-text-and-entity): explains how to run the classification on the remaining changes left unclassified by rule-based classifiers.
+  - [ML model training](#ml-model-training): provides links to model, features, and classification results of our ML classifier for reproducibility and explains how to train and run our ML-based classification.
+  - [LLM baseline](#llm-baseline): describes how to run the LLM baseline.
 
 ### Change Classification Framework and Change Type taxonomy
 
-This section our change classification framework and change taxonmy.
+This section presents our change classification framework and change type taxonmy.
 
 As shown in the picture below, our change classification framework is composed of 3 steps. The first step classifies edit events which are the basic edits a user can perform on Wikidata entities. In particular, this step classifies (1) statement (and associated rank) insertion, update and deletion, (2) qualifier insertion and deletion, and (3) reference insertion and deletion.
 In Step 2 we re-interpret some edit events (e.g., the upgrade of a rank can be classified as soft insertion), tag reverted edits (reverted edits within 4 weeks) and value updates between values of different datatypes (e.g., quantity to string) or from "no value" or "some value" to a concrete value.
-Note that classification for Step 1 and 2 is performed in WiDiff by enabling *re-interpretation: true*.
+Moreover, in this step we classify UPDATE edit events between values of the same data type into *refinement*, *unrefinement*, *re-formatting*, *textual change* and *value update*, using rule-based classifiers.
 
-In Step 3, we refine value updates between values of the same datatype and classify them into refinement, unrefinement, re-formatting, textual change, link change, or value update (for complete changes between values).
+In Step 3, we classify UPDATE edit events between values of type string-string and entity-entity into refinement, unrefinement, textual change, or value update, using an ML classifier.
 
-![classification framework](change_classification_framework.png)
+![classification framework](change_classification_framework.svg)
 
 Next, we present the definitions of the different change types.
 
 #### Change Type Taxonomy
+
+In the following we present the definitions of change types in our taxonomy.
 
 ##### Statement Addition
 A new statement is added to an entity. *Example:* for the entity Uruguay (Q77) the statement <Uruguay, capital, Montevideo>[↗](https://www.wikidata.org/w/index.php?title=Q77&diff=next&oldid=5443901) was added.
@@ -435,12 +447,13 @@ A property value is replaced with a semantically different value, altering the s
 - *Time:* -5-00-00 -> +1951-09-25[↗](https://www.wikidata.org/w/index.php?title=210447&diff=prev&oldid=1070077246) or +100-00-00 -> -100-00-00[↗](https://www.wikidata.org/w/index.php?title=Q801294&diff=prev&oldid=663123864), +1764-01-01 -> +1764-00-00[↗](https://www.wikidata.org/w/index.php?title=Q801294&diff=prev&oldid=1574340120)
 
 ##### Re-formatting
-A property value’s representation is modified at the surface-level, without altering its underlying meaning. For numeric values, re-formatting covers changes in numerical precision that do not alter the value (e.g., adding or removing trailing zeros), while for time values .....
+A property value’s representation is modified at the surface-level, without altering its underlying meaning. For numeric values, re-formatting covers changes in numerical precision that do not alter the value (e.g., adding or removing trailing zeros). Furthermore, globecoordinate values can only be entered in Wikidata in decimal-degree format (e.g., 38.585), as the interface does not support other representations, such as degree-minute-second. As a result, re-formatting changes, which would arise from converting between these formats, do not occur. Additionally, we observed that time values were altered
+by adding spaces or special characters, without changing the actual value. We classified these changes as re-formatting.
 **Examples:**
 - *Quantity:* +4.0 -> +4[↗](https://www.wikidata.org/w/index.php?title=Q801294&diff=prev&oldid=109984021) or +98 -> +98.0[↗](https://www.wikidata.org/w/index.php?title=Q801294&diff=prev&oldid=107182680)
 
 ##### Textual Change
-A property value of type text is modified to correct or introduce language errors, such as spelling, typos, or grammar, without altering sentence structure or the statement's meaning.
+A property value of type text is modified to correct or introduce language errors, such as spelling, typos, or grammar, without altering sentence structure or the statement's meaning. This also covers surface-level presentation changes, such as spacing, capitalization, hyphenation, punctuation, and other typographical elements. 
 **Examples:**
 - "country in southeastern Europe" -> "Country in Southeast Europe"[↗](https://www.wikidata.org/w/index.php?title=Q225&diff=prev&oldid=1678150592)
 - "American acterss" -> "American actress"[↗](https://www.wikidata.org/w/index.php?title=Q801294&diff=prev&oldid=143695424)
@@ -463,29 +476,101 @@ A property value is replaced by a more (refinement) or less (unrefinement) preci
 A change is considered reverted when a subsequent edit restores a previous value of a property.
 *Example:* "44th President of the United States of America" -> "Worst president ever" for Barack Obama (Q76) [↗](https://www.wikidata.org/w/index.php?title=Q76&diff=prev&oldid=7375872) was reverted in a subsequent revision.
 
-The following table presents a summary of the change types, indicating which ones are reversible, their granularity and classification step.
+---
 
-| **Category** | **Change Type** | **Reversible** | **Granularity** | **Classification Step** |
-|:---|:---|:---:|:---:|:---:|
-| **Create** | Reference/Qualifier insertion | | Statement | 1 |
-| | Statement insertion | x | Entity | 1 |
-| | Soft insertion | x | Statement | 2 |
-| **Update** | Re-formatting* | x | Value | 3 |
-| | Refinement | x | Value | 3 |
-| | Unrefinement | x | Value | 3 |
-| | Textual change* | x | Value | 3 |
-| | Value update | x | Statement | 2 & 3 |
-| **Delete** | Reference/Qualifier deletion | | Statement | 1 |
-| | Statement deletion | x | Entity | 1 |
-| | Soft deletion | x | Statement | 2 |
+### Rule-based classification
 
-\* *Re-formatting* to time, globecoordinate, and quantity values; *Textual change* to text values only.
+Rule-based classification is performed during change extraction by setting *re-interpretation: true* in the *set_up.yml* file for change extraction (See [Change Extraction](#change-extraction)).
 
---- 
+Rule-based classifiers can be found in *wikidata-edit-history/classifiers/rule/rule_based_classifier.py*.
 
-### ML model training
+### Classification of remaining changes (Text and Entity)
+
+We provide an example for the *classifier_setup.yml* in *classifier_setup.example.yml*. Make a copy of this file and configure it accordingly.
+
+**Before running the classification, perform the following steps:**
+1. Rename the table *updates_text* to *updates_text_full*
+2. Create the following 2 tables:
+```
+  create table updates_text_latin as
+  select *
+  from updates_text_full
+  where old_value->>0 ~ '[^\u0000-\u036F\u1E00-\u1EFF\u2000-\u206F\u2070-\u218F]' OR
+  new_value->>0 ~ '[^\u0000-\u036F\u1E00-\u1EFF\u2000-\u206F\u2070-\u218F]';
+
+  create table updates_text as
+  select *
+  from updates_text_full
+  where not (old_value->>0 ~ '[^\u0000-\u036F\u1E00-\u1EFF\u2000-\u206F\u2070-\u218F]' OR
+  new_value->>0 ~ '[^\u0000-\u036F\u1E00-\u1EFF\u2000-\u206F\u2070-\u218F]');
+```
+3. Run the update of labels and descriptions for entity. For this, run extract_remaining_changes.py with the following parameters in the classifier_setup.yml
+
+```
+classification_ml:
+  classify: false     <--------
+  evaluate: false     <--------
+  table_suffix: ''     <--- set this according to the specific table suffix (e.g., '', '_less', '_sa', '_ao')
+  train: false         <--------
+config:
+  classifier_type: ml     <--------
+  db_config_path: config/aux_db_config.json
+update_entity_labels_descriptions: true    <--------
+```
+
+4. Rename *updates_entity* to *updates_entity_full*
+5. Create the following 2 tables:
+```
+  create table updates_entity_latin as
+  select *
+  from updates_entity_full
+  where (old_value_label = '' OR old_value_label IS NULL) OR
+            (new_value_label = '' OR new_value_label IS NULL) OR
+            old_value_label ~ '[^\u0000-\u036F\u1E00-\u1EFF\u2000-\u206F\u2070-\u218F]' OR
+            new_value_label ~ '[^\u0000-\u036F\u1E00-\u1EFF\u2000-\u206F\u2070-\u218F]';
+
+  create table updates_entity as
+  select *
+  from updates_entity_full
+  where not ((old_value_label = '' OR old_value_label IS NULL) OR
+            (new_value_label = '' OR new_value_label IS NULL) OR
+            old_value_label ~ '[^\u0000-\u036F\u1E00-\u1EFF\u2000-\u206F\u2070-\u218F]' OR
+            new_value_label ~ '[^\u0000-\u036F\u1E00-\u1EFF\u2000-\u206F\u2070-\u218F]');
+```
+
+1. Download Transitive closure cache from [WiDiff: Wikidata Entities Transitive Closures (October 2025)](https://doi.org/10.5281/zenodo.22203191) and store it in *auxiliary_data/transitive_closures*. If not, create a new one following the steps in [Downloading extra data](#downloading-extra-data) and [Transitive Closure Cache Creation](#transitive-closure-cache-creation)
+2. Download the trained ML classifiers from [Wikidata Change Classification models and features]() and put both *training_info* and *features* folder under *classifiers/ml/*.
+3. Set the following parameters in *wikidata-edit-history/classifier_setup.yml*:
+````
+  config:
+    db_config_path: path_to_db_with_changes  <-----
+    classifier_type: ml   <-----
+  classification_ml:
+    train: false          <-----
+    classify: true        <-----
+    evaluate: false       <-----
+    table_suffix: ''      <----- change for the corresponding table suffix (See Database schema and change extraction filters)
+  update_entity_labels_descriptions: false  <-----
+````
+
+**NOTE:** db_config_path is the path to the database that stores the changes. The config.json has the same structure as the one set for change extraction, can use that one as is.
+
+4. Run:
+
+```bash
+python3 -m classify_remaining_changes
+```
+
+this command classifies entity changes using rule-based first, and then classifies the remaining entity and text changes using the trained ML model.
+
+---
+
+#### ML model training
 
 **NOTE:** The trained ML models and features can be found in [Wikidata Change Classification models and features]().
+
+We provide an example configuration file in *classifiers/ml/config/ml_classifier_config.example.json*.
+Configure its path in *classifier_setup.yml* under *config -> ml_config_path* accordingly.
 
 **Configuration**
 
@@ -546,81 +631,26 @@ Training outputs *training_info_<model_name>.pkl* files with the following struc
       evaluate: true
   ```
 
+**Inter annotator agreement**
+The shared samples labeled by 2 other extra annotators and compute of IAA can be found in *wikidata-edit-history/classifiers/ml/training_dataset/shared_overlap*. The notebook *inter_annotator_agreement* calculates the IAA.
+
 ---
 
-### LLM baseline
+#### LLM baseline
 1. Configure LLM in *classifiers/llm/config/llm_classifier_config.json*. To use Qwen 3.5 (FP8 quantized), run the script *classifiers/llm/qwen_server.sh* in the background and set the corresponding `base_url` in the configuration file (*classifiers/llm/config/llm_classifier_config.json*). 
-2. Set `classifier_type: llm` in  *wikidata-edit-history/classifier_setup.yml*. 
+2. Set `classifier_type: llm` and `llm_config_path` under *config* in  *wikidata-edit-history/classifier_setup.yml*. 
 3. Run `python3 -m classifiy_remaining_changes`. This classifies changes on the labeled dataset (*classifiers/ml/training_dataset*). To modify the changes to label, set the `[classification_llm][path_to_entity_changes]` and `[classification_llm][path_to_text_changes]` in  *wikidata-edit-history/classifier_setup.yml* to other files.
 
 *Note:* We used 2 40GB VRAM GPUs and that's why `--tensor-parallel-size 2` is used in *classifiers/llm/qwen_server.sh*. If running on a single GPU, then this should be removed
 
 ---
 
-### Classification of remaining changes (Text and Entity)
+## Analysis
+All analysis scripts can be found in *wikidata-edit-history/analysis/sql*.
 
-1. Download Transitive closure cache from [WiDiff: Wikidata Entities Transitive Closures (October 2025)](https://doi.org/10.5281/zenodo.22203191) and store it in *auxiliary_data/transitive_closures*. If not, create a new one following the steps in [Downloading extra data](#downloading-extra-data) and [Transitive Closure Cache Creation](#transitive-closure-cache-creation)
-2. Download the trained ML classifiers from [Wikidata Change Classification models and features]() and put both *training_info* and *features* folder under *classifiers/ml/*.
-3. Set the following parameters in *wikidata-edit-history/classifier_setup.yml*:
-````
-  config:
-    db_config_path: path_to_db_with_changes
-  classification:
-    classifier_type: ml
-  classification_ml:
-    train: false
-    classify: true
-    evaluate: false
-    table_suffix: '' <- change for the corresponding table suffix (See Database schema and change extraction filters)
-  update_entity_labels_descriptions: true
-  separate_non_latin_entity: true
-  separate_non_latin_text: true
-````
-
-**NOTE:** db_config_path is the path to the database that stored the changes. The config.json has the same structure as the one set for change extraction, can use that one as is.
-
-4. Run:
-
-```bash
-python3 -m classify_remaining_changes
-```
-
-this command classifies entity changes using rule-based first, and then classifies the remaining entity and text changes using the trained ML model.
-
-## Descriptive Analysis
-Descriptive analysis scripts are provided in `analysis/scripts.py`. Each analysis can be enabled and configured independently in `setup.yml` under the `analysis` section:
-
-```yaml
-analysis:
-  distribution_of_revisions_value_changes:
-    execute: true   # set to true to run this analysis
-    reload_data: false  # set to true to re-run the SQL query and overwrite stored results in analysis/results/
-  entity_types_analysis:
-    execute: true
-    reload_data: false
-  property_stats:
-    execute: true
-    reload_data: false
-```
-
-To run the analysis, simply execute from root:
-
-```bash
-python3 -m analysis.scripts.general_analysis
-```
-
-| Analysis | Description |
-|---|---|
-| `distribution_of_revisions_value_changes` | Distribution of revisions and value changes across all entities |
-| `entity_types_analysis` | Largest entity types, most edited entity types and user type breakdown for the latter |
-| `property_stats` | Most edited properties (wrt. number of entities that have a change to that entity) and type of action distribution |
-
-Output figures are saved to `analysis/results/figures/`.
-
-We provide datasets to run this analysis ([WiDiff: Analysis Results from Wikidata Edit History Dump (June 2025)](https://doi.org/10.5281/zenodo.19771569)). Download the *widiff_analysis_results_20250601.zip* and put the .csv files in the folder `analysis/results/`.
-
-**Note:** Set `reload_data: true` (if you want to obtain fresh results and not use the ones provided in [WiDiff: Analysis Results from Wikidata Edit History Dump (June 2025)](https://doi.org/10.5281/zenodo.19771569)) to execute the SQL queries and store the results. Subsequent runs can use `reload_data: false` to load from the stored results.
-
+- To compute change distributions use the scripts: *qualifier_change_stats.sql*, *reference_change_stats.sql*, *rank_change_stats.sql*, *dist_change_types.sql* 
+- Using Change Types section: *using_change_types.sql*
+- Plot can be replicated by running *plots.py*.
 
 ## Downloading extra data
 

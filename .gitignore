@@ -12,6 +12,10 @@ logs/*
 !logs/metrics.ipynb
 setup.yml
 classifier_setup.yml
+classifiers/rule/rule_based_samples/*
+classifiers/ml/features/*
+classifiers/ml/training_info/*
+classifiers/ml/training_dataset/*
 classifiers/ml/training_dataset/gs_entity_old.csv
 logs_new/*
 logs/*
