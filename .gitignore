@@ -17,6 +17,7 @@ classifiers/ml/features/*
 classifiers/ml/training_info/*
 classifiers/ml/training_dataset/*
 classifiers/ml/training_dataset/gs_entity_old.csv
+analysis/scripts/data/*
 logs_new/*
 logs/*
 slurm_wrapper.slurm
