@@ -1,8 +1,10 @@
 # WiDiff - Change Extraction and Classification in Wikidata
 
-This tool extracts changes (diff between revisions) of statement values, ranks, qualifiers, and references, from Wikidata's xml dumps and stores them in a relational DB. For a description of the change extraction, refer to our paper [WiDiff: Change Extraction and Exploration in Wikidata]().
+This tool extracts changes (diff between revisions) of statement values, ranks, qualifiers, and references, from Wikidata's xml dumps and stores them in a relational DB. 
 
-**For change classification see `wikidata-edit-history/README_classification.md`**.
+### For change classification see `wikidata-edit-history/README_classification.md`.
+
+For a description of the change extraction, refer to our paper [WiDiff: Change Extraction and Exploration in Wikidata]().
 
 This README is structured as follows:
 - [Change extraction](#change-extraction): change extraction prerequisites and configuration parameters.
